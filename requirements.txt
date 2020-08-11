@@ -1,0 +1,6 @@
+scikit_learn
+pandas
+numpy
+deap
+joblib
+xgboost
