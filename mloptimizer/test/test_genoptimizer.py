@@ -1,0 +1,69 @@
+# Import the package to test
+# import mloptimizer
+
+# Import the module
+from mloptimizer.genoptimizer import Param
+from mloptimizer.genoptimizer import TreeOptimizer, MLPOptimizer, SVCOptimizer, XGBClassifierOptimizer
+from mloptimizer.eda import read_dataset
+from unittest import TestCase
+from sklearn.datasets import load_iris
+from sklearn.preprocessing import MinMaxScaler
+
+
+class ParamTest(TestCase):
+    def test_int_param(self):
+        int_test = 3
+        uat = Param('integer', 2, 10, int)
+        self.assertEqual(int_test, uat.correct(int_test))
+
+
+class XGBClassifierOptimizerTest(TestCase):
+    def test_load_boston_optimizer(self):
+        X, y = load_iris(return_X_y=True)
+        uat = XGBClassifierOptimizer(X, y, "file")
+        uat.optimize_clf(2, 2)
+
+
+class TreeOptimizerTest(TestCase):
+    def test_default_params_basic_optimizer(self):
+        features = [[0, 1, 2, 3], [0, 1, 1, 2]]
+        labels = [1, 2]
+        uat = TreeOptimizer(features, labels)
+        self.assertEqual(uat.get_default_params(), uat.get_params())
+
+    def test_default_params_basic_optimizer(self):
+        features = [[0, 1, 2, 3], [0, 1, 1, 2]]
+        labels = [1, 2]
+        uat = TreeOptimizer(features, labels, "file", {"min_samples_split": Param("min_samples_split", 100, 200, int)})
+        self.assertNotEqual(uat.get_default_params(), uat.get_params())
+
+    def test_load_boston_optimizer(self):
+        X, y = load_iris(return_X_y=True)
+        uat = TreeOptimizer(X, y, "file")
+        uat.optimize_clf(2, 2)
+
+
+class SCVOptimizerTest(TestCase):
+    def test_load_boston_optimizer(self):
+        X, y = load_iris(return_X_y=True)
+        uat = SVCOptimizer(X, y, "file")
+        uat.optimize_clf(10, 2)
+
+
+class MLPOptimizerTest(TestCase):
+    def test_load_boston_optimizer(self):
+        X, y = load_iris(return_X_y=True)
+        uat = MLPOptimizer(X, y, "file")
+        uat.optimize_clf(2, 2)
+
+
+class PaperTest(TestCase):
+    def test_experiment_1(self):
+        x, y = read_dataset("data.balanced.csv", ohe=0, scaler=MinMaxScaler(), samples=10000, return_X_y=True)
+        uat = XGBClassifierOptimizer(x, y, "file")
+        uat.optimize_clf(10, 2)
+        uat = MLPOptimizer(x, y, "file")
+        uat.optimize_clf(10, 2)
+        uat = SVCOptimizer(x, y, "file")
+        uat.optimize_clf(10, 2)
+
