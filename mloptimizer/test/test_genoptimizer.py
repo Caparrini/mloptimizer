@@ -21,7 +21,7 @@ class XGBClassifierOptimizerTest(TestCase):
     def test_load_boston_optimizer(self):
         X, y = load_iris(return_X_y=True)
         uat = XGBClassifierOptimizer(X, y, "file")
-        uat.optimize_clf(2, 2)
+        uat.optimize_clf(10, 10)
 
 
 class TreeOptimizerTest(TestCase):
@@ -59,7 +59,7 @@ class MLPOptimizerTest(TestCase):
 
 class PaperTest(TestCase):
     def test_experiment_1(self):
-        x, y = read_dataset("data.balanced.csv", ohe=0, scaler=MinMaxScaler(), samples=10000, return_X_y=True)
+        x, y = read_dataset("data_sample_train.csv", ohe=0, scaler=MinMaxScaler(), samples=1000, return_x_y=True)
         uat = XGBClassifierOptimizer(x, y, "file")
         uat.optimize_clf(10, 2)
         uat = MLPOptimizer(x, y, "file")

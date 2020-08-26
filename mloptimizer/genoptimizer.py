@@ -1,8 +1,11 @@
+import multiprocessing
 from abc import ABCMeta, abstractmethod, ABC
 from random import randint
 import numpy as np
 import copy
+import os
 from deap import creator, tools, base, algorithms
+from deap.algorithms import varAnd
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
@@ -13,10 +16,128 @@ import xgboost as xgb
 import logging
 
 
+def customEaSimple(opt, population, toolbox, cxpb, mutpb, ngen, stats=None,
+                   halloffame=None, verbose=__debug__):
+    """This algorithm reproduce the simplest evolutionary algorithm as
+    presented in chapter 7 of [Back2000]_.
+
+    :param population: A list of individuals.
+    :param toolbox: A :class:`~deap.base.Toolbox` that contains the evolution
+                    operators.
+    :param cxpb: The probability of mating two individuals.
+    :param mutpb: The probability of mutating an individual.
+    :param ngen: The number of generation.
+    :param stats: A :class:`~deap.tools.Statistics` object that is updated
+                  inplace, optional.
+    :param halloffame: A :class:`~deap.tools.HallOfFame` object that will
+                       contain the best individuals, optional.
+    :param verbose: Whether or not to log the statistics.
+    :returns: The final population
+    :returns: A class:`~deap.tools.Logbook` with the statistics of the
+              evolution
+
+    The algorithm takes in a population and evolves it in place using the
+    :meth:`varAnd` method. It returns the optimized population and a
+    :class:`~deap.tools.Logbook` with the statistics of the evolution. The
+    logbook will contain the generation number, the number of evaluations for
+    each generation and the statistics if a :class:`~deap.tools.Statistics` is
+    given as argument. The *cxpb* and *mutpb* arguments are passed to the
+    :func:`varAnd` function. The pseudocode goes as follow ::
+
+        evaluate(population)
+        for g in range(ngen):
+            population = select(population, len(population))
+            offspring = varAnd(population, toolbox, cxpb, mutpb)
+            evaluate(offspring)
+            population = offspring
+
+    As stated in the pseudocode above, the algorithm goes as follow. First, it
+    evaluates the individuals with an invalid fitness. Second, it enters the
+    generational loop where the selection procedure is applied to entirely
+    replace the parental population. The 1:1 replacement ratio of this
+    algorithm **requires** the selection procedure to be stochastic and to
+    select multiple times the same individual, for example,
+    :func:`~deap.tools.selTournament` and :func:`~deap.tools.selRoulette`.
+    Third, it applies the :func:`varAnd` function to produce the next
+    generation population. Fourth, it evaluates the new individuals and
+    compute the statistics on this population. Finally, when *ngen*
+    generations are done, the algorithm returns a tuple with the final
+    population and a :class:`~deap.tools.Logbook` of the evolution.
+
+    .. note::
+
+        Using a non-stochastic selection method will result in no selection as
+        the operator selects *n* individuals from a pool of *n*.
+
+    This function expects the :meth:`toolbox.mate`, :meth:`toolbox.mutate`,
+    :meth:`toolbox.select` and :meth:`toolbox.evaluate` aliases to be
+    registered in the toolbox.
+
+    .. [Back2000] Back, Fogel and Michalewicz, "Evolutionary Computation 1 :
+       Basic Algorithms and Operators", 2000.
+    """
+    logbook = tools.Logbook()
+    logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
+
+    # Evaluate the individuals with an invalid fitness
+    invalid_ind = [ind for ind in population if not ind.fitness.valid]
+    fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+    for ind, fit in zip(invalid_ind, fitnesses):
+        ind.fitness.values = fit
+
+    if halloffame is not None:
+        halloffame.update(population)
+
+    record = stats.compile(population) if stats else {}
+    logbook.record(gen=0, nevals=len(invalid_ind), **record)
+    if verbose:
+        logging.info(logbook.stream)
+
+    # Begin the generational process
+    for gen in range(1, ngen + 1):
+        logging.info("Generation: {}".format(gen))
+        # Select the next generation individuals
+        offspring = toolbox.select(population, len(population))
+
+        # Vary the pool of individuals
+        offspring = varAnd(offspring, toolbox, cxpb, mutpb)
+
+        # Evaluate the individuals with an invalid fitness
+        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+        fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+        c = 1
+        for ind, fit in zip(invalid_ind, fitnesses):
+            logging.info("Fitting individual (informational purpose): {}".format(c))
+            ind.fitness.values = fit
+            c = c + 1
+
+        # Update the hall of fame with the generated individuals
+        if halloffame is not None:
+            halloffame.update(offspring)
+
+        # Replace the current population by the offspring
+        population[:] = offspring
+
+        # Append the current generation statistics to the logbook
+        record = stats.compile(population) if stats else {}
+        logbook.record(gen=gen, nevals=len(invalid_ind), **record)
+        if verbose:
+            print(logbook.stream)
+
+        for i in range(len(halloffame[:2])):
+            best_score = halloffame[i].fitness.values[:]
+            logging.info("Individual TOP {}".format(i + 1))
+            logging.info("Individual accuracy: {}".format(best_score))
+            logging.info("Best classifier: {}".format(str(opt.get_clf(halloffame[i]))))
+
+    return population, logbook
+
+
 class Param(object):
     """
     Object to store param info, type and range of values
     """
+
     def __init__(self, name, min_value, max_value, param_type, denominator=100, values_str=None):
         """
         Init object
@@ -46,12 +167,12 @@ class Param(object):
         if self.type == int:
             ret = value
         elif self.type == float:
-            ret = float(value)/self.denominator
+            ret = float(value) / self.denominator
             # ret = round(value, self.decimals)
         elif self.type == "nexp":
-            ret = 10**(-value)
+            ret = 10 ** (-value)
         elif self.type == "x10":
-            ret = value*10
+            ret = value * 10
 
         return ret
 
@@ -140,17 +261,18 @@ class BaseOptimizer(object):
         :param individual: individual for evaluation
         :return: mean accuracy, standard deviation accuracy
         """
-        #keys = list(self.params.keys())
-        #for i in range(len(keys)):
+        # keys = list(self.params.keys())
+        # for i in range(len(keys)):
         #    individual[i] = self.params[keys[i]].correct(individual[i])
 
-        mean, std = KFoldStratifiedAccuracy(self.features, self.labels, self.get_corrected_clf(individual), random_state=1)
+        mean, std = KFoldStratifiedAccuracy(self.features, self.labels, self.get_corrected_clf(individual),
+                                            random_state=1)
 
-        #out = "Individual evaluation:\n"
-        #for i in range(len(self.params)):
+        # out = "Individual evaluation:\n"
+        # for i in range(len(self.params)):
         #    out += self.params[i].name + " = " + str(individual[i]) + "\n"
-        #out += "  ----> Accuracy: " + str(mean) + " +- " + str(std) + "\n"
-        #self.file_out.write(out)
+        # out += "  ----> Accuracy: " + str(mean) + " +- " + str(std) + "\n"
+        # self.file_out.write(out)
         return mean, std
 
     def optimize_clf(self, population=10, generations=3):
@@ -172,8 +294,8 @@ class BaseOptimizer(object):
         toolbox = base.Toolbox()
 
         # Paralel
-        #pool = multiprocessing.Pool()
-        #toolbox.register("map", pool.map)
+        pool = multiprocessing.Pool()
+        toolbox.register("map", pool.map)
 
         toolbox.register("individual", self.init_individual, creator.Individual)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
@@ -199,15 +321,15 @@ class BaseOptimizer(object):
         toolbox.decorate("mutate", hist.decorator)
         hist.update(pop)
 
-        fpop, logbook = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2,
-                                            ngen=generations, stats=stats,
-                                            halloffame=hof)
+        fpop, logbook = customEaSimple(self, pop, toolbox, cxpb=0.5, mutpb=0.2,
+                                       ngen=generations, stats=stats,
+                                       halloffame=hof)
         logging.info("LOGBOOK: \n{}".format(logbook))
         logging.info("HALL OF FAME: {} individuals".format(len(hof)))
 
         for i in range(len(hof)):
             best_score = hof[i].fitness.values[:]
-            logging.info("Individual TOP {}".format(i+1))
+            logging.info("Individual TOP {}".format(i + 1))
             logging.info("Individual accuracy: {}".format(best_score))
             logging.info("Best classifier: {}".format(str(self.get_clf(hof[i]))))
 
@@ -226,28 +348,31 @@ class BaseOptimizer(object):
         :param logbook: logbook of the genetic algorithm
         '''
         print("TODO")
-        #gen = logbook.select("gen")
-        #fit_max = logbook.select("max")
-        #fit_avg = logbook.select("avg")
+        # gen = logbook.select("gen")
+        # fit_max = logbook.select("max")
+        # fit_avg = logbook.select("avg")
+
+
 #
-        #fig, ax1 = plt.subplots()
-        #line1 = ax1.plot(gen, fit_max, "b-", label="Max fit")
-        #ax1.set_xlabel("Generation")
-        #ax1.set_ylabel("Fitness", color="b")
+# fig, ax1 = plt.subplots()
+# line1 = ax1.plot(gen, fit_max, "b-", label="Max fit")
+# ax1.set_xlabel("Generation")
+# ax1.set_ylabel("Fitness", color="b")
 #
-        #line2 = ax1.plot(gen, fit_avg, "r-", label="Avg fit")
+# line2 = ax1.plot(gen, fit_avg, "r-", label="Avg fit")
 #
-        #lns = line1 + line2
-        #labs = [l.get_label() for l in lns]
-        #ax1.legend(lns, labs, loc="lower right")
+# lns = line1 + line2
+# labs = [l.get_label() for l in lns]
+# ax1.legend(lns, labs, loc="lower right")
 #
-        #plt.savefig("optfig")
+# plt.savefig("optfig")
 
 
 class TreeOptimizer(BaseOptimizer, ABC):
     """
     Concrete optimizer for sklearn classifier -> sklearn.tree.DecisionTreeClassifier
     """
+
     def get_clf(self, individual):
         """
         Build a classifier object from an individual one
@@ -286,6 +411,7 @@ class ForestOptimizer(TreeOptimizer, ABC):
     """
     Concrete optimizer for sklearn random forest -> sklearn.ensemble.RandomForestClassifier
     """
+
     def get_clf(self, individual):
         """
         Builds a classifier object from an individual one
@@ -328,6 +454,7 @@ class ExtraTreesOptimizer(ForestOptimizer, ABC):
     Concrete optimizer for sklearn extra trees -> sklearn.ensemble.ExtraTreesClassifier
     Use the same get_params() as ForestOptimizer
     """
+
     def get_clf(self, individual):
         """
         Builds a classifier object from an individual one
@@ -360,6 +487,7 @@ class GradientBoostingOptimizer(ForestOptimizer, ABC):
     Concrete optimizer for sklearn gradient boosting -> sklearn.ensemble.GradientBoostingClassifier
     Use the same get_params() as ForestOptimizer
     """
+
     def get_params(self):
         """
         Params for the creation of individuals (relative to the algorithm)
@@ -403,6 +531,7 @@ class XGBClassifierOptimizer(BaseOptimizer, ABC):
     """
     Concrete optimizer for extreme gradient boosting classifier -> xgb.XGBRegressor
     """
+
     @staticmethod
     def get_default_params():
         default_params = {
@@ -445,7 +574,7 @@ class XGBClassifierOptimizer(BaseOptimizer, ABC):
                                 scale_pos_weight=individual_dict['scale_pos_weight'],
                                 seed=None,
                                 silent=False,
-                                subsample=individual_dict['subsample']
+                                subsample=individual_dict['subsample'],
                                 )
         return clf
 
@@ -454,6 +583,7 @@ class SVCOptimizer(BaseOptimizer, ABC):
     """
         Concrete optimizer for support vector machine SVC classifier -> sklearn.svm.SVC
         """
+
     @staticmethod
     def get_default_params():
         default_params = {
@@ -492,6 +622,7 @@ class MLPOptimizer(BaseOptimizer, ABC):
     """
         Concrete optimizer for support vector machine SVC classifier -> sklearn.svm.SVC
         """
+
     @staticmethod
     def get_default_params():
         default_params = {
