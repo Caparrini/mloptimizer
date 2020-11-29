@@ -104,6 +104,8 @@ def TemporalKFoldAccuracy(features, labels, clf, n_splits=4, score_function=bala
     '''
     logging.info("TemporalKFold accuracy\nClassifier:{}\nn_splits:{}\n"
                  "score_metric:{}".format(clf, n_splits, score_function))
+    print("TemporalKFold accuracy\nClassifier:{}\nn_splits:{}\n"
+                 "score_metric:{}".format(clf, n_splits, score_function))
 
     clfs = []
 
@@ -140,10 +142,11 @@ def TemporalKFoldAccuracy(features, labels, clf, n_splits=4, score_function=bala
             # Train the classifier
             t1 = time.process_time()
             logging.info("Training clf...")
+            print("Training clf...")
             clf.fit(features_train, labels_train)
             t2 = time.process_time()
             logging.info("Processing time: {:.3f}".format(t2 - t1))
-
+            print("Processing time: {:.3f}".format(t2 - t1))
             # Labels predicted for test split
             labels_pred_test = clf.predict(features_test)
             labels_predicted[test_index] = labels_pred_test
@@ -159,6 +162,7 @@ def TemporalKFoldAccuracy(features, labels, clf, n_splits=4, score_function=bala
     meanAccuracy = np.mean(accuracies_kfold)
     std = np.std(accuracies_kfold)
     logging.info("Accuracy: {:.2f} +- {:.2f}".format(round(meanAccuracy, 3), round(std, 3)))
+    print("Accuracy: {:.2f} +- {:.2f}".format(round(meanAccuracy, 3), round(std, 3)))
 
     # return meanAccuracy, std, labels, labels_predicted, clfs
     return meanAccuracy, std

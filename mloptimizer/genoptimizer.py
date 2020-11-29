@@ -96,6 +96,7 @@ def customEaSimple(opt, population, toolbox, cxpb, mutpb, ngen, stats=None,
     # Begin the generational process
     for gen in range(1, ngen + 1):
         logging.info("Generation: {}".format(gen))
+        print("Generation: {}".format(gen))
         # Select the next generation individuals
         offspring = toolbox.select(population, len(population))
 
@@ -108,6 +109,7 @@ def customEaSimple(opt, population, toolbox, cxpb, mutpb, ngen, stats=None,
         c = 1
         for ind, fit in zip(invalid_ind, fitnesses):
             logging.info("Fitting individual (informational purpose): {}".format(c))
+            print("Fitting individual (informational purpose): {}".format(c))
             ind.fitness.values = fit
             c = c + 1
 
@@ -129,6 +131,9 @@ def customEaSimple(opt, population, toolbox, cxpb, mutpb, ngen, stats=None,
             logging.info("Individual TOP {}".format(i + 1))
             logging.info("Individual accuracy: {}".format(best_score))
             logging.info("Best classifier: {}".format(str(opt.get_corrected_clf(halloffame[i]))))
+            print("Individual TOP {}".format(i + 1))
+            print("Individual accuracy: {}".format(best_score))
+            print("Best classifier: {}".format(str(opt.get_corrected_clf(halloffame[i]))))
 
     return population, logbook
 
@@ -285,6 +290,8 @@ class BaseOptimizer(object):
         """
         logging.info("Initiating genetic optimization...")
         logging.info("Algorithm: {}".format(type(self).__name__))
+        print("Initiating genetic optimization...")
+        print("Algorithm: {}".format(type(self).__name__))
         # self.file_out.write("Optimizing accuracy:\n")
         # Using deap, custom for decision tree
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
@@ -326,6 +333,8 @@ class BaseOptimizer(object):
                                        halloffame=hof)
         logging.info("LOGBOOK: \n{}".format(logbook))
         logging.info("HALL OF FAME: {} individuals".format(len(hof)))
+        print("LOGBOOK: \n{}".format(logbook))
+        print("HALL OF FAME: {} individuals".format(len(hof)))
 
         for i in range(len(hof)):
             best_score = hof[i].fitness.values[:]

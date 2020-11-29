@@ -14,7 +14,7 @@ reqs = [str(ir.req) for ir in install_reqs]
 
 setuptools.setup(
     name='mloptimizer',
-    version='0.3',
+    version='0.4',
     author="Antonio Caparrini",
     author_email="a.caparrini@gmail.com",
     description="Genetic hyper-parameter selection for machine learning algorithms",
