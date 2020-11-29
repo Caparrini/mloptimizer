@@ -10,7 +10,7 @@ from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, Gradi
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
-from mloptimizer.model_evaluation import KFoldStratifiedAccuracy
+from mloptimizer.model_evaluation import KFoldStratifiedAccuracy, TemporalKFoldAccuracy
 from mloptimizer import miscellaneous
 import xgboost as xgb
 import logging
@@ -265,9 +265,9 @@ class BaseOptimizer(object):
         # for i in range(len(keys)):
         #    individual[i] = self.params[keys[i]].correct(individual[i])
 
-        mean, std = KFoldStratifiedAccuracy(self.features, self.labels, self.get_corrected_clf(individual),
-                                            random_state=1)
-
+        #mean, std = KFoldStratifiedAccuracy(self.features, self.labels, self.get_corrected_clf(individual),
+        #                                    random_state=1)
+        mean, std = TemporalKFoldAccuracy(self.features, self.labels, self.get_corrected_clf(individual))
         # out = "Individual evaluation:\n"
         # for i in range(len(self.params)):
         #    out += self.params[i].name + " = " + str(individual[i]) + "\n"
