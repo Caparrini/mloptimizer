@@ -2,10 +2,8 @@ import logging
 import sys
 import os
 
-LOG_PATH = "/opt/project/logs/"
 
-
-def init_logger(filename='optimization.log'):
+def init_logger(filename='optimization.log', LOG_PATH ="/opt/project/logs/"):
     logging_params = {
         # 'stream': sys.stdout,
         'level': logging.DEBUG,
