@@ -128,7 +128,7 @@ def customEaSimple(opt, population, toolbox, cxpb, mutpb, ngen, stats=None,
             best_score = halloffame[i].fitness.values[:]
             logging.info("Individual TOP {}".format(i + 1))
             logging.info("Individual accuracy: {}".format(best_score))
-            logging.info("Best classifier: {}".format(str(opt.get_clf(halloffame[i]))))
+            logging.info("Best classifier: {}".format(str(opt.get_corrected_clf(halloffame[i]))))
 
     return population, logbook
 
@@ -331,7 +331,7 @@ class BaseOptimizer(object):
             best_score = hof[i].fitness.values[:]
             logging.info("Individual TOP {}".format(i + 1))
             logging.info("Individual accuracy: {}".format(best_score))
-            logging.info("Best classifier: {}".format(str(self.get_clf(hof[i]))))
+            logging.info("Best classifier: {}".format(str(self.get_corrected_clf(hof[i]))))
 
         # self.file_out.write("LOGBOOK: \n"+str(logbook)+"\n")
         # self.file_out.write("Best accuracy: "+str(best_score[0])+"\n")
@@ -339,7 +339,7 @@ class BaseOptimizer(object):
 
         # self.plot_loogbook(logbook=logbook)
 
-        return self.get_clf(hof[0])
+        return self.get_corrected_clf(hof[0])
 
     def plot_loogbook(self, logbook):
         '''
