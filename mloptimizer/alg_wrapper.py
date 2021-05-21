@@ -1,6 +1,7 @@
 import xgboost as xgb
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
+import numpy as np
 
 
 class CustomXGBClassifier(BaseEstimator):
@@ -37,4 +38,7 @@ class CustomXGBClassifier(BaseEstimator):
     def predict(self, X):
         check_array(X)
         dtest = xgb.DMatrix(X)
-        return self._xclf.predict(dtest)
+        preds = np.array(self._xclf.predict(dtest, ntree_limit=self._xclf.best_iteration))
+        preds = preds > 0.5
+        preds = preds.astype(int)
+        return preds

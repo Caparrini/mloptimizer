@@ -4,10 +4,11 @@
 # Import the module
 import unittest
 from mloptimizer.genoptimizer import Param
-from mloptimizer.genoptimizer import TreeOptimizer, MLPOptimizer, SVCOptimizer, XGBClassifierOptimizer
+from mloptimizer.genoptimizer import TreeOptimizer, MLPOptimizer, \
+    SVCOptimizer, XGBClassifierOptimizer, CustomXGBClassifierOptimizer
 from mloptimizer.eda import read_dataset
 from unittest import TestCase
-from sklearn.datasets import load_iris
+from sklearn.datasets import load_iris, load_breast_cancer
 from sklearn.preprocessing import MinMaxScaler
 
 
@@ -22,6 +23,13 @@ class XGBClassifierOptimizerTest(TestCase):
     def test_load_boston_optimizer(self):
         X, y = load_iris(return_X_y=True)
         uat = XGBClassifierOptimizer(X, y, "file")
+        uat.optimize_clf(3, 3)
+
+
+class CustomXGBClassifierOptimizerTest(TestCase):
+    def test_load_breast_cancer_optimizer(self):
+        X, y = load_breast_cancer(return_X_y=True)
+        uat = CustomXGBClassifierOptimizer(X, y, "file")
         uat.optimize_clf(10, 10)
 
 
@@ -42,6 +50,11 @@ class TreeOptimizerTest(TestCase):
         X, y = load_iris(return_X_y=True)
         uat = TreeOptimizer(X, y, "file")
         uat.optimize_clf(2, 2)
+
+    def test_load_breast_cancer_optimizer(self):
+        X, y = load_breast_cancer(return_X_y=True)
+        uat = TreeOptimizer(X, y, "file")
+        uat.optimize_clf(10, 10)
 
 
 class SCVOptimizerTest(TestCase):

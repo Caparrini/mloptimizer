@@ -12,6 +12,7 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from mloptimizer.model_evaluation import KFoldStratifiedAccuracy, TemporalKFoldAccuracy
 from mloptimizer import miscellaneous
+from mloptimizer.alg_wrapper import CustomXGBClassifier
 import xgboost as xgb
 import logging
 
@@ -265,7 +266,7 @@ class BaseOptimizer(object):
         # for i in range(len(keys)):
         #    individual[i] = self.params[keys[i]].correct(individual[i])
 
-        #mean, std = KFoldStratifiedAccuracy(self.features, self.labels, self.get_corrected_clf(individual),
+        # mean, std = KFoldStratifiedAccuracy(self.features, self.labels, self.get_corrected_clf(individual),
         #                                    random_state=1)
         mean, std = KFoldStratifiedAccuracy(self.features, self.labels, self.get_corrected_clf(individual))
         # out = "Individual evaluation:\n"
@@ -576,6 +577,48 @@ class XGBClassifierOptimizer(BaseOptimizer, ABC):
                                 silent=False,
                                 subsample=individual_dict['subsample'],
                                 )
+        return clf
+
+
+class CustomXGBClassifierOptimizer(BaseOptimizer, ABC):
+    """
+    Concrete optimizer for extreme gradient boosting classifier -> using xgb.train
+    """
+
+    @staticmethod
+    def get_default_params():
+        default_params = {
+            'eta': Param("eta", 0, 10, float, 10),
+            'colsample_bytree': Param("colsample_bytree", 3, 10, float, 10),
+            'gamma': Param("gamma", 0, 20, int),
+            'max_depth': Param("max_depth", 3, 30, int),
+            'subsample': Param("subsample", 700, 1000, float, 1000),
+            'scale_pos_weight': Param("scale_pos_weight", 15, 40, float, 100)
+        }
+        return default_params
+
+    def get_clf(self, individual):
+        """
+        Build a classifier object from an individual one
+
+        :param individual: individual to create classifier
+        :return: classifier alg_wrapper.CustomXGBClassifier
+        """
+        individual_dict = self.individual2dict(individual)
+        clf = CustomXGBClassifier(base_score=0.5,
+                                  booster="gbtree",
+                                  eval_metric="auc",
+                                  eta=individual_dict['eta'],
+                                  gamma=individual_dict['gamma'],
+                                  subsample=individual_dict['subsample'],
+                                  colsample_bylevel=1,
+                                  colsample_bytree=individual_dict['colsample_bytree'],
+                                  max_delta_step=0,
+                                  max_depth=individual_dict['max_depth'],
+                                  min_child_weight=1,
+                                  seed=1,
+                                  alpha=0,
+                                  scale_pos_weight=individual_dict['scale_pos_weight'])
         return clf
 
 
