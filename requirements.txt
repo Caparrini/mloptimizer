@@ -1,6 +1,6 @@
 scikit_learn
 pandas
 numpy
-deap
+deap==1.2.1
 joblib
 xgboost
