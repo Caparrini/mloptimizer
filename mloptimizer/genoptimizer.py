@@ -267,7 +267,7 @@ class BaseOptimizer(object):
 
         #mean, std = KFoldStratifiedAccuracy(self.features, self.labels, self.get_corrected_clf(individual),
         #                                    random_state=1)
-        mean, std = TemporalKFoldAccuracy(self.features, self.labels, self.get_corrected_clf(individual))
+        mean, std = KFoldStratifiedAccuracy(self.features, self.labels, self.get_corrected_clf(individual))
         # out = "Individual evaluation:\n"
         # for i in range(len(self.params)):
         #    out += self.params[i].name + " = " + str(individual[i]) + "\n"
@@ -294,8 +294,8 @@ class BaseOptimizer(object):
         toolbox = base.Toolbox()
 
         # Paralel
-        pool = multiprocessing.Pool()
-        toolbox.register("map", pool.map)
+        # pool = multiprocessing.Pool()
+        # toolbox.register("map", pool.map)
 
         toolbox.register("individual", self.init_individual, creator.Individual)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
