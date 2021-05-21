@@ -75,11 +75,12 @@ class PaperTest(TestCase):
     def test_experiment_1(self):
         x, y = read_dataset("data_sample_train.csv", ohe=0, scaler=MinMaxScaler(), samples=1000, return_x_y=True)
         uat = XGBClassifierOptimizer(x, y, "file")
-        uat.optimize_clf(10, 2)
+        uat.optimize_clf(2, 2)
         uat = MLPOptimizer(x, y, "file")
-        uat.optimize_clf(10, 2)
+        uat.optimize_clf(2, 2)
         uat = SVCOptimizer(x, y, "file")
-        uat.optimize_clf(10, 2)
+        uat.optimize_clf(2, 2)
+
 
 if __name__ == '__main__':
     unittest.main()
