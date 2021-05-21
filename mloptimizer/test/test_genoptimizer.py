@@ -2,6 +2,7 @@
 # import mloptimizer
 
 # Import the module
+import unittest
 from mloptimizer.genoptimizer import Param
 from mloptimizer.genoptimizer import TreeOptimizer, MLPOptimizer, SVCOptimizer, XGBClassifierOptimizer
 from mloptimizer.eda import read_dataset
@@ -67,3 +68,5 @@ class PaperTest(TestCase):
         uat = SVCOptimizer(x, y, "file")
         uat.optimize_clf(10, 2)
 
+if __name__ == '__main__':
+    unittest.main()
