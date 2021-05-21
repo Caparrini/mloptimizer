@@ -558,6 +558,8 @@ class XGBClassifierOptimizer(BaseOptimizer, ABC):
                                 booster='gbtree',
                                 colsample_bytree=individual_dict['colsample_bytree'],
                                 colsample_bylevel=1,
+                                eval_metric='logloss',
+                                use_label_encoder=False,
                                 gamma=individual_dict['gamma'],
                                 importance_type='gain',
                                 learning_rate=individual_dict['learning_rate'],
@@ -574,7 +576,6 @@ class XGBClassifierOptimizer(BaseOptimizer, ABC):
                                 reg_lambda=1,
                                 scale_pos_weight=individual_dict['scale_pos_weight'],
                                 seed=None,
-                                silent=False,
                                 subsample=individual_dict['subsample'],
                                 )
         return clf
