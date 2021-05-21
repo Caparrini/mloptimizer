@@ -3,7 +3,7 @@ import os
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 
-DATA_MASTER_FOLDER = "/opt/project/data"
+DATA_MASTER_FOLDER = "../../data"
 
 
 def read_dataset(file_name="train_test.csv", ohe=0, scaler=None, samples=None, return_x_y=False,
