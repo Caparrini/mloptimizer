@@ -191,7 +191,7 @@ class BaseOptimizer(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, features, labels, log_file, custom_params={}):
+    def __init__(self, features, labels, log_file=None, custom_params={}):
         """
 
         :param df: (DataFrame) DataFrame to train and test the classifier
@@ -202,6 +202,8 @@ class BaseOptimizer(object):
         self.custom_params = custom_params
         self.params = self.get_params()
         self.eval_dict = {}
+        if log_file is not None:
+            miscellaneous.init_logger(log_file)
 
     def init_individual(self, pcls):
         """
