@@ -8,7 +8,8 @@ class CustomXGBClassifier(BaseEstimator):
     def __init__(self, base_score=0.5, booster="gbtree", eval_metric="auc",
                  eta=0.077, gamma=18, subsample=0.728, colsample_bylevel=1,
                  colsample_bytree=0.46, max_delta_step=0, max_depth=7,
-                 min_child_weight=1, seed=1, alpha=0, scale_pos_weight=4.43):
+                 min_child_weight=1, seed=1, alpha=0, scale_pos_weight=4.43,
+                 obj=None, feval=None):
         self.base_score = base_score
         self.booster = booster
         self.eval_metric = eval_metric
@@ -23,6 +24,8 @@ class CustomXGBClassifier(BaseEstimator):
         self.seed = seed
         self.alpha = alpha
         self.scale_pos_weight = scale_pos_weight
+        self.obj = None
+        self.feval = None
 
     def fit(self, X, y):
         check_array(X)
@@ -31,8 +34,11 @@ class CustomXGBClassifier(BaseEstimator):
         params = self.get_params()
         # Workaround: lambda is a reserved word in Python
         params['lambda'] = 1
-        self._xclf = xgb.train(params, dtrain, num_boost_round=50)
-        #                      obj=profit_objective_f, feval=saving_f_tp)
+        # Extract params for obj and feval
+        obj = params.pop('obj')
+        feval = params.pop('feval')
+        self._xclf = xgb.train(params, dtrain, num_boost_round=50,
+                               obj=obj, feval=feval)
         return self
 
     def predict(self, X):
