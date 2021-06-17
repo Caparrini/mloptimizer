@@ -72,7 +72,7 @@ def KFoldStratifiedAccuracy(features, labels, clf, n_splits=4, score_function=ba
         logging.info("Processing time: {:.3f}".format(t2 - t1))
 
         # Labels predicted for test split
-        labels_pred_test = clf.predict(features_test)
+        labels_pred_test = clf.predict(features_test).reshape(-1)
         labels_predicted[test_index] = labels_pred_test
 
         accuracies_kfold.append(score_function(labels_test, labels_pred_test))

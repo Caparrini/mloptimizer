@@ -2,6 +2,16 @@ import xgboost as xgb
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
 import numpy as np
+from keras.models import Sequential
+from keras.layers import Dense
+from sklearn.utils import class_weight
+import logging
+from sklearn.preprocessing import OneHotEncoder
+from keras.wrappers.scikit_learn import KerasClassifier
+import keras
+
+logging.getLogger('alg_wrapper')
+logging.basicConfig(level=logging.DEBUG)
 
 
 class CustomXGBClassifier(BaseEstimator):
@@ -24,8 +34,8 @@ class CustomXGBClassifier(BaseEstimator):
         self.seed = seed
         self.alpha = alpha
         self.scale_pos_weight = scale_pos_weight
-        self.obj = None
-        self.feval = None
+        self.obj = obj
+        self.feval = feval
 
     def fit(self, X, y):
         check_array(X)
@@ -48,3 +58,13 @@ class CustomXGBClassifier(BaseEstimator):
         preds = preds > 0.5
         preds = preds.astype(int)
         return preds
+
+
+def generate_model():
+    model = Sequential()
+    model.add(Dense(100, activation="relu"))
+    model.add(Dense(50, activation="relu"))
+    model.add(Dense(1, activation="sigmoid"))
+
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model

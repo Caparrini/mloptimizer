@@ -5,7 +5,8 @@
 import unittest
 from mloptimizer.genoptimizer import Param
 from mloptimizer.genoptimizer import TreeOptimizer, MLPOptimizer, \
-    SVCOptimizer, XGBClassifierOptimizer, CustomXGBClassifierOptimizer
+    SVCOptimizer, XGBClassifierOptimizer, CustomXGBClassifierOptimizer, \
+    KerasClassifierOptimizer
 from mloptimizer.eda import read_dataset
 from unittest import TestCase
 from sklearn.datasets import load_iris, load_breast_cancer
@@ -30,7 +31,14 @@ class CustomXGBClassifierOptimizerTest(TestCase):
     def test_load_breast_cancer_optimizer(self):
         X, y = load_breast_cancer(return_X_y=True)
         uat = CustomXGBClassifierOptimizer(X, y, "file")
-        uat.optimize_clf(10, 10)
+        uat.optimize_clf(3, 3)
+
+
+class KerasClassifierOptimizerTest(TestCase):
+    def test_load_breast_cancer_optimizer(self):
+        X, y = load_breast_cancer(return_X_y=True)
+        uat = KerasClassifierOptimizer(X, y, "file")
+        uat.optimize_clf(3, 3)
 
 
 class TreeOptimizerTest(TestCase):

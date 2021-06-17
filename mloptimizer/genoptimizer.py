@@ -12,9 +12,10 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from mloptimizer.model_evaluation import KFoldStratifiedAccuracy, TemporalKFoldAccuracy
 from mloptimizer import miscellaneous
-from mloptimizer.alg_wrapper import CustomXGBClassifier
+from mloptimizer.alg_wrapper import CustomXGBClassifier, generate_model
 import xgboost as xgb
 import logging
+from keras.wrappers.scikit_learn import KerasClassifier
 
 
 def customEaSimple(opt, population, toolbox, cxpb, mutpb, ngen, stats=None,
@@ -622,6 +623,33 @@ class CustomXGBClassifierOptimizer(BaseOptimizer, ABC):
                                   seed=1,
                                   alpha=0,
                                   scale_pos_weight=individual_dict['scale_pos_weight'])
+        return clf
+
+
+class KerasClassifierOptimizer(BaseOptimizer, ABC):
+    """
+    Concrete optimizer for KerasClassifier
+    """
+
+    @staticmethod
+    def get_default_params():
+        default_params = {
+            'epochs': Param("epochs", 5, 100, int),
+            'batch_size': Param("batch_size", 5, 500, int)
+        }
+        return default_params
+
+    def get_clf(self, individual):
+        """
+        Build a classifier object from an individual one
+
+        :param individual: individual to create classifier
+        :return: classifier KerasClassifier
+        """
+        individual_dict = self.individual2dict(individual)
+        clf = KerasClassifier(build_fn=generate_model,
+                              epochs=individual_dict['epochs'],
+                              batch_size=individual_dict['batch_size'])
         return clf
 
 
