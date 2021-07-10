@@ -23,6 +23,5 @@ class CustomKerasClassifier(unittest.TestCase):
         self.assertFalse(np.all((preds == 0)))
 
 
-
 if __name__ == '__main__':
     unittest.main()
