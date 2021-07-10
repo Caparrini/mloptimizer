@@ -192,7 +192,8 @@ class BaseOptimizer(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, features, labels, log_file=None, custom_params={}):
+    def __init__(self, features, labels, log_file=None, custom_params={},
+                 eval_function=KFoldStratifiedAccuracy):
         """
 
         :param df: (DataFrame) DataFrame to train and test the classifier
@@ -205,6 +206,7 @@ class BaseOptimizer(object):
         self.eval_dict = {}
         if log_file is not None:
             miscellaneous.init_logger(log_file)
+        self.eval_function = eval_function
 
     def init_individual(self, pcls):
         """
@@ -271,7 +273,7 @@ class BaseOptimizer(object):
 
         # mean, std = KFoldStratifiedAccuracy(self.features, self.labels, self.get_corrected_clf(individual),
         #                                    random_state=1)
-        mean, std = KFoldStratifiedAccuracy(self.features, self.labels, self.get_corrected_clf(individual))
+        mean, std = self.eval_function(self.features, self.labels, self.get_corrected_clf(individual))
         # out = "Individual evaluation:\n"
         # for i in range(len(self.params)):
         #    out += self.params[i].name + " = " + str(individual[i]) + "\n"
