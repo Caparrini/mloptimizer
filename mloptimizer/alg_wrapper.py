@@ -5,13 +5,9 @@ import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense
 from sklearn.utils import class_weight
-import logging
 from sklearn.preprocessing import OneHotEncoder
 from keras.wrappers.scikit_learn import KerasClassifier
 import keras
-
-logging.getLogger('alg_wrapper')
-logging.basicConfig(level=logging.DEBUG)
 
 
 class CustomXGBClassifier(BaseEstimator):

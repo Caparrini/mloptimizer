@@ -3,7 +3,6 @@ from abc import ABCMeta, abstractmethod, ABC
 from random import randint
 import numpy as np
 import copy
-import os
 from deap import creator, tools, base, algorithms
 from deap.algorithms import varAnd
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
@@ -14,126 +13,7 @@ from mloptimizer.model_evaluation import KFoldStratifiedAccuracy, TemporalKFoldA
 from mloptimizer import miscellaneous
 from mloptimizer.alg_wrapper import CustomXGBClassifier, generate_model
 import xgboost as xgb
-import logging
 from keras.wrappers.scikit_learn import KerasClassifier
-
-
-def customEaSimple(opt, population, toolbox, cxpb, mutpb, ngen, stats=None,
-                   halloffame=None, verbose=__debug__):
-    """This algorithm reproduce the simplest evolutionary algorithm as
-    presented in chapter 7 of [Back2000]_.
-
-    :param population: A list of individuals.
-    :param toolbox: A :class:`~deap.base.Toolbox` that contains the evolution
-                    operators.
-    :param cxpb: The probability of mating two individuals.
-    :param mutpb: The probability of mutating an individual.
-    :param ngen: The number of generation.
-    :param stats: A :class:`~deap.tools.Statistics` object that is updated
-                  inplace, optional.
-    :param halloffame: A :class:`~deap.tools.HallOfFame` object that will
-                       contain the best individuals, optional.
-    :param verbose: Whether or not to log the statistics.
-    :returns: The final population
-    :returns: A class:`~deap.tools.Logbook` with the statistics of the
-              evolution
-
-    The algorithm takes in a population and evolves it in place using the
-    :meth:`varAnd` method. It returns the optimized population and a
-    :class:`~deap.tools.Logbook` with the statistics of the evolution. The
-    logbook will contain the generation number, the number of evaluations for
-    each generation and the statistics if a :class:`~deap.tools.Statistics` is
-    given as argument. The *cxpb* and *mutpb* arguments are passed to the
-    :func:`varAnd` function. The pseudocode goes as follow ::
-
-        evaluate(population)
-        for g in range(ngen):
-            population = select(population, len(population))
-            offspring = varAnd(population, toolbox, cxpb, mutpb)
-            evaluate(offspring)
-            population = offspring
-
-    As stated in the pseudocode above, the algorithm goes as follow. First, it
-    evaluates the individuals with an invalid fitness. Second, it enters the
-    generational loop where the selection procedure is applied to entirely
-    replace the parental population. The 1:1 replacement ratio of this
-    algorithm **requires** the selection procedure to be stochastic and to
-    select multiple times the same individual, for example,
-    :func:`~deap.tools.selTournament` and :func:`~deap.tools.selRoulette`.
-    Third, it applies the :func:`varAnd` function to produce the next
-    generation population. Fourth, it evaluates the new individuals and
-    compute the statistics on this population. Finally, when *ngen*
-    generations are done, the algorithm returns a tuple with the final
-    population and a :class:`~deap.tools.Logbook` of the evolution.
-
-    .. note::
-
-        Using a non-stochastic selection method will result in no selection as
-        the operator selects *n* individuals from a pool of *n*.
-
-    This function expects the :meth:`toolbox.mate`, :meth:`toolbox.mutate`,
-    :meth:`toolbox.select` and :meth:`toolbox.evaluate` aliases to be
-    registered in the toolbox.
-
-    .. [Back2000] Back, Fogel and Michalewicz, "Evolutionary Computation 1 :
-       Basic Algorithms and Operators", 2000.
-    """
-    logbook = tools.Logbook()
-    logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
-
-    # Evaluate the individuals with an invalid fitness
-    invalid_ind = [ind for ind in population if not ind.fitness.valid]
-    fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
-    for ind, fit in zip(invalid_ind, fitnesses):
-        ind.fitness.values = fit
-
-    if halloffame is not None:
-        halloffame.update(population)
-
-    record = stats.compile(population) if stats else {}
-    logbook.record(gen=0, nevals=len(invalid_ind), **record)
-    if verbose:
-        logging.info(logbook.stream)
-
-    # Begin the generational process
-    for gen in range(1, ngen + 1):
-        logging.info("Generation: {}".format(gen))
-        # Select the next generation individuals
-        offspring = toolbox.select(population, len(population))
-
-        # Vary the pool of individuals
-        offspring = varAnd(offspring, toolbox, cxpb, mutpb)
-
-        # Evaluate the individuals with an invalid fitness
-        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
-        c = 1
-        for ind, fit in zip(invalid_ind, fitnesses):
-            logging.info("Fitting individual (informational purpose): {}".format(c))
-            ind.fitness.values = fit
-            c = c + 1
-
-        # Update the hall of fame with the generated individuals
-        if halloffame is not None:
-            halloffame.update(offspring)
-
-        # Replace the current population by the offspring
-        population[:] = offspring
-
-        # Append the current generation statistics to the logbook
-        record = stats.compile(population) if stats else {}
-        logbook.record(gen=gen, nevals=len(invalid_ind), **record)
-        if verbose:
-            print(logbook.stream)
-
-        for i in range(len(halloffame[:2])):
-            best_score = halloffame[i].fitness.values[:]
-            logging.info("Individual TOP {}".format(i + 1))
-            logging.info("Individual accuracy: {}".format(best_score))
-            logging.info("Best classifier: {}".format(str(opt.get_clf(halloffame[i]))))
-            logging.info("Params: {}".format(str(opt.get_clf(halloffame[i]).get_params())))
-
-    return population, logbook
 
 
 class Param(object):
@@ -205,8 +85,7 @@ class BaseOptimizer(object):
         self.custom_params = custom_params
         self.params = self.get_params()
         self.eval_dict = {}
-        if log_file is not None:
-            miscellaneous.init_logger(log_file)
+        self.logger = miscellaneous.init_logger(log_file)
         self.eval_function = eval_function
 
     def init_individual(self, pcls):
@@ -290,8 +169,8 @@ class BaseOptimizer(object):
         :param int generations: Number of generations
         :return: Trained classifier
         """
-        logging.info("Initiating genetic optimization...")
-        logging.info("Algorithm: {}".format(type(self).__name__))
+        self.logger.info("Initiating genetic optimization...")
+        self.logger.info("Algorithm: {}".format(type(self).__name__))
         # self.file_out.write("Optimizing accuracy:\n")
         # Using deap, custom for decision tree
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
@@ -328,18 +207,18 @@ class BaseOptimizer(object):
         toolbox.decorate("mutate", hist.decorator)
         hist.update(pop)
 
-        fpop, logbook = customEaSimple(self, pop, toolbox, cxpb=0.5, mutpb=0.2,
+        fpop, logbook = self.customEaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2,
                                        ngen=generations, stats=stats,
                                        halloffame=hof)
-        logging.info("LOGBOOK: \n{}".format(logbook))
-        logging.info("HALL OF FAME: {} individuals".format(len(hof)))
+        self.logger.info("LOGBOOK: \n{}".format(logbook))
+        self.logger.info("HALL OF FAME: {} individuals".format(len(hof)))
 
         for i in range(len(hof)):
             best_score = hof[i].fitness.values[:]
-            logging.info("Individual TOP {}".format(i + 1))
-            logging.info("Individual accuracy: {}".format(best_score))
-            logging.info("Best classifier: {}".format(str(self.get_clf(hof[i]))))
-            logging.info("Params: {}".format(str(self.get_clf(hof[i]).get_params())))
+            self.logger.info("Individual TOP {}".format(i + 1))
+            self.logger.info("Individual accuracy: {}".format(best_score))
+            self.logger.info("Best classifier: {}".format(str(self.get_clf(hof[i]))))
+            self.logger.info("Params: {}".format(str(self.get_clf(hof[i]).get_params())))
 
         # self.file_out.write("LOGBOOK: \n"+str(logbook)+"\n")
         # self.file_out.write("Best accuracy: "+str(best_score[0])+"\n")
@@ -360,6 +239,122 @@ class BaseOptimizer(object):
         # fit_max = logbook.select("max")
         # fit_avg = logbook.select("avg")
 
+    def customEaSimple(self, population, toolbox, cxpb, mutpb, ngen, stats=None,
+                       halloffame=None, verbose=__debug__):
+        """This algorithm reproduce the simplest evolutionary algorithm as
+        presented in chapter 7 of [Back2000]_.
+
+        :param population: A list of individuals.
+        :param toolbox: A :class:`~deap.base.Toolbox` that contains the evolution
+                        operators.
+        :param cxpb: The probability of mating two individuals.
+        :param mutpb: The probability of mutating an individual.
+        :param ngen: The number of generation.
+        :param stats: A :class:`~deap.tools.Statistics` object that is updated
+                      inplace, optional.
+        :param halloffame: A :class:`~deap.tools.HallOfFame` object that will
+                           contain the best individuals, optional.
+        :param verbose: Whether or not to log the statistics.
+        :returns: The final population
+        :returns: A class:`~deap.tools.Logbook` with the statistics of the
+                  evolution
+
+        The algorithm takes in a population and evolves it in place using the
+        :meth:`varAnd` method. It returns the optimized population and a
+        :class:`~deap.tools.Logbook` with the statistics of the evolution. The
+        logbook will contain the generation number, the number of evaluations for
+        each generation and the statistics if a :class:`~deap.tools.Statistics` is
+        given as argument. The *cxpb* and *mutpb* arguments are passed to the
+        :func:`varAnd` function. The pseudocode goes as follow ::
+
+            evaluate(population)
+            for g in range(ngen):
+                population = select(population, len(population))
+                offspring = varAnd(population, toolbox, cxpb, mutpb)
+                evaluate(offspring)
+                population = offspring
+
+        As stated in the pseudocode above, the algorithm goes as follow. First, it
+        evaluates the individuals with an invalid fitness. Second, it enters the
+        generational loop where the selection procedure is applied to entirely
+        replace the parental population. The 1:1 replacement ratio of this
+        algorithm **requires** the selection procedure to be stochastic and to
+        select multiple times the same individual, for example,
+        :func:`~deap.tools.selTournament` and :func:`~deap.tools.selRoulette`.
+        Third, it applies the :func:`varAnd` function to produce the next
+        generation population. Fourth, it evaluates the new individuals and
+        compute the statistics on this population. Finally, when *ngen*
+        generations are done, the algorithm returns a tuple with the final
+        population and a :class:`~deap.tools.Logbook` of the evolution.
+
+        .. note::
+
+            Using a non-stochastic selection method will result in no selection as
+            the operator selects *n* individuals from a pool of *n*.
+
+        This function expects the :meth:`toolbox.mate`, :meth:`toolbox.mutate`,
+        :meth:`toolbox.select` and :meth:`toolbox.evaluate` aliases to be
+        registered in the toolbox.
+
+        .. [Back2000] Back, Fogel and Michalewicz, "Evolutionary Computation 1 :
+           Basic Algorithms and Operators", 2000.
+        """
+        logbook = tools.Logbook()
+        logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
+
+        # Evaluate the individuals with an invalid fitness
+        invalid_ind = [ind for ind in population if not ind.fitness.valid]
+        fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+        for ind, fit in zip(invalid_ind, fitnesses):
+            ind.fitness.values = fit
+
+        if halloffame is not None:
+            halloffame.update(population)
+
+        record = stats.compile(population) if stats else {}
+        logbook.record(gen=0, nevals=len(invalid_ind), **record)
+        if verbose:
+            self.logger.info(logbook.stream)
+
+        # Begin the generational process
+        for gen in range(1, ngen + 1):
+            self.logger.info("Generation: {}".format(gen))
+            # Select the next generation individuals
+            offspring = toolbox.select(population, len(population))
+
+            # Vary the pool of individuals
+            offspring = varAnd(offspring, toolbox, cxpb, mutpb)
+
+            # Evaluate the individuals with an invalid fitness
+            invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+            fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+            c = 1
+            for ind, fit in zip(invalid_ind, fitnesses):
+                self.logger.info("Fitting individual (informational purpose): {}".format(c))
+                ind.fitness.values = fit
+                c = c + 1
+
+            # Update the hall of fame with the generated individuals
+            if halloffame is not None:
+                halloffame.update(offspring)
+
+            # Replace the current population by the offspring
+            population[:] = offspring
+
+            # Append the current generation statistics to the logbook
+            record = stats.compile(population) if stats else {}
+            logbook.record(gen=gen, nevals=len(invalid_ind), **record)
+            if verbose:
+                print(logbook.stream)
+
+            for i in range(len(halloffame[:2])):
+                best_score = halloffame[i].fitness.values[:]
+                self.logger.info("Individual TOP {}".format(i + 1))
+                self.logger.info("Individual accuracy: {}".format(best_score))
+                self.logger.info("Best classifier: {}".format(str(self.get_clf(halloffame[i]))))
+                self.logger.info("Params: {}".format(str(self.get_clf(halloffame[i]).get_params())))
+
+        return population, logbook
 
 #
 # fig, ax1 = plt.subplots()

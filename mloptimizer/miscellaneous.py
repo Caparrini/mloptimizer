@@ -16,5 +16,7 @@ def init_logger(filename='optimization.log'):
     #print(os.listdir("../"))
     #print(os.path.abspath(__file__))
     logging.basicConfig(**logging_params)
+    l = logging.getLogger("mloptimizer")
     logging.debug('Logger configured')
+    return l
 
