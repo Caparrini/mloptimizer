@@ -131,6 +131,7 @@ def customEaSimple(opt, population, toolbox, cxpb, mutpb, ngen, stats=None,
             logging.info("Individual TOP {}".format(i + 1))
             logging.info("Individual accuracy: {}".format(best_score))
             logging.info("Best classifier: {}".format(str(opt.get_clf(halloffame[i]))))
+            logging.info("Params: {}".format(str(opt.get_clf(halloffame[i]).get_params())))
 
     return population, logbook
 
@@ -338,6 +339,7 @@ class BaseOptimizer(object):
             logging.info("Individual TOP {}".format(i + 1))
             logging.info("Individual accuracy: {}".format(best_score))
             logging.info("Best classifier: {}".format(str(self.get_clf(hof[i]))))
+            logging.info("Params: {}".format(str(self.get_clf(hof[i]).get_params())))
 
         # self.file_out.write("LOGBOOK: \n"+str(logbook)+"\n")
         # self.file_out.write("Best accuracy: "+str(best_score[0])+"\n")
