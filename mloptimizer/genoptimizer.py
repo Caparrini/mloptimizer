@@ -171,6 +171,7 @@ class BaseOptimizer(object):
         """
         self.logger.info("Initiating genetic optimization...")
         self.logger.info("Algorithm: {}".format(type(self).__name__))
+
         # self.file_out.write("Optimizing accuracy:\n")
         # Using deap, custom for decision tree
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
@@ -210,6 +211,7 @@ class BaseOptimizer(object):
         fpop, logbook = self.customEaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2,
                                        ngen=generations, stats=stats,
                                        halloffame=hof)
+
         self.logger.info("LOGBOOK: \n{}".format(logbook))
         self.logger.info("HALL OF FAME: {} individuals".format(len(hof)))
 
@@ -218,7 +220,7 @@ class BaseOptimizer(object):
             self.logger.info("Individual TOP {}".format(i + 1))
             self.logger.info("Individual accuracy: {}".format(best_score))
             self.logger.info("Best classifier: {}".format(str(self.get_clf(hof[i]))))
-            self.logger.info("Params: {}".format(str(self.get_clf(hof[i]).get_params())))
+
 
         # self.file_out.write("LOGBOOK: \n"+str(logbook)+"\n")
         # self.file_out.write("Best accuracy: "+str(best_score[0])+"\n")
@@ -226,7 +228,7 @@ class BaseOptimizer(object):
 
         # self.plot_loogbook(logbook=logbook)
 
-        return self.get_clf(hof[0])
+        return self.get_corrected_clf(hof[0])
 
     def plot_loogbook(self, logbook):
         '''
