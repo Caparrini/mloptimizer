@@ -33,6 +33,27 @@ class CustomXGBClassifierOptimizerTest(TestCase):
         uat = CustomXGBClassifierOptimizer(X, y, "file")
         uat.optimize_clf(3, 3)
 
+    def test_custom_params(self):
+        X, y = load_breast_cancer(return_X_y=True)
+        custom_params = {
+            'eta': Param("eta", 5, 10, float, 10),
+            'gamma': Param("gamma", 10, 20, int),
+            'max_depth': Param("max_depth", 10, 20, int)
+        }
+        uat = CustomXGBClassifierOptimizer(X, y, "file",
+                                           custom_params=custom_params)
+        uat.optimize_clf(3, 3)
+
+    def test_fixed_params(self):
+        X, y = load_breast_cancer(return_X_y=True)
+        fixed_params = {
+            'obj': None,
+            'feval': None
+        }
+        uat = CustomXGBClassifierOptimizer(X, y, "file",
+                                           custom_fixed_params=fixed_params)
+        uat.optimize_clf(3, 3)
+
 
 class KerasClassifierOptimizerTest(TestCase):
     def test_load_breast_cancer_optimizer(self):

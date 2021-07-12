@@ -74,7 +74,7 @@ class BaseOptimizer(object):
     __metaclass__ = ABCMeta
 
     def __init__(self, features, labels, log_file=None, custom_params={},
-                 eval_function=KFoldStratifiedAccuracy):
+                 custom_fixed_params={}, eval_function=KFoldStratifiedAccuracy):
         """
 
         :param df: (DataFrame) DataFrame to train and test the classifier
@@ -83,7 +83,9 @@ class BaseOptimizer(object):
         self.features = features
         self.labels = labels
         self.custom_params = custom_params
+        self.custom_fixed_params = custom_fixed_params
         self.params = self.get_params()
+        self.fixed_params = self.get_fixed_params()
         self.eval_dict = {}
         self.logger = miscellaneous.init_logger(log_file)
         self.eval_function = eval_function
@@ -128,6 +130,22 @@ class BaseOptimizer(object):
 
         # Return all the params
         return params
+
+    @abstractmethod
+    def get_fixed_params(self):
+        """
+        Params values as a dictionary of values for non optimizing params
+        :return: dict of params
+        """
+        fixed_params = {**self.get_default_fixed_params(), **self.custom_fixed_params}
+        return fixed_params
+
+    @abstractmethod
+    def get_default_fixed_params(self):
+        default_fixed_params = {
+
+        }
+        return default_fixed_params
 
     @abstractmethod
     def get_clf(self, individual):
@@ -602,6 +620,13 @@ class CustomXGBClassifierOptimizer(BaseOptimizer, ABC):
         }
         return default_params
 
+    def get_default_fixed_params(self):
+        default_fixed_params = {
+            'obj': None,
+            'feval': None
+        }
+        return default_fixed_params
+
     def get_clf(self, individual):
         """
         Build a classifier object from an individual one
@@ -623,7 +648,9 @@ class CustomXGBClassifierOptimizer(BaseOptimizer, ABC):
                                   min_child_weight=1,
                                   seed=1,
                                   alpha=0,
-                                  scale_pos_weight=individual_dict['scale_pos_weight'])
+                                  scale_pos_weight=individual_dict['scale_pos_weight'],
+                                  obj=self.fixed_params['obj'],
+                                  feval=self.fixed_params['feval'])
         return clf
 
 
