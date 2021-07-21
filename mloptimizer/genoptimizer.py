@@ -643,6 +643,7 @@ class CustomXGBClassifierOptimizer(BaseOptimizer, ABC):
             'colsample_bytree': Param("colsample_bytree", 3, 10, float, 10),
             'gamma': Param("gamma", 0, 20, int),
             'max_depth': Param("max_depth", 3, 30, int),
+            'n_estimators': Param("n_estimators", 100, 500, int),
             'subsample': Param("subsample", 700, 1000, float, 1000),
             'scale_pos_weight': Param("scale_pos_weight", 15, 40, float, 100)
         }
