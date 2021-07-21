@@ -14,6 +14,7 @@ from mloptimizer import miscellaneous
 from mloptimizer.alg_wrapper import CustomXGBClassifier, generate_model
 import xgboost as xgb
 from keras.wrappers.scikit_learn import KerasClassifier
+from catboost import CatBoostClassifier
 
 
 class Param(object):
@@ -238,7 +239,7 @@ class BaseOptimizer(object):
             self.logger.info("Individual TOP {}".format(i + 1))
             self.logger.info("Individual accuracy: {}".format(best_score))
             self.logger.info("Best classifier: {}".format(str(self.get_corrected_clf(hof[i]))))
-
+            self.logger.info("Params: {}".format(str(self.get_corrected_clf(hof[i]).get_params())))
 
         # self.file_out.write("LOGBOOK: \n"+str(logbook)+"\n")
         # self.file_out.write("Best accuracy: "+str(best_score[0])+"\n")
@@ -651,6 +652,32 @@ class CustomXGBClassifierOptimizer(BaseOptimizer, ABC):
                                   scale_pos_weight=individual_dict['scale_pos_weight'],
                                   obj=self.fixed_params['obj'],
                                   feval=self.fixed_params['feval'])
+        return clf
+
+
+class CatBoostClassifierOptimizer(BaseOptimizer, ABC):
+    """
+    Concrete optimizer for cat gradient boosting classifier -> CatBoostClassifier
+    """
+
+    @staticmethod
+    def get_default_params():
+        default_params = {
+            'iterations': Param("iterations", 100, 1000, int),
+            'learning_rate': Param("learning_rate", 1, 10, float, 10),
+            'depth': Param("depth", 3, 10, int)
+        }
+        return default_params
+
+    def get_clf(self, individual):
+        """
+        Build a classifier object from an individual one
+
+        :param individual: individual to create classifier
+        :return: classifier CatBoostClassifier
+        """
+        individual_dict = self.individual2dict(individual)
+        clf = CatBoostClassifier(**individual_dict)
         return clf
 
 

@@ -6,7 +6,7 @@ import unittest
 from mloptimizer.genoptimizer import Param
 from mloptimizer.genoptimizer import TreeOptimizer, MLPOptimizer, \
     SVCOptimizer, XGBClassifierOptimizer, CustomXGBClassifierOptimizer, \
-    KerasClassifierOptimizer
+    KerasClassifierOptimizer, CatBoostClassifierOptimizer
 from mloptimizer.eda import read_dataset
 from unittest import TestCase
 from sklearn.datasets import load_iris, load_breast_cancer
@@ -24,6 +24,13 @@ class XGBClassifierOptimizerTest(TestCase):
     def test_load_boston_optimizer(self):
         X, y = load_iris(return_X_y=True)
         uat = XGBClassifierOptimizer(X, y, "file")
+        uat.optimize_clf(3, 3)
+
+
+class CatBoostClassifierOptimizerTest(TestCase):
+    def test_load_boston_optimizer(self):
+        X, y = load_iris(return_X_y=True)
+        uat = CatBoostClassifierOptimizer(X, y, "file")
         uat.optimize_clf(3, 3)
 
 
