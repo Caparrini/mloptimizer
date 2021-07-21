@@ -11,6 +11,8 @@ from mloptimizer.eda import read_dataset
 from unittest import TestCase
 from sklearn.datasets import load_iris, load_breast_cancer
 from sklearn.preprocessing import MinMaxScaler
+import os
+import shutil
 
 
 class ParamTest(TestCase):
@@ -21,17 +23,26 @@ class ParamTest(TestCase):
 
 
 class XGBClassifierOptimizerTest(TestCase):
-    def test_load_boston_optimizer(self):
-        X, y = load_iris(return_X_y=True)
+    def test_load_breast_optimizer(self):
+        X, y = load_breast_cancer(return_X_y=True)
         uat = XGBClassifierOptimizer(X, y, "file")
         uat.optimize_clf(3, 3)
+        shutil.rmtree(uat.checkpoint_path)
 
+    def test_checkpoint_optimizer(self):
+        X, y = load_breast_cancer(return_X_y=True)
+        uat = XGBClassifierOptimizer(X, y, "file")
+        uat.optimize_clf(10, 3)
+        checkpoint = os.path.join(uat.checkpoint_path, "cp_gen_2.pkl")
+        uat.optimize_clf(10, 3, checkpoint=checkpoint)
+        shutil.rmtree(uat.checkpoint_path)
 
 class CatBoostClassifierOptimizerTest(TestCase):
-    def test_load_boston_optimizer(self):
+    def test_load_iris_optimizer(self):
         X, y = load_iris(return_X_y=True)
         uat = CatBoostClassifierOptimizer(X, y, "file")
         uat.optimize_clf(3, 3)
+        shutil.rmtree(uat.checkpoint_path)
 
 
 class CustomXGBClassifierOptimizerTest(TestCase):
@@ -39,6 +50,7 @@ class CustomXGBClassifierOptimizerTest(TestCase):
         X, y = load_breast_cancer(return_X_y=True)
         uat = CustomXGBClassifierOptimizer(X, y, "file")
         uat.optimize_clf(3, 3)
+        shutil.rmtree(uat.checkpoint_path)
 
     def test_custom_params(self):
         X, y = load_breast_cancer(return_X_y=True)
@@ -50,6 +62,7 @@ class CustomXGBClassifierOptimizerTest(TestCase):
         uat = CustomXGBClassifierOptimizer(X, y, "file",
                                            custom_params=custom_params)
         uat.optimize_clf(3, 3)
+        shutil.rmtree(uat.checkpoint_path)
 
     def test_fixed_params(self):
         X, y = load_breast_cancer(return_X_y=True)
@@ -60,6 +73,7 @@ class CustomXGBClassifierOptimizerTest(TestCase):
         uat = CustomXGBClassifierOptimizer(X, y, "file",
                                            custom_fixed_params=fixed_params)
         uat.optimize_clf(3, 3)
+        shutil.rmtree(uat.checkpoint_path)
 
 
 class KerasClassifierOptimizerTest(TestCase):
@@ -67,6 +81,7 @@ class KerasClassifierOptimizerTest(TestCase):
         X, y = load_breast_cancer(return_X_y=True)
         uat = KerasClassifierOptimizer(X, y, "file")
         uat.optimize_clf(3, 3)
+        shutil.rmtree(uat.checkpoint_path)
 
 
 class TreeOptimizerTest(TestCase):
@@ -86,25 +101,29 @@ class TreeOptimizerTest(TestCase):
         X, y = load_iris(return_X_y=True)
         uat = TreeOptimizer(X, y, "file")
         uat.optimize_clf(2, 2)
+        shutil.rmtree(uat.checkpoint_path)
 
     def test_load_breast_cancer_optimizer(self):
         X, y = load_breast_cancer(return_X_y=True)
         uat = TreeOptimizer(X, y, "file")
         uat.optimize_clf(10, 10)
+        shutil.rmtree(uat.checkpoint_path)
 
 
 class SCVOptimizerTest(TestCase):
-    def test_load_boston_optimizer(self):
+    def test_load_iris_optimizer(self):
         X, y = load_iris(return_X_y=True)
         uat = SVCOptimizer(X, y, "file")
         uat.optimize_clf(10, 2)
+        shutil.rmtree(uat.checkpoint_path)
 
 
 class MLPOptimizerTest(TestCase):
-    def test_load_boston_optimizer(self):
+    def test_load_iris_optimizer(self):
         X, y = load_iris(return_X_y=True)
         uat = MLPOptimizer(X, y, "file")
         uat.optimize_clf(2, 2)
+        shutil.rmtree(uat.checkpoint_path)
 
 
 class PaperTest(TestCase):
@@ -112,10 +131,13 @@ class PaperTest(TestCase):
         x, y = read_dataset("data_sample_train.csv", ohe=0, scaler=MinMaxScaler(), samples=1000, return_x_y=True)
         uat = XGBClassifierOptimizer(x, y, "file")
         uat.optimize_clf(2, 2)
+        shutil.rmtree(uat.checkpoint_path)
         uat = MLPOptimizer(x, y, "file")
         uat.optimize_clf(2, 2)
+        shutil.rmtree(uat.checkpoint_path)
         uat = SVCOptimizer(x, y, "file")
         uat.optimize_clf(2, 2)
+        shutil.rmtree(uat.checkpoint_path)
 
 
 if __name__ == '__main__':

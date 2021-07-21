@@ -16,7 +16,10 @@ from mloptimizer.alg_wrapper import CustomXGBClassifier, generate_model
 import xgboost as xgb
 from keras.wrappers.scikit_learn import KerasClassifier
 from catboost import CatBoostClassifier
-import pickle
+import joblib
+import os
+import shutil
+from datetime import datetime
 
 
 class Param(object):
@@ -92,6 +95,7 @@ class BaseOptimizer(object):
         self.eval_dict = {}
         self.logger = miscellaneous.init_logger(log_file)
         self.eval_function = eval_function
+        self.checkpoint_path = None
 
     def init_individual(self, pcls):
         """
@@ -199,14 +203,15 @@ class BaseOptimizer(object):
         stats.register("min", np.min)
         stats.register("max", np.max)
         if checkpoint:
-            with open(checkpoint, "r") as cp_file:
-                cp = pickle.load(cp_file)
+            cp = joblib.load(checkpoint)
             self.logger.info("Initiating from checkpoint {}...".format(checkpoint))
             pop = cp['population']
-            start_gen = cp['generation']
+            start_gen = cp['generation'] + 1
             hof = cp['halloffame']
-            logbook = cp['loogbok']
+            logbook = cp['logbook']
             random.setstate(cp['rndstate'])
+            # Extract checkpoint_path from checkpoint file
+            self.checkpoint_path = os.path.dirname(checkpoint)
         else:
             start_gen = 0
             # self.file_out.write("Optimizing accuracy:\n")
@@ -227,6 +232,15 @@ class BaseOptimizer(object):
             logbook = tools.Logbook()
             logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
 
+            # Create checkpoint_path from date and algorithm
+            checkpoint_exe_name = "{}_{}".format(
+                datetime.now().strftime("%Y%m%d_%s"),
+                type(self).__name__)
+            self.checkpoint_path = os.path.join(".", checkpoint_exe_name)
+            if os.path.exists(self.checkpoint_path):
+                shutil.rmtree(self.checkpoint_path)
+            os.mkdir(self.checkpoint_path)
+
         # Methods for genetic algorithm
         toolbox.register("mate", tools.cxTwoPoint)
         toolbox.register("mutate", tools.mutUniformInt, low=[x.minValue for x in self.params.values()],
@@ -234,16 +248,16 @@ class BaseOptimizer(object):
         toolbox.register("select", tools.selTournament, tournsize=4)
         toolbox.register("evaluate", self.evaluate_clf)
 
-
         # History
         hist = tools.History()
         toolbox.decorate("mate", hist.decorator)
         toolbox.decorate("mutate", hist.decorator)
         hist.update(pop)
 
-        fpop, logbook = self.customEaSimple(pop, toolbox, logbook, cxpb=0.5, mutpb=0.2,
-                                       start_gen=start_gen, ngen=generations, stats=stats,
-                                       halloffame=hof)
+        fpop, logbook, hof = self.customEaSimple(pop, toolbox, logbook, cxpb=0.5, mutpb=0.2,
+                                            checkpoint_path=self.checkpoint_path,
+                                            start_gen=start_gen, ngen=generations, stats=stats,
+                                            halloffame=hof)
 
         self.logger.info("LOGBOOK: \n{}".format(logbook))
         self.logger.info("HALL OF FAME: {} individuals".format(len(hof)))
@@ -259,13 +273,13 @@ class BaseOptimizer(object):
         # self.file_out.write("Best accuracy: "+str(best_score[0])+"\n")
         # self.file_out.write("Best classifier(without parameter formating(DECIMALS)): "+str(self.get_clf(hof[0])))
 
-        # self.plot_loogbook(logbook=logbook)
+        # self.plot_logbook(logbook=logbook)
 
         return self.get_corrected_clf(hof[0])
 
-    def plot_loogbook(self, logbook):
+    def plot_logbook(self, logbook):
         '''
-        Plots the given loogboook
+        Plots the given logboook
 
         :param logbook: logbook of the genetic algorithm
         '''
@@ -275,8 +289,8 @@ class BaseOptimizer(object):
         # fit_avg = logbook.select("avg")
 
     def customEaSimple(self, population, toolbox, logbook,
-                       cxpb, mutpb, start_gen=0, ngen=4, stats=None,
-                       halloffame=None, verbose=__debug__):
+                       cxpb, mutpb, start_gen=0, ngen=4, checkpoint_path=None, stats=None,
+                       halloffame=None, verbose=__debug__, checkpoint_flag=True):
         """This algorithm reproduce the simplest evolutionary algorithm as
         presented in chapter 7 of [Back2000]_.
 
@@ -336,6 +350,12 @@ class BaseOptimizer(object):
            Basic Algorithms and Operators", 2000.
         """
 
+        if checkpoint_flag and (checkpoint_path is None or not os.path.isdir(checkpoint_path)):
+            error_msg = "checkpoint_flag is True and checkpoint_path {} " \
+                        "is not a folder or does not exist".format(checkpoint_path)
+            self.logger.error(error_msg)
+            raise NotADirectoryError(error_msg)
+
         # Begin the generational process
         for gen in range(start_gen, ngen + 1):
             self.logger.info("Generation: {}".format(gen))
@@ -345,11 +365,17 @@ class BaseOptimizer(object):
             # Evaluate the individuals with an invalid fitness
             invalid_ind = [ind for ind in population if not ind.fitness.valid]
             fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+            c = 1
             for ind, fit in zip(invalid_ind, fitnesses):
+                self.logger.info(
+                    "Fitting individual (informational purpose): gen {} - ind {}".format(
+                        gen, c
+                    )
+                )
                 ind.fitness.values = fit
+                c = c + 1
 
-            if halloffame is not None:
-                halloffame.update(population)
+            halloffame.update(population)
 
             record = stats.compile(population) if stats else {}
 
@@ -367,7 +393,16 @@ class BaseOptimizer(object):
                 self.logger.info("Best classifier: {}".format(str(self.get_corrected_clf(halloffame[i]))))
                 self.logger.info("Params: {}".format(str(self.get_corrected_clf(halloffame[i]).get_params())))
 
-        return population, logbook
+            if checkpoint_flag:
+                # Fill the dictionary using the dict(key=value[, ...]) constructor
+                cp = dict(population=population, generation=gen, halloffame=halloffame,
+                          logbook=logbook, rndstate=random.getstate())
+
+                cp_file = os.path.join(checkpoint_path, "cp_gen_{}.pkl".format(gen))
+                joblib.dump(cp, cp_file)
+
+        return population, logbook, halloffame
+
 
 #
 # fig, ax1 = plt.subplots()

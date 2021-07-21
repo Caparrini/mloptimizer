@@ -85,7 +85,7 @@ def KFoldStratifiedAccuracy(features, labels, clf, n_splits=4, score_function=ba
 
     meanAccuracy = np.mean(accuracies_kfold)
     std = np.std(accuracies_kfold)
-    logging.info("Accuracy: {:.2f} +- {:.2f}".format(round(meanAccuracy, 3), round(std, 3)))
+    logging.info("Accuracy: {:.3f} +- {:.3f}".format(round(meanAccuracy, 3), round(std, 3)))
 
     # return meanAccuracy, std, labels, labels_predicted, clfs
     return meanAccuracy, std
