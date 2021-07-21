@@ -1,6 +1,7 @@
 import multiprocessing
 from abc import ABCMeta, abstractmethod, ABC
 from random import randint
+import random
 import numpy as np
 import copy
 from deap import creator, tools, base, algorithms
@@ -15,6 +16,7 @@ from mloptimizer.alg_wrapper import CustomXGBClassifier, generate_model
 import xgboost as xgb
 from keras.wrappers.scikit_learn import KerasClassifier
 from catboost import CatBoostClassifier
+import pickle
 
 
 class Param(object):
@@ -180,7 +182,7 @@ class BaseOptimizer(object):
         # self.file_out.write(out)
         return mean, std
 
-    def optimize_clf(self, population=10, generations=3):
+    def optimize_clf(self, population=10, generations=3, checkpoint=None):
         """
         Searches through a genetic algorithm the best classifier
 
@@ -190,21 +192,40 @@ class BaseOptimizer(object):
         """
         self.logger.info("Initiating genetic optimization...")
         self.logger.info("Algorithm: {}".format(type(self).__name__))
-
-        # self.file_out.write("Optimizing accuracy:\n")
-        # Using deap, custom for decision tree
-        creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-        creator.create("Individual", list, fitness=creator.FitnessMax)
-
         # Creation of individual and population
         toolbox = base.Toolbox()
+        stats = tools.Statistics(lambda ind: ind.fitness.values)
+        stats.register("avg", np.mean)
+        stats.register("min", np.min)
+        stats.register("max", np.max)
+        if checkpoint:
+            with open(checkpoint, "r") as cp_file:
+                cp = pickle.load(cp_file)
+            self.logger.info("Initiating from checkpoint {}...".format(checkpoint))
+            pop = cp['population']
+            start_gen = cp['generation']
+            hof = cp['halloffame']
+            logbook = cp['loogbok']
+            random.setstate(cp['rndstate'])
+        else:
+            start_gen = 0
+            # self.file_out.write("Optimizing accuracy:\n")
+            # Using deap, custom for decision tree
+            creator.create("FitnessMax", base.Fitness, weights=(1.0,))
+            creator.create("Individual", list, fitness=creator.FitnessMax)
 
-        # Paralel
-        # pool = multiprocessing.Pool()
-        # toolbox.register("map", pool.map)
+            # Paralel
+            # pool = multiprocessing.Pool()
+            # toolbox.register("map", pool.map)
 
-        toolbox.register("individual", self.init_individual, creator.Individual)
-        toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+            toolbox.register("individual", self.init_individual, creator.Individual)
+            toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+
+            # Tools
+            pop = toolbox.population(n=population)
+            hof = tools.HallOfFame(10)
+            logbook = tools.Logbook()
+            logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
 
         # Methods for genetic algorithm
         toolbox.register("mate", tools.cxTwoPoint)
@@ -213,13 +234,6 @@ class BaseOptimizer(object):
         toolbox.register("select", tools.selTournament, tournsize=4)
         toolbox.register("evaluate", self.evaluate_clf)
 
-        # Tools
-        pop = toolbox.population(n=population)
-        hof = tools.HallOfFame(10)
-        stats = tools.Statistics(lambda ind: ind.fitness.values)
-        stats.register("avg", np.mean)
-        stats.register("min", np.min)
-        stats.register("max", np.max)
 
         # History
         hist = tools.History()
@@ -227,8 +241,8 @@ class BaseOptimizer(object):
         toolbox.decorate("mutate", hist.decorator)
         hist.update(pop)
 
-        fpop, logbook = self.customEaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2,
-                                       ngen=generations, stats=stats,
+        fpop, logbook = self.customEaSimple(pop, toolbox, logbook, cxpb=0.5, mutpb=0.2,
+                                       start_gen=start_gen, ngen=generations, stats=stats,
                                        halloffame=hof)
 
         self.logger.info("LOGBOOK: \n{}".format(logbook))
@@ -260,7 +274,8 @@ class BaseOptimizer(object):
         # fit_max = logbook.select("max")
         # fit_avg = logbook.select("avg")
 
-    def customEaSimple(self, population, toolbox, cxpb, mutpb, ngen, stats=None,
+    def customEaSimple(self, population, toolbox, logbook,
+                       cxpb, mutpb, start_gen=0, ngen=4, stats=None,
                        halloffame=None, verbose=__debug__):
         """This algorithm reproduce the simplest evolutionary algorithm as
         presented in chapter 7 of [Back2000]_.
@@ -320,53 +335,30 @@ class BaseOptimizer(object):
         .. [Back2000] Back, Fogel and Michalewicz, "Evolutionary Computation 1 :
            Basic Algorithms and Operators", 2000.
         """
-        logbook = tools.Logbook()
-        logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
-
-        # Evaluate the individuals with an invalid fitness
-        invalid_ind = [ind for ind in population if not ind.fitness.valid]
-        fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
-        for ind, fit in zip(invalid_ind, fitnesses):
-            ind.fitness.values = fit
-
-        if halloffame is not None:
-            halloffame.update(population)
-
-        record = stats.compile(population) if stats else {}
-        logbook.record(gen=0, nevals=len(invalid_ind), **record)
-        if verbose:
-            self.logger.info(logbook.stream)
 
         # Begin the generational process
-        for gen in range(1, ngen + 1):
+        for gen in range(start_gen, ngen + 1):
             self.logger.info("Generation: {}".format(gen))
-            # Select the next generation individuals
-            offspring = toolbox.select(population, len(population))
-
             # Vary the pool of individuals
-            offspring = varAnd(offspring, toolbox, cxpb, mutpb)
+            population = varAnd(population, toolbox, cxpb, mutpb)
 
             # Evaluate the individuals with an invalid fitness
-            invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+            invalid_ind = [ind for ind in population if not ind.fitness.valid]
             fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
-            c = 1
             for ind, fit in zip(invalid_ind, fitnesses):
-                self.logger.info("Fitting individual (informational purpose): {}".format(c))
                 ind.fitness.values = fit
-                c = c + 1
 
-            # Update the hall of fame with the generated individuals
             if halloffame is not None:
-                halloffame.update(offspring)
+                halloffame.update(population)
 
-            # Replace the current population by the offspring
-            population[:] = offspring
-
-            # Append the current generation statistics to the logbook
             record = stats.compile(population) if stats else {}
+
             logbook.record(gen=gen, nevals=len(invalid_ind), **record)
             if verbose:
-                print(logbook.stream)
+                self.logger.info(logbook.stream)
+
+            # Select the next generation individuals
+            population = toolbox.select(population, len(population))
 
             for i in range(len(halloffame[:2])):
                 best_score = halloffame[i].fitness.values[:]
