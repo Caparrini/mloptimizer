@@ -3,7 +3,7 @@ from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
 import numpy as np
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers import Dense, Dropout
 from sklearn.utils import class_weight
 from sklearn.preprocessing import OneHotEncoder
 from keras.wrappers.scikit_learn import KerasClassifier
@@ -56,11 +56,16 @@ class CustomXGBClassifier(BaseEstimator):
         return preds
 
 
-def generate_model():
+def generate_model(learning_rate=0.01, layer_1=100, layer_2=50,
+                   dropout_rate_1=0, dropout_rate_2=0):
     model = Sequential()
-    model.add(Dense(100, activation="relu"))
-    model.add(Dense(50, activation="relu"))
+    model.add(Dense(layer_1, activation="relu"))
+    model.add(Dropout(dropout_rate_1))
+    model.add(Dense(layer_2, activation="relu"))
+    model.add(Dropout(dropout_rate_2))
     model.add(Dense(1, activation="sigmoid"))
 
-    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    opt = keras.optimizers.Adam(learning_rate=learning_rate)
+    model.compile(loss='binary_crossentropy', optimizer=opt,
+                  metrics=['accuracy'])
     return model

@@ -237,7 +237,7 @@ class BaseOptimizer(object):
             best_score = hof[i].fitness.values[:]
             self.logger.info("Individual TOP {}".format(i + 1))
             self.logger.info("Individual accuracy: {}".format(best_score))
-            self.logger.info("Best classifier: {}".format(str(self.get_clf(hof[i]))))
+            self.logger.info("Best classifier: {}".format(str(self.get_corrected_clf(hof[i]))))
 
 
         # self.file_out.write("LOGBOOK: \n"+str(logbook)+"\n")
@@ -371,8 +371,8 @@ class BaseOptimizer(object):
                 best_score = halloffame[i].fitness.values[:]
                 self.logger.info("Individual TOP {}".format(i + 1))
                 self.logger.info("Individual accuracy: {}".format(best_score))
-                self.logger.info("Best classifier: {}".format(str(self.get_clf(halloffame[i]))))
-                self.logger.info("Params: {}".format(str(self.get_clf(halloffame[i]).get_params())))
+                self.logger.info("Best classifier: {}".format(str(self.get_corrected_clf(halloffame[i]))))
+                self.logger.info("Params: {}".format(str(self.get_corrected_clf(halloffame[i]).get_params())))
 
         return population, logbook
 
@@ -662,8 +662,13 @@ class KerasClassifierOptimizer(BaseOptimizer, ABC):
     @staticmethod
     def get_default_params():
         default_params = {
-            'epochs': Param("epochs", 5, 100, int),
-            'batch_size': Param("batch_size", 5, 500, int)
+            'epochs': Param("epochs", 1, 10, "x10"),
+            'batch_size': Param("batch_size", 1, 5, "x10"),
+            'learning_rate': Param("learning_rate", 1, 20, float, 1000),
+            'layer_1': Param("layer_1", 10, 50, "x10"),
+            'layer_2': Param("layer_2", 5, 20, "x10"),
+            'dropout_rate_1': Param("dropout_rate_1", 0, 5, float, 10),
+            'dropout_rate_2': Param("dropout_rate_2", 0, 5, float, 10),
         }
         return default_params
 
@@ -675,9 +680,9 @@ class KerasClassifierOptimizer(BaseOptimizer, ABC):
         :return: classifier KerasClassifier
         """
         individual_dict = self.individual2dict(individual)
+        print(individual_dict)
         clf = KerasClassifier(build_fn=generate_model,
-                              epochs=individual_dict['epochs'],
-                              batch_size=individual_dict['batch_size'])
+                              **individual_dict)
         return clf
 
 
