@@ -691,9 +691,10 @@ class CatBoostClassifierOptimizer(BaseOptimizer, ABC):
     @staticmethod
     def get_default_params():
         default_params = {
-            'iterations': Param("iterations", 100, 1000, int),
-            'learning_rate': Param("learning_rate", 1, 10, float, 10),
-            'depth': Param("depth", 3, 10, int)
+            'eta': Param("eta", 0, 10, float, 10),
+            'max_depth': Param("max_depth", 3, 16, int), # Max is 16
+            'n_estimators': Param("n_estimators", 100, 500, int),
+            'subsample': Param("subsample", 700, 1000, float, 1000),
         }
         return default_params
 
@@ -705,7 +706,10 @@ class CatBoostClassifierOptimizer(BaseOptimizer, ABC):
         :return: classifier CatBoostClassifier
         """
         individual_dict = self.individual2dict(individual)
-        clf = CatBoostClassifier(**individual_dict)
+        clf = CatBoostClassifier(
+            **individual_dict, auto_class_weights="Balanced",
+            bootstrap_type='Bernoulli'
+        )
         return clf
 
 

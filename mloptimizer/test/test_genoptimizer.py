@@ -37,6 +37,7 @@ class XGBClassifierOptimizerTest(TestCase):
         uat.optimize_clf(10, 3, checkpoint=checkpoint)
         shutil.rmtree(uat.checkpoint_path)
 
+
 class CatBoostClassifierOptimizerTest(TestCase):
     def test_load_iris_optimizer(self):
         X, y = load_iris(return_X_y=True)
