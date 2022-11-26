@@ -96,6 +96,7 @@ class BaseOptimizer(object):
         self.logger = miscellaneous.init_logger(log_file)
         self.eval_function = eval_function
         self.checkpoint_path = None
+        self.populations = []
 
     def init_individual(self, pcls):
         """
@@ -395,6 +396,9 @@ class BaseOptimizer(object):
                 self.logger.info("Individual accuracy: {}".format(best_score))
                 self.logger.info("Best classifier: {}".format(str(self.get_corrected_clf(halloffame[i]))))
                 self.logger.info("Params: {}".format(str(self.get_corrected_clf(halloffame[i]).get_params())))
+
+            # Store the space param and fitness for each
+            self.populations.append([[ind, ind.fitness] for ind in population])
 
             if checkpoint_flag:
                 # Fill the dictionary using the dict(key=value[, ...]) constructor
