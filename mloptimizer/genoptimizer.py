@@ -208,7 +208,7 @@ class BaseOptimizer(object):
         start_gen = 0
         # self.file_out.write("Optimizing accuracy:\n")
         # Using deap, custom for decision tree
-        creator.create("FitnessMax", base.Fitness, weights=(1.0,))
+        creator.create("FitnessMax", base.Fitness, weights=(1.0,0.0))
         creator.create("Individual", list, fitness=creator.FitnessMax)
 
         # Paralel
