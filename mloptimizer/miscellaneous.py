@@ -1,19 +1,19 @@
 import logging
-import sys
+from logging import FileHandler
+from logging import Formatter
 import os
 
 
-def init_logger(filename='optimization.log', log_path="."):
-    logging_params = {
-        # 'stream': sys.stdout,
-        'level': logging.DEBUG,
-        'format': '%(asctime)s:%(levelname)s:[L%(lineno)d]:%(message)s',
-        'datefmt': '%Y-%m-%d %H:%M:%S',
-        'filename': os.path.join(log_path, filename)
-    }
-    # print(os.listdir("../"))
-    # print(os.path.abspath(__file__))
-    logging.basicConfig(**logging_params)
-    l = logging.getLogger("mloptimizer")
-    l.debug('Logger configured')
-    return l
+def init_logger(filename='mloptimizer.log', log_path="."):
+    FILENAME = os.path.join(log_path, filename)
+    LOG_FORMAT = (
+        "%(asctime)s [%(levelname)s]: %(message)s in %(pathname)s:%(lineno)d")
+    LOG_LEVEL = logging.INFO
+    custom_logger = logging.getLogger(filename)
+    custom_logger.setLevel(LOG_LEVEL)
+    custom_logger_file_handler = FileHandler(FILENAME)
+    custom_logger_file_handler.setLevel(LOG_LEVEL)
+    custom_logger_file_handler.setFormatter(Formatter(LOG_FORMAT))
+    custom_logger.addHandler(custom_logger_file_handler)
+    custom_logger.debug("Logger configured")
+    return custom_logger

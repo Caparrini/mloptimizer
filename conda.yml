@@ -100,6 +100,6 @@ dependencies:
     - webencodings==0.5.1
     - werkzeug==2.0.1
     - wrapt==1.12.1
-    - xgboost==1.4.2
+    - xgboost==1.5.0
     - zipp==3.5.0
 prefix: /Users/paradox/opt/anaconda3/envs/mloptimizer

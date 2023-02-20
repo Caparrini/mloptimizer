@@ -93,9 +93,11 @@ class BaseOptimizer(object):
         self.params = self.get_params()
         self.fixed_params = self.get_fixed_params()
         self.eval_dict = {}
-        self.logger = miscellaneous.init_logger(log_file)
+        self.mloptimizer_logger = miscellaneous.init_logger(log_file)
+        self.optimization_logger = None
         self.eval_function = eval_function
         self.checkpoint_path = None
+        self.populations = []
 
     def init_individual(self, pcls):
         """
@@ -194,17 +196,37 @@ class BaseOptimizer(object):
         :param int generations: Number of generations
         :return: Trained classifier
         """
-        self.logger.info("Initiating genetic optimization...")
-        self.logger.info("Algorithm: {}".format(type(self).__name__))
+        self.mloptimizer_logger.info("Initiating genetic optimization...")
+        self.mloptimizer_logger.info("Algorithm: {}".format(type(self).__name__))
         # Creation of individual and population
         toolbox = base.Toolbox()
         stats = tools.Statistics(lambda ind: ind.fitness.values)
         stats.register("avg", np.mean)
         stats.register("min", np.min)
         stats.register("max", np.max)
+
+        start_gen = 0
+        # self.file_out.write("Optimizing accuracy:\n")
+        # Using deap, custom for decision tree
+        creator.create("FitnessMax", base.Fitness, weights=(1.0,))
+        creator.create("Individual", list, fitness=creator.FitnessMax)
+
+        # Paralel
+        # pool = multiprocessing.Pool()
+        # toolbox.register("map", pool.map)
+
+        toolbox.register("individual", self.init_individual, creator.Individual)
+        toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+
+        # Tools
+        pop = toolbox.population(n=population)
+        hof = tools.HallOfFame(10)
+        logbook = tools.Logbook()
+
         if checkpoint:
+            self.optimization_logger = miscellaneous.init_logger(os.path.join(checkpoint, "opt.log"))
             cp = joblib.load(checkpoint)
-            self.logger.info("Initiating from checkpoint {}...".format(checkpoint))
+            self.optimization_logger.info("Initiating from checkpoint {}...".format(checkpoint))
             pop = cp['population']
             start_gen = cp['generation'] + 1
             hof = cp['halloffame']
@@ -213,23 +235,7 @@ class BaseOptimizer(object):
             # Extract checkpoint_path from checkpoint file
             self.checkpoint_path = os.path.dirname(checkpoint)
         else:
-            start_gen = 0
-            # self.file_out.write("Optimizing accuracy:\n")
-            # Using deap, custom for decision tree
-            creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-            creator.create("Individual", list, fitness=creator.FitnessMax)
 
-            # Paralel
-            # pool = multiprocessing.Pool()
-            # toolbox.register("map", pool.map)
-
-            toolbox.register("individual", self.init_individual, creator.Individual)
-            toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-
-            # Tools
-            pop = toolbox.population(n=population)
-            hof = tools.HallOfFame(10)
-            logbook = tools.Logbook()
             logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
 
             # Create checkpoint_path from date and algorithm
@@ -240,11 +246,12 @@ class BaseOptimizer(object):
             if os.path.exists(self.checkpoint_path):
                 shutil.rmtree(self.checkpoint_path)
             os.mkdir(self.checkpoint_path)
+            self.optimization_logger = miscellaneous.init_logger(os.path.join(self.checkpoint_path, "opt.log"))
 
         # Methods for genetic algorithm
         toolbox.register("mate", tools.cxTwoPoint)
         toolbox.register("mutate", tools.mutUniformInt, low=[x.minValue for x in self.params.values()],
-                         up=[x.maxValue for x in self.params.values()], indpb=0.35)
+                         up=[x.maxValue for x in self.params.values()], indpb=0.5)
         toolbox.register("select", tools.selTournament, tournsize=4)
         toolbox.register("evaluate", self.evaluate_clf)
 
@@ -254,20 +261,20 @@ class BaseOptimizer(object):
         toolbox.decorate("mutate", hist.decorator)
         hist.update(pop)
 
-        fpop, logbook, hof = self.customEaSimple(pop, toolbox, logbook, cxpb=0.5, mutpb=0.2,
+        fpop, logbook, hof = self.customEaSimple(pop, toolbox, logbook, cxpb=0.5, mutpb=0.5,
                                             checkpoint_path=self.checkpoint_path,
                                             start_gen=start_gen, ngen=generations, stats=stats,
                                             halloffame=hof)
 
-        self.logger.info("LOGBOOK: \n{}".format(logbook))
-        self.logger.info("HALL OF FAME: {} individuals".format(len(hof)))
+        self.optimization_logger.info("LOGBOOK: \n{}".format(logbook))
+        self.optimization_logger.info("HALL OF FAME: {} individuals".format(len(hof)))
 
         for i in range(len(hof)):
             best_score = hof[i].fitness.values[:]
-            self.logger.info("Individual TOP {}".format(i + 1))
-            self.logger.info("Individual accuracy: {}".format(best_score))
-            self.logger.info("Best classifier: {}".format(str(self.get_corrected_clf(hof[i]))))
-            self.logger.info("Params: {}".format(str(self.get_corrected_clf(hof[i]).get_params())))
+            self.optimization_logger.info("Individual TOP {}".format(i + 1))
+            self.optimization_logger.info("Individual accuracy: {}".format(best_score))
+            self.optimization_logger.info("Best classifier: {}".format(str(self.get_corrected_clf(hof[i]))))
+            self.optimization_logger.info("Params: {}".format(str(self.get_corrected_clf(hof[i]).get_params())))
 
         # self.file_out.write("LOGBOOK: \n"+str(logbook)+"\n")
         # self.file_out.write("Best accuracy: "+str(best_score[0])+"\n")
@@ -353,12 +360,12 @@ class BaseOptimizer(object):
         if checkpoint_flag and (checkpoint_path is None or not os.path.isdir(checkpoint_path)):
             error_msg = "checkpoint_flag is True and checkpoint_path {} " \
                         "is not a folder or does not exist".format(checkpoint_path)
-            self.logger.error(error_msg)
+            self.optimization_logger.error(error_msg)
             raise NotADirectoryError(error_msg)
 
         # Begin the generational process
         for gen in range(start_gen, ngen + 1):
-            self.logger.info("Generation: {}".format(gen))
+            self.optimization_logger.info("Generation: {}".format(gen))
             # Vary the pool of individuals
             population = varAnd(population, toolbox, cxpb, mutpb)
 
@@ -367,7 +374,7 @@ class BaseOptimizer(object):
             fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
             c = 1
             for ind, fit in zip(invalid_ind, fitnesses):
-                self.logger.info(
+                self.optimization_logger.info(
                     "Fitting individual (informational purpose): gen {} - ind {}".format(
                         gen, c
                     )
@@ -381,17 +388,20 @@ class BaseOptimizer(object):
 
             logbook.record(gen=gen, nevals=len(invalid_ind), **record)
             if verbose:
-                self.logger.info(logbook.stream)
+                self.optimization_logger.info(logbook.stream)
 
             # Select the next generation individuals
             population = toolbox.select(population, len(population))
 
             for i in range(len(halloffame[:2])):
                 best_score = halloffame[i].fitness.values[:]
-                self.logger.info("Individual TOP {}".format(i + 1))
-                self.logger.info("Individual accuracy: {}".format(best_score))
-                self.logger.info("Best classifier: {}".format(str(self.get_corrected_clf(halloffame[i]))))
-                self.logger.info("Params: {}".format(str(self.get_corrected_clf(halloffame[i]).get_params())))
+                self.optimization_logger.info("Individual TOP {}".format(i + 1))
+                self.optimization_logger.info("Individual accuracy: {}".format(best_score))
+                self.optimization_logger.info("Best classifier: {}".format(str(self.get_corrected_clf(halloffame[i]))))
+                self.optimization_logger.info("Params: {}".format(str(self.get_corrected_clf(halloffame[i]).get_params())))
+
+            # Store the space param and fitness for each
+            self.populations.append([[ind, ind.fitness] for ind in population])
 
             if checkpoint_flag:
                 # Fill the dictionary using the dict(key=value[, ...]) constructor
@@ -433,14 +443,21 @@ class TreeOptimizer(BaseOptimizer, ABC):
         """
         individual_dict = self.individual2dict(individual)
 
+        if "scale_pos_weight" in individual_dict.keys():
+            class_weight = {0: 1, 1:individual_dict["scale_pos_weight"]}
+        else:
+            class_weight = "balanced"
+
+
         clf = DecisionTreeClassifier(criterion="gini",
-                                     class_weight="balanced",
+                                     class_weight=class_weight,
                                      splitter="best",
                                      max_features=None,
                                      max_depth=individual_dict['max_depth'],
                                      min_samples_split=individual_dict['min_samples_split'],
                                      min_samples_leaf=individual_dict['min_samples_leaf'],
                                      min_impurity_decrease=individual_dict['min_impurity_decrease'],
+                                     #min_weight_fraction_leaf=individual_dict['min_weight_fraction_leaf'],
                                      ccp_alpha=individual_dict['ccp_alpha'],
                                      max_leaf_nodes=None,
                                      random_state=None)
@@ -492,10 +509,13 @@ class ForestOptimizer(TreeOptimizer, ABC):
     @staticmethod
     def get_default_params():
         default_params = {
-            "max_features": Param("max_features", 75, 90, float, 100),
-            "n_estimators": Param("n_estimators", 50, 250, int),
-            "max_depth": Param("max_depth", 3, 40, int),
-            "max_samples": Param("max_samples", 20, 50, float, 100)
+            "max_features": Param("max_features", 1, 100, float, 100),
+            "n_estimators": Param("n_estimators", 5, 250, int),
+            "max_samples": Param("max_samples", 10, 100, float, 100),
+            "max_depth": Param("max_depth", 2, 14, int),
+            "scale_pos_weight": Param("scale_pos_weight", 1, 1000, float, 100),
+            "min_impurity_decrease": Param("min_impurity_decrease", 0, 500, float, 100),
+            "min_weight_fraction_leaf": Param("min_weight_fraction_leaf", 1, 1000, float, 100)
         }
         return default_params
 
@@ -515,13 +535,26 @@ class ExtraTreesOptimizer(ForestOptimizer, ABC):
         """
         individual_dict = self.individual2dict(individual)
 
+        class_weight = "balanced"
+
+        if "scale_pos_weight" in individual_dict.keys():
+            perc_class_one = individual_dict["scale_pos_weight"]
+            total = 10
+            class_one = total * perc_class_one
+            class_zero = total - class_one
+            real_weight_zero = total/(2*class_zero)
+            real_weight_one = total/(2*class_one)
+            class_weight = {0: real_weight_zero, 1:real_weight_one}
+
         clf = ExtraTreesClassifier(n_estimators=individual_dict['n_estimators'],
                                    criterion="gini",
                                    max_depth=individual_dict['max_depth'],
-                                   min_samples_split=individual_dict['min_samples_split'],
-                                   min_samples_leaf=individual_dict['min_samples_leaf'],
-                                   min_weight_fraction_leaf=0,
+                                   #min_samples_split=individual_dict['min_samples_split'],
+                                   #min_samples_leaf=individual_dict['min_samples_leaf'],
+                                   min_weight_fraction_leaf=individual_dict['min_weight_fraction_leaf'],
+                                   min_impurity_decrease=individual_dict['min_impurity_decrease'],
                                    max_features=individual_dict['max_features'],
+                                   max_samples=individual_dict['max_samples'],
                                    max_leaf_nodes=None,
                                    bootstrap=False,
                                    oob_score=False,
@@ -529,7 +562,8 @@ class ExtraTreesOptimizer(ForestOptimizer, ABC):
                                    random_state=None,
                                    verbose=0,
                                    warm_start=False,
-                                   class_weight="balanced")
+                                   class_weight=class_weight
+        )
         return clf
 
 
@@ -609,24 +643,19 @@ class XGBClassifierOptimizer(BaseOptimizer, ABC):
                                 colsample_bytree=individual_dict['colsample_bytree'],
                                 colsample_bylevel=1,
                                 eval_metric='logloss',
-                                use_label_encoder=False,
                                 gamma=individual_dict['gamma'],
-                                importance_type='gain',
                                 learning_rate=individual_dict['learning_rate'],
-                                max_delta_step=0,
                                 max_depth=individual_dict['max_depth'],
-                                min_child_weight=1,
-                                missing=None,
                                 n_estimators=individual_dict['n_estimators'],
                                 n_jobs=-1,
-                                nthread=None,
                                 objective='binary:logistic',
                                 random_state=0,
-                                reg_alpha=0,
-                                reg_lambda=1,
+                                #reg_alpha=0,
+                                #reg_lambda=1,
                                 scale_pos_weight=individual_dict['scale_pos_weight'],
-                                seed=None,
+                                seed=0,
                                 subsample=individual_dict['subsample'],
+                                #tree_method="gpu_hist"
                                 )
         return clf
 
@@ -639,13 +668,16 @@ class CustomXGBClassifierOptimizer(BaseOptimizer, ABC):
     @staticmethod
     def get_default_params():
         default_params = {
-            'eta': Param("eta", 0, 10, float, 10),
+            'eta': Param("eta", 0, 100, float, 100),
             'colsample_bytree': Param("colsample_bytree", 3, 10, float, 10),
-            'gamma': Param("gamma", 0, 20, int),
-            'max_depth': Param("max_depth", 3, 30, int),
-            'n_estimators': Param("n_estimators", 100, 500, int),
-            'subsample': Param("subsample", 700, 1000, float, 1000),
-            'scale_pos_weight': Param("scale_pos_weight", 15, 40, float, 100)
+            'alpha': Param("alpha", 0, 100, float, 100),
+            'lambda': Param("lambda", 0, 100, float, 100),
+            'gamma': Param("gamma", 0, 100, float, 100),
+            'max_depth': Param("max_depth", 3, 14, int),
+            'subsample': Param("subsample", 70, 100, float, 100),
+            'num_boost_round': Param("num_boost_round", 2, 100, int),
+            'scale_pos_weight': Param("scale_pos_weight", 10, 10000, float, 100),
+            'min_child_weight': Param("min_child_weight", 0, 100, float, 10)
         }
         return default_params
 
@@ -674,9 +706,11 @@ class CustomXGBClassifierOptimizer(BaseOptimizer, ABC):
                                   colsample_bytree=individual_dict['colsample_bytree'],
                                   max_delta_step=0,
                                   max_depth=individual_dict['max_depth'],
-                                  min_child_weight=1,
+                                  min_child_weight=individual_dict['min_child_weight'],
                                   seed=1,
-                                  alpha=0,
+                                  alpha=individual_dict['alpha'],
+                                  reg_lambda=individual_dict['lambda'],
+                                  num_boost_round=individual_dict['num_boost_round'],
                                   scale_pos_weight=individual_dict['scale_pos_weight'],
                                   obj=self.fixed_params['obj'],
                                   feval=self.fixed_params['feval'])
@@ -691,7 +725,7 @@ class CatBoostClassifierOptimizer(BaseOptimizer, ABC):
     @staticmethod
     def get_default_params():
         default_params = {
-            'eta': Param("eta", 0, 10, float, 10),
+            'eta': Param("eta", 1, 10, float, 10),
             'max_depth': Param("max_depth", 3, 16, int), # Max is 16
             'n_estimators': Param("n_estimators", 100, 500, int),
             'subsample': Param("subsample", 700, 1000, float, 1000),

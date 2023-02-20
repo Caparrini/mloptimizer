@@ -101,7 +101,7 @@ class TreeOptimizerTest(TestCase):
     def test_load_boston_optimizer(self):
         X, y = load_iris(return_X_y=True)
         uat = TreeOptimizer(X, y, "file")
-        uat.optimize_clf(2, 2)
+        uat.optimize_clf(100, 10)
         shutil.rmtree(uat.checkpoint_path)
 
     def test_load_breast_cancer_optimizer(self):
