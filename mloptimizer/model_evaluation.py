@@ -88,7 +88,7 @@ def KFoldStratifiedAccuracy(features, labels, clf, n_splits=4, score_function=ba
     logging.info("Accuracy: {:.3f} +- {:.3f}".format(round(meanAccuracy, 3), round(std, 3)))
 
     # return meanAccuracy, std, labels, labels_predicted, clfs
-    return meanAccuracy, std
+    return meanAccuracy
 
 
 def TemporalKFoldAccuracy(features, labels, clf, n_splits=4, score_function=balanced_accuracy_score):
@@ -165,4 +165,4 @@ def TemporalKFoldAccuracy(features, labels, clf, n_splits=4, score_function=bala
     print("Accuracy: {:.2f} +- {:.2f}".format(round(meanAccuracy, 3), round(std, 3)))
 
     # return meanAccuracy, std, labels, labels_predicted, clfs
-    return meanAccuracy, std
+    return meanAccuracy
