@@ -54,7 +54,7 @@ The following dependencies are used in `mloptimizer`:
 
 ## Documentation
 
-The documentation for `mloptimizer` can be found in the project's [wiki](DOCUMENTATION TODO)
+The documentation for `mloptimizer` can be found in the project's [wiki](http://mloptimizer.readthedocs.io/)
 
 ## Authors
 
