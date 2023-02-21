@@ -1,6 +1,6 @@
 # mloptimizer
 
-**mloptimizer** is a Python module for hyperparameter optimization in machine learning using genetic algorithms.
+**mloptimizer** is a Python library for optimizing hyperparameters of machine learning algorithms using genetic algorithms. With mloptimizer, you can find the optimal set of hyperparameters for a given machine learning model and dataset, which can significantly improve the performance of the model. The library supports several popular machine learning algorithms, including decision trees, random forests, and gradient boosting classifiers. The genetic algorithm used in mloptimizer provides an efficient and flexible approach to search for the optimal hyperparameters in a large search space.
 
 ### Installation
 
@@ -8,6 +8,7 @@ It is recommended to create a virtual environment using the `venv` package.
 To learn more about how to use `venv`, 
 check out the official Python documentation at 
 https://docs.python.org/3/library/venv.html.
+
 ```bash
 # Create the virtual environment
 python -m venv myenv
