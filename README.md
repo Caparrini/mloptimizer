@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/mloptimizer/badge/?version=latest)](https://mloptimizer.readthedocs.io/en/latest/?badge=latest)
+
 # mloptimizer
 
 **mloptimizer** is a Python library for optimizing hyperparameters of machine learning algorithms using genetic algorithms. With mloptimizer, you can find the optimal set of hyperparameters for a given machine learning model and dataset, which can significantly improve the performance of the model. The library supports several popular machine learning algorithms, including decision trees, random forests, and gradient boosting classifiers. The genetic algorithm used in mloptimizer provides an efficient and flexible approach to search for the optimal hyperparameters in a large search space.
