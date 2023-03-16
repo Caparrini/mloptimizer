@@ -27,7 +27,8 @@ class Param(object):
     Object to store param info, type and range of values
     """
 
-    def __init__(self, name, min_value, max_value, param_type, denominator=100, values_str=None):
+    def __init__(self, name: str, min_value: int, max_value: int, param_type,
+                 denominator: int = 100, values_str: list = None):
         """
         Init object
 
@@ -39,20 +40,30 @@ class Param(object):
         if values_str is None:
             values_str = []
         self.name = name
-        self.minValue = min_value
-        self.maxValue = max_value
+        self.min_value = min_value
+        self.max_value = max_value
         self.type = param_type
         self.denominator = denominator
         self.values_str = values_str
 
     def correct(self, value):
         """
-        Returns the real value of the param
+        Returns the real value of the param:
+            1) Verifies the input is int
+            2) Enforce min and max value
+            3) Apply the type of value
         :param value: value to verify if accomplishes type, min and max due to mutations
         :return: value fixed
         """
-        ret = None
+        # Input value must be int
         value = int(value)
+        ret = None
+        # Verify the value is in range
+        if value > self.max_value:
+            value = self.max_value
+        elif value < self.min_value:
+            value = self.min_value
+        # Apply the type of value
         if self.type == int:
             ret = value
         elif self.type == float:
@@ -62,14 +73,14 @@ class Param(object):
             ret = 10 ** (-value)
         elif self.type == "x10":
             ret = value * 10
-
         return ret
 
     def __eq__(self, other_param):
         """Overrides the default implementation"""
 
-        equals = (self.name == other_param.name and self.minValue == other_param.minValue and
-                  self.type == other_param.type and self.denominator == other_param.denominator)
+        equals = (self.name == other_param.name and self.min_value == other_param.min_value and
+                  self.type == other_param.type and self.denominator == other_param.denominator and
+                  self.max_value == other_param.max_value)
         return equals
 
 
@@ -108,7 +119,7 @@ class BaseOptimizer(object):
         """
         ps = []
         for k in self.params.keys():
-            ps.append(randint(self.params[k].minValue, self.params[k].maxValue))
+            ps.append(randint(self.params[k].min_value, self.params[k].max_value))
         ind = pcls(ps)
         return ind
 
@@ -186,7 +197,7 @@ class BaseOptimizer(object):
         #    out += self.params[i].name + " = " + str(individual[i]) + "\n"
         # out += "  ----> Accuracy: " + str(mean) + " +- " + str(std) + "\n"
         # self.file_out.write(out)
-        return (mean, )
+        return (mean,)
 
     def optimize_clf(self, population=10, generations=3, checkpoint=None):
         """
@@ -250,8 +261,8 @@ class BaseOptimizer(object):
 
         # Methods for genetic algorithm
         toolbox.register("mate", tools.cxTwoPoint)
-        toolbox.register("mutate", tools.mutUniformInt, low=[x.minValue for x in self.params.values()],
-                         up=[x.maxValue for x in self.params.values()], indpb=0.5)
+        toolbox.register("mutate", tools.mutUniformInt, low=[x.min_value for x in self.params.values()],
+                         up=[x.max_value for x in self.params.values()], indpb=0.5)
         toolbox.register("select", tools.selTournament, tournsize=4)
         toolbox.register("evaluate", self.evaluate_clf)
 
