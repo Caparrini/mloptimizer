@@ -24,7 +24,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/guides/single-sourcing-package-version/
-    version="0.5.5",  # Required
+    version="0.5.6",  # Required
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#summary
@@ -122,6 +122,7 @@ setup(
         "pytz>=2022.7.1",
         "scikit-learn>=1.2.1",
         "scipy>=1.10.0",
+        "seaborn==0.12.2",
         "six>=1.15.0",
         "tensorflow>=2.11.0",
         "xgboost>=1.7.3"

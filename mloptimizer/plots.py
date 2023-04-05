@@ -1,8 +1,6 @@
 import seaborn as sns
 import pandas as pd
-import numpy as np
-import itertools as it
-from mloptimizer.genoptimizer import BaseOptimizer
+import matplotlib.pyplot as plt
 
 
 def logbook_to_pandas(logbook):
@@ -11,7 +9,13 @@ def logbook_to_pandas(logbook):
     return df
 
 
-def plot_search_space(optimizer, height=2, s=25, features: list = None):
+def plot_logbook(logbook):
+    df = pd.DataFrame(logbook)
+    g = sns.lineplot(df.drop(columns=['gen', 'nevals']))
+    return g.get_figure()
+
+
+def plot_search_space(populations_df: pd.DataFrame, height=2, s=25, features: list = None):
     """
     Parameters
     ----------
@@ -27,22 +31,8 @@ def plot_search_space(optimizer, height=2, s=25, features: list = None):
     -------
     Pair plot of the used hyperparameters during the search
     """
-
-    if not isinstance(optimizer, BaseOptimizer):
-        raise TypeError(
-            "optimizer must be a BaseOptimizer instance"
-        )
-
     sns.set_style("white")
-
-    param_names = list(optimizer.get_params().keys())
-    df = pd.DataFrame(pd.DataFrame(optimizer.populations).unstack().reset_index(drop=True),
-                      columns=["Pop"])
-    df2 = pd.DataFrame(df.Pop.tolist(), index=df.index, columns=["a", "fitness"])
-    df3 = pd.DataFrame(df2.a.tolist(), columns=param_names)
-    df3["fitness"] = df2["fitness"].apply(lambda x: x.values[0])
-
-    g = sns.PairGrid(df3, diag_sharey=False, height=height)
+    g = sns.PairGrid(populations_df, diag_sharey=False, height=height)
     g = g.map_upper(sns.scatterplot, s=s, color="r", alpha=0.2)
     g = g.map_lower(
         sns.kdeplot,

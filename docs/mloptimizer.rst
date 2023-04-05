@@ -20,14 +20,6 @@ mloptimizer.alg\_wrapper module
    :undoc-members:
    :show-inheritance:
 
-mloptimizer.eda module
-----------------------
-
-.. automodule:: mloptimizer.eda
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 mloptimizer.genoptimizer module
 -------------------------------
 
@@ -48,6 +40,14 @@ mloptimizer.model\_evaluation module
 ------------------------------------
 
 .. automodule:: mloptimizer.model_evaluation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+mloptimizer.plots module
+------------------------
+
+.. automodule:: mloptimizer.plots
    :members:
    :undoc-members:
    :show-inheritance:
