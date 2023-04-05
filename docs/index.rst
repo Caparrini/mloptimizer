@@ -6,9 +6,10 @@
 Welcome to mloptimizer's documentation!
 =======================================
 
+mloptimizer is a Python package that provides genetic optimization using deap for machine learning algorithms.
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Table of Contents:
 
    modules
 

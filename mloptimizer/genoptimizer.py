@@ -2,15 +2,17 @@ import multiprocessing
 from abc import ABCMeta, abstractmethod, ABC
 from random import randint
 import random
+import matplotlib.pyplot as plt
 import numpy as np
 import copy
-from deap import creator, tools, base, algorithms
+import pandas as pd
+from deap import creator, tools, base
 from deap.algorithms import varAnd
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
-from mloptimizer.model_evaluation import KFoldStratifiedAccuracy, TemporalKFoldAccuracy
+from mloptimizer.model_evaluation import KFoldStratifiedAccuracy
 from mloptimizer import miscellaneous
 from mloptimizer.alg_wrapper import CustomXGBClassifier, generate_model
 import xgboost as xgb
@@ -20,6 +22,7 @@ import joblib
 import os
 import shutil
 from datetime import datetime
+from mloptimizer.plots import plot_search_space, plot_logbook
 
 
 class Param(object):
@@ -46,7 +49,7 @@ class Param(object):
         self.denominator = denominator
         self.values_str = values_str
 
-    def correct(self, value):
+    def correct(self, value: int):
         """
         Returns the real value of the param:
             1) Verifies the input is int
@@ -83,6 +86,24 @@ class Param(object):
                   self.max_value == other_param.max_value)
         return equals
 
+    def __str__(self):
+        """Overrides the default implementation"""
+        return "Param({}, {}, {}, {})".format(
+            self.name,
+            self.min_value,
+            self.max_value,
+            self.type.__name__
+        )
+
+    def __repr__(self):
+        """Overrides the default implementation"""
+        return "Param({}, {}, {}, {})".format(
+            self.name,
+            self.min_value,
+            self.max_value,
+            self.type.__name__
+        )
+
 
 class BaseOptimizer(object):
     """
@@ -90,25 +111,30 @@ class BaseOptimizer(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, features, labels, log_file=None, custom_params={},
-                 custom_fixed_params={}, eval_function=KFoldStratifiedAccuracy):
-        """
-
-        :param df: (DataFrame) DataFrame to train and test the classifier
-        (maybe in the future this must be change for features, labels list which is more usual)
-        """
+    def __init__(self, features: np.array, labels: np.array, folder=None, log_file="mloptimizer.log",
+                 custom_params: dict = {},
+                 custom_fixed_params: dict = {}, eval_function=KFoldStratifiedAccuracy):
         self.features = features
         self.labels = labels
+        self.folder = miscellaneous.create_optimization_folder(folder)
         self.custom_params = custom_params
         self.custom_fixed_params = custom_fixed_params
         self.params = self.get_params()
         self.fixed_params = self.get_fixed_params()
         self.eval_dict = {}
-        self.mloptimizer_logger = miscellaneous.init_logger(log_file)
+        self.mloptimizer_logger, self.log_file = miscellaneous.init_logger(log_file, self.folder)
         self.optimization_logger = None
         self.eval_function = eval_function
         self.checkpoint_path = None
         self.populations = []
+        self.results_path = None
+        self.graphics_path = None
+
+    def get_folder(self):
+        return self.folder
+
+    def get_log_file(self):
+        return self.log_file
 
     def init_individual(self, pcls):
         """
@@ -141,6 +167,8 @@ class BaseOptimizer(object):
         """
         params = {}
         default_params = self.get_default_params()
+        for k in self.custom_fixed_params.keys():
+            default_params.pop(k, None)
 
         for k in default_params.keys():
             if k in self.custom_params:
@@ -183,23 +211,47 @@ class BaseOptimizer(object):
         Method to evaluate the individual, in this case the classifier
 
         :param individual: individual for evaluation
-        :return: mean accuracy, standard deviation accuracy
+        :return: fitness
         """
-        # keys = list(self.params.keys())
-        # for i in range(len(keys)):
-        #    individual[i] = self.params[keys[i]].correct(individual[i])
-
-        # mean, std = KFoldStratifiedAccuracy(self.features, self.labels, self.get_corrected_clf(individual),
-        #                                    random_state=1)
         mean = self.eval_function(self.features, self.labels, self.get_corrected_clf(individual))
-        # out = "Individual evaluation:\n"
-        # for i in range(len(self.params)):
-        #    out += self.params[i].name + " = " + str(individual[i]) + "\n"
-        # out += "  ----> Accuracy: " + str(mean) + " +- " + str(std) + "\n"
-        # self.file_out.write(out)
         return (mean,)
 
-    def optimize_clf(self, population=10, generations=3, checkpoint=None):
+    def population_2_df(self):
+        data = []
+        n = 0
+        for p in self.populations:
+            for i in p:
+                i_params = self.get_corrected_clf(i[0]).get_params()
+                i_params['fitness'] = i[1].values[0]
+                i_params['population'] = n
+                data.append(i_params)
+            n += 1
+
+        df = pd.DataFrame(data)
+        return df
+
+    def _write_population_file(self, filename=None):
+        if filename is None:
+            filename = os.path.join(self.results_path, 'populations.csv')
+        self.population_2_df().sort_values(by=['fitness'], ascending=False
+                                           ).to_csv(filename, index=False)
+
+    def _write_logbook_file(self, filename=None):
+        if filename is None:
+            filename = os.path.join(self.results_path, 'logbook.csv')
+        pd.DataFrame(self.logbook).to_csv(filename, index=False)
+
+    def _read_logbook_file(self, filename=None):
+        if filename is None:
+            filename = os.path.join(self.results_path, 'logbook.csv')
+        data = []
+        if os.path.exists(filename):
+            data = pd.read_csv(filename)
+        else:
+            self.optimization_logger.error("File {} does not exist".format(filename))
+        return data
+
+    def optimize_clf(self, population: int = 10, generations: int = 3, checkpoint: str = None) -> object:
         """
         Searches through a genetic algorithm the best classifier
 
@@ -232,32 +284,38 @@ class BaseOptimizer(object):
         # Tools
         pop = toolbox.population(n=population)
         hof = tools.HallOfFame(10)
-        logbook = tools.Logbook()
+        self.logbook = tools.Logbook()
 
         if checkpoint:
-            self.optimization_logger = miscellaneous.init_logger(os.path.join(checkpoint, "opt.log"))
+            self.optimization_logger, _ = miscellaneous.init_logger(os.path.join(checkpoint, "opt.log"))
             cp = joblib.load(checkpoint)
             self.optimization_logger.info("Initiating from checkpoint {}...".format(checkpoint))
             pop = cp['population']
             start_gen = cp['generation'] + 1
             hof = cp['halloffame']
-            logbook = cp['logbook']
+            self.logbook = cp['logbook']
             random.setstate(cp['rndstate'])
             # Extract checkpoint_path from checkpoint file
             self.checkpoint_path = os.path.dirname(checkpoint)
+            self.results_path = os.path.join(self.checkpoint_path, "results")
+            self.graphics_path = os.path.join(self.checkpoint_path, "graphics")
         else:
 
-            logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
+            self.logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
 
             # Create checkpoint_path from date and algorithm
             checkpoint_exe_name = "{}_{}".format(
                 datetime.now().strftime("%Y%m%d_%s"),
                 type(self).__name__)
-            self.checkpoint_path = os.path.join(".", checkpoint_exe_name)
+            self.checkpoint_path = os.path.join(self.folder, checkpoint_exe_name)
+            self.results_path = os.path.join(self.checkpoint_path, "results")
+            self.graphics_path = os.path.join(self.checkpoint_path, "graphics")
             if os.path.exists(self.checkpoint_path):
                 shutil.rmtree(self.checkpoint_path)
             os.mkdir(self.checkpoint_path)
-            self.optimization_logger = miscellaneous.init_logger(os.path.join(self.checkpoint_path, "opt.log"))
+            os.mkdir(self.results_path)
+            os.mkdir(self.graphics_path)
+            self.optimization_logger, _ = miscellaneous.init_logger(os.path.join(self.checkpoint_path, "opt.log"))
 
         # Methods for genetic algorithm
         toolbox.register("mate", tools.cxTwoPoint)
@@ -272,12 +330,12 @@ class BaseOptimizer(object):
         toolbox.decorate("mutate", hist.decorator)
         hist.update(pop)
 
-        fpop, logbook, hof = self.customEaSimple(pop, toolbox, logbook, cxpb=0.5, mutpb=0.5,
-                                                 checkpoint_path=self.checkpoint_path,
-                                                 start_gen=start_gen, ngen=generations, stats=stats,
-                                                 halloffame=hof)
+        fpop, self.logbook, hof = self.custom_ea_simple(pop, toolbox, self.logbook, cxpb=0.5, mutpb=0.5,
+                                                        checkpoint_path=self.checkpoint_path,
+                                                        start_gen=start_gen, ngen=generations, stats=stats,
+                                                        halloffame=hof)
 
-        self.optimization_logger.info("LOGBOOK: \n{}".format(logbook))
+        self.optimization_logger.info("LOGBOOK: \n{}".format(self.logbook))
         self.optimization_logger.info("HALL OF FAME: {} individuals".format(len(hof)))
 
         for i in range(len(hof)):
@@ -290,25 +348,25 @@ class BaseOptimizer(object):
         # self.file_out.write("LOGBOOK: \n"+str(logbook)+"\n")
         # self.file_out.write("Best accuracy: "+str(best_score[0])+"\n")
         # self.file_out.write("Best classifier(without parameter formating(DECIMALS)): "+str(self.get_clf(hof[0])))
-
+        self._write_population_file()
+        self._write_logbook_file()
         # self.plot_logbook(logbook=logbook)
+        param_names = list(self.get_params().keys())
+        param_names.append("fitness")
+        df = self.population_2_df()[param_names]
+        g = plot_search_space(df)
+        g.savefig(os.path.join(self.graphics_path, "search_space.png"))
+        plt.close()
+
+        g2 = plot_logbook(self.logbook)
+        g2.savefig(os.path.join(self.graphics_path, "logbook.png"))
+        plt.close()
 
         return self.get_corrected_clf(hof[0])
 
-    def plot_logbook(self, logbook):
-        '''
-        Plots the given logboook
-
-        :param logbook: logbook of the genetic algorithm
-        '''
-        print("TODO")
-        # gen = logbook.select("gen")
-        # fit_max = logbook.select("max")
-        # fit_avg = logbook.select("avg")
-
-    def customEaSimple(self, population, toolbox, logbook,
-                       cxpb, mutpb, start_gen=0, ngen=4, checkpoint_path=None, stats=None,
-                       halloffame=None, verbose=__debug__, checkpoint_flag=True):
+    def custom_ea_simple(self, population, toolbox, logbook,
+                         cxpb, mutpb, start_gen=0, ngen=4, checkpoint_path=None, stats=None,
+                         halloffame=None, verbose=__debug__, checkpoint_flag=True):
         """This algorithm reproduce the simplest evolutionary algorithm as
         presented in chapter 7 of [Back2000]_.
 
@@ -424,21 +482,6 @@ class BaseOptimizer(object):
                 joblib.dump(cp, cp_file)
 
         return population, logbook, halloffame
-
-
-#
-# fig, ax1 = plt.subplots()
-# line1 = ax1.plot(gen, fit_max, "b-", label="Max fit")
-# ax1.set_xlabel("Generation")
-# ax1.set_ylabel("Fitness", color="b")
-#
-# line2 = ax1.plot(gen, fit_avg, "r-", label="Avg fit")
-#
-# lns = line1 + line2
-# labs = [l.get_label() for l in lns]
-# ax1.legend(lns, labs, loc="lower right")
-#
-# plt.savefig("optfig")
 
 
 class TreeOptimizer(BaseOptimizer, ABC):
