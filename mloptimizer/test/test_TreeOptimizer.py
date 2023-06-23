@@ -34,6 +34,7 @@ def custom_params_tree_optimizer():
 def custom_fixed_params_tree_optimizer():
     fixed_params = {
         "max_depth": 4,
+        "min_samples_split": 10
     }
     X, y = load_iris(return_X_y=True)
     return TreeOptimizer(X, y, custom_fixed_params=fixed_params)
@@ -52,12 +53,18 @@ def test_custom_tree_optimizer_get_params(custom_params_tree_optimizer):
 
 
 def test_custom_fixed_tree_optimizer_get_params(custom_fixed_params_tree_optimizer):
-    assert custom_fixed_params_tree_optimizer.get_params() != custom_fixed_params_tree_optimizer.get_default_params()
+    custom_p = custom_fixed_params_tree_optimizer.get_params()
+    default_p = custom_fixed_params_tree_optimizer.get_default_params()
+    assert custom_p != default_p
 
 
 def test_create_tree_optimizer(default_tree_optimizer):
     assert os.path.isdir(default_tree_optimizer.get_folder()) and os.path.exists(default_tree_optimizer.get_log_file())
     shutil.rmtree(default_tree_optimizer.get_folder())
+
+
+def test_create_custom_fixed_params_tree_optimizer(custom_fixed_params_tree_optimizer):
+    custom_fixed_params_tree_optimizer.optimize_clf(8, 10)
 
 
 def test_create_tree_optimizer2(default_tree_optimizer2):

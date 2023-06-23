@@ -44,3 +44,8 @@ def test_x10_param_correct(x10_param):
     assert x10_param.correct(5) == 50
     assert x10_param.correct(-1) == 0
     assert x10_param.correct(11) == 100
+
+
+def test_str_float_param(float_param):
+    float_param_str = str(float_param)
+    assert float_param_str == "Param('float_param', 1, 200, float, 100)"

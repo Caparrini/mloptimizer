@@ -22,6 +22,7 @@ import joblib
 import os
 import shutil
 from datetime import datetime
+import time
 from mloptimizer.plots import plot_search_space, plot_logbook
 
 
@@ -88,21 +89,27 @@ class Param(object):
 
     def __str__(self):
         """Overrides the default implementation"""
-        return "Param({}, {}, {}, {})".format(
-            self.name,
-            self.min_value,
-            self.max_value,
-            self.type.__name__
-        )
+        if self.type == float:
+            param_str = "Param('{}', {}, {}, {}, {})".format(
+                self.name,
+                self.min_value,
+                self.max_value,
+                self.type.__name__,
+                self.denominator
+            )
+        else:
+            param_str = "Param('{}', {}, {}, {})".format(
+                self.name,
+                self.min_value,
+                self.max_value,
+                self.type.__name__
+            )
+
+        return param_str
 
     def __repr__(self):
         """Overrides the default implementation"""
-        return "Param({}, {}, {}, {})".format(
-            self.name,
-            self.min_value,
-            self.max_value,
-            self.type.__name__
-        )
+        return self.__str__()
 
 
 class BaseOptimizer(object):
@@ -114,6 +121,10 @@ class BaseOptimizer(object):
     def __init__(self, features: np.array, labels: np.array, folder=None, log_file="mloptimizer.log",
                  custom_params: dict = {},
                  custom_fixed_params: dict = {}, eval_function=KFoldStratifiedAccuracy):
+        self.logbook = None
+        self.progress_path = None
+        self.progress_path = None
+        self.exe_path = None
         self.features = features
         self.labels = labels
         self.folder = miscellaneous.create_optimization_folder(folder)
@@ -154,8 +165,8 @@ class BaseOptimizer(object):
         individual_dict = {}
         keys = list(self.params.keys())
         for i in range(len(keys)):
-            individual_dict[keys[i]] = individual[i]
-        return individual_dict
+            individual_dict[keys[i]] = self.params[keys[i]].correct(individual[i])
+        return {**individual_dict, **self.get_fixed_params()}
 
     @abstractmethod
     def get_params(self):
@@ -199,12 +210,6 @@ class BaseOptimizer(object):
     def get_clf(self, individual):
         pass
 
-    def get_corrected_clf(self, individual_in):
-        individual = copy.copy(individual_in)
-        keys = list(self.params.keys())
-        for i in range(len(keys)):
-            individual[i] = self.params[keys[i]].correct(individual[i])
-        return self.get_clf(individual)
 
     def evaluate_clf(self, individual):
         """
@@ -213,7 +218,7 @@ class BaseOptimizer(object):
         :param individual: individual for evaluation
         :return: fitness
         """
-        mean = self.eval_function(self.features, self.labels, self.get_corrected_clf(individual))
+        mean = self.eval_function(self.features, self.labels, self.get_clf(individual))
         return (mean,)
 
     def population_2_df(self):
@@ -221,7 +226,7 @@ class BaseOptimizer(object):
         n = 0
         for p in self.populations:
             for i in p:
-                i_params = self.get_corrected_clf(i[0]).get_params()
+                i_params = self.get_clf(i[0]).get_params()
                 i_params['fitness'] = i[1].values[0]
                 i_params['population'] = n
                 data.append(i_params)
@@ -304,18 +309,22 @@ class BaseOptimizer(object):
             self.logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
 
             # Create checkpoint_path from date and algorithm
-            checkpoint_exe_name = "{}_{}".format(
+            exe_name = "{}_{}".format(
                 datetime.now().strftime("%Y%m%d_%s"),
                 type(self).__name__)
-            self.checkpoint_path = os.path.join(self.folder, checkpoint_exe_name)
-            self.results_path = os.path.join(self.checkpoint_path, "results")
-            self.graphics_path = os.path.join(self.checkpoint_path, "graphics")
-            if os.path.exists(self.checkpoint_path):
-                shutil.rmtree(self.checkpoint_path)
+            self.exe_path = os.path.join(self.folder, exe_name)
+            self.checkpoint_path = os.path.join(self.exe_path, "checkpoints")
+            self.results_path = os.path.join(self.exe_path, "results")
+            self.graphics_path = os.path.join(self.exe_path, "graphics")
+            self.progress_path = os.path.join(self.exe_path, "progress")
+            if os.path.exists(self.exe_path):
+                shutil.rmtree(self.exe_path)
+            os.mkdir(self.exe_path)
             os.mkdir(self.checkpoint_path)
             os.mkdir(self.results_path)
             os.mkdir(self.graphics_path)
-            self.optimization_logger, _ = miscellaneous.init_logger(os.path.join(self.checkpoint_path, "opt.log"))
+            os.mkdir(self.progress_path)
+            self.optimization_logger, _ = miscellaneous.init_logger(os.path.join(self.exe_path, "opt.log"))
 
         # Methods for genetic algorithm
         toolbox.register("mate", tools.cxTwoPoint)
@@ -342,8 +351,8 @@ class BaseOptimizer(object):
             best_score = hof[i].fitness.values[:]
             self.optimization_logger.info("Individual TOP {}".format(i + 1))
             self.optimization_logger.info("Individual accuracy: {}".format(best_score))
-            self.optimization_logger.info("Best classifier: {}".format(str(self.get_corrected_clf(hof[i]))))
-            self.optimization_logger.info("Params: {}".format(str(self.get_corrected_clf(hof[i]).get_params())))
+            self.optimization_logger.info("Best classifier: {}".format(str(self.get_clf(hof[i]))))
+            self.optimization_logger.info("Params: {}".format(str(self.get_clf(hof[i]).get_params())))
 
         # self.file_out.write("LOGBOOK: \n"+str(logbook)+"\n")
         # self.file_out.write("Best accuracy: "+str(best_score[0])+"\n")
@@ -362,7 +371,7 @@ class BaseOptimizer(object):
         g2.savefig(os.path.join(self.graphics_path, "logbook.png"))
         plt.close()
 
-        return self.get_corrected_clf(hof[0])
+        return self.get_clf(hof[0])
 
     def custom_ea_simple(self, population, toolbox, logbook,
                          cxpb, mutpb, start_gen=0, ngen=4, checkpoint_path=None, stats=None,
@@ -433,7 +442,12 @@ class BaseOptimizer(object):
             raise NotADirectoryError(error_msg)
 
         # Begin the generational process
+
         for gen in range(start_gen, ngen + 1):
+            progress_gen_path = os.path.join(self.progress_path, "Generation_{}.csv".format(gen))
+            progress_gen_file = open(progress_gen_path, "w")
+            header_progress_gen_file = "i;total;time(s);Individual;fitness\n"
+            progress_gen_file.write(header_progress_gen_file)
             self.optimization_logger.info("Generation: {}".format(gen))
             # Vary the pool of individuals
             population = varAnd(population, toolbox, cxpb, mutpb)
@@ -442,13 +456,24 @@ class BaseOptimizer(object):
             invalid_ind = [ind for ind in population if not ind.fitness.valid]
             fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
             c = 1
+            evaluations_pending = len(invalid_ind)
             for ind, fit in zip(invalid_ind, fitnesses):
                 self.optimization_logger.info(
-                    "Fitting individual (informational purpose): gen {} - ind {}".format(
-                        gen, c
+                    "Fitting individual (informational purpose): gen {} - ind {} of {}".format(
+                        gen, c, evaluations_pending
                     )
                 )
+                t0_evaluation = time.time()
                 ind.fitness.values = fit
+                t1_evaluation = time.time()
+                t_evaluation = t1_evaluation - t0_evaluation
+                ind_formatted = self.individual2dict(ind)
+                progress_gen_file.write(
+                    "{};{};{};{};{}\n".format(c,
+                                              evaluations_pending,
+                                              t_evaluation,
+                                              ind_formatted, fit)
+                )
                 c = c + 1
 
             halloffame.update(population)
@@ -466,9 +491,9 @@ class BaseOptimizer(object):
                 best_score = halloffame[i].fitness.values[:]
                 self.optimization_logger.info("Individual TOP {}".format(i + 1))
                 self.optimization_logger.info("Individual accuracy: {}".format(best_score))
-                self.optimization_logger.info("Best classifier: {}".format(str(self.get_corrected_clf(halloffame[i]))))
+                self.optimization_logger.info("Best classifier: {}".format(str(self.get_clf(halloffame[i]))))
                 self.optimization_logger.info(
-                    "Params: {}".format(str(self.get_corrected_clf(halloffame[i]).get_params())))
+                    "Params: {}".format(str(self.get_clf(halloffame[i]).get_params())))
 
             # Store the space param and fitness for each
             self.populations.append([[ind, ind.fitness] for ind in population])
@@ -480,6 +505,9 @@ class BaseOptimizer(object):
 
                 cp_file = os.path.join(checkpoint_path, "cp_gen_{}.pkl".format(gen))
                 joblib.dump(cp, cp_file)
+            self._write_population_file()
+            self._write_logbook_file()
+            progress_gen_file.close()
 
         return population, logbook, halloffame
 
