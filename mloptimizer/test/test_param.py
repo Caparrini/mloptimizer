@@ -1,4 +1,5 @@
 import pytest
+
 from mloptimizer.genoptimizer import Param
 
 

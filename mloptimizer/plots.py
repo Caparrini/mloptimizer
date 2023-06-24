@@ -1,15 +1,22 @@
 import seaborn as sns
 import pandas as pd
-import matplotlib.pyplot as plt
 
 
 def logbook_to_pandas(logbook):
+    """
+    :param logbook: A logbook from :class:`~mloptimizer.genoptimizer.BaseOptimizer`
+    :return: A pandas dataframe with the logbook
+    """
     data = logbook.chapters["parameters"]
     df = pd.DataFrame(data)
     return df
 
 
 def plot_logbook(logbook):
+    """
+    :param logbook: A logbook from :class:`~mloptimizer.genoptimizer.BaseOptimizer`
+    :return: A line plot of the logbook
+    """
     df = pd.DataFrame(logbook)
     g = sns.lineplot(df.drop(columns=['gen', 'nevals']))
     return g.get_figure()
@@ -17,19 +24,11 @@ def plot_logbook(logbook):
 
 def plot_search_space(populations_df: pd.DataFrame, height=2, s=25, features: list = None):
     """
-    Parameters
-    ----------
-    optimizer: optimizer object
-        A fitted optimizer from :class:`~mloptimizer.genoptimizer.BaseOptimizer`
-    height: float, default=2
-        Height of each facet
-    s: float, default=5
-        Size of the markers in scatter plot
-    features: list, default=None
-        Subset of features to plot, if ``None`` it plots all the features by default
-    Returns
-    -------
-    Pair plot of the used hyperparameters during the search
+    :param pd.DataFrame populations_df: A dataframe with the population
+    :param int height: The height of the plot
+    :param int s: The size of the points
+    :param list features: The features to plot
+    :return: A pairplot of the search space
     """
     sns.set_style("white")
     g = sns.PairGrid(populations_df, diag_sharey=False, height=height)

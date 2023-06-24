@@ -1,13 +1,10 @@
+import keras
+import numpy as np
 import xgboost as xgb
+from keras.layers import Dense, Dropout
+from keras.models import Sequential
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
-import numpy as np
-from keras.models import Sequential
-from keras.layers import Dense, Dropout
-from sklearn.utils import class_weight
-from sklearn.preprocessing import OneHotEncoder
-from keras.wrappers.scikit_learn import KerasClassifier
-import keras
 
 
 class CustomXGBClassifier(BaseEstimator):

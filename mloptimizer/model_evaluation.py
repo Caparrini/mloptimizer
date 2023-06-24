@@ -1,37 +1,43 @@
 import logging
-from sklearn.metrics import balanced_accuracy_score
-from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit
-import numpy as np
 import time
 
+import numpy as np
+from sklearn.metrics import balanced_accuracy_score
+from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit
 
-def unpackDF(df, target_variable="class"):
-    '''
+
+def unpack_df(df, target_variable="class"):
+    """
     Extract classes, features, and labels from a pandas.DataFrame.
-    One column of the DataFrame should be called "class" and
+    One column of the DataFrame should be called as target_variable="class" and
     the rest are features.
 
     :param DataFrame df: pandas.DataFrame with the dataset
+    :param str target_variable: str with the name of the target column
     :return: Classes, features, labels
-    '''
+    """
     class_list = list(df[target_variable].drop_duplicates())
     labels = df[target_variable]
     features = np.array(df.drop(columns=[target_variable]))
     return class_list, features, labels
 
 
-def KFoldStratifiedAccuracy(features, labels, clf, n_splits=4, score_function=balanced_accuracy_score,
-                            random_state=None):
-    '''
-    Computes KFold cross validation accuracy using n_splits folds over the data in the pandas.DataFrame given.
-    Uses an stratified KFold with the random_state specified.
+def kfold_stratified_score(features, labels, clf, n_splits=4, score_function=balanced_accuracy_score,
+                           random_state=None):
+    """
+    Computes KFold cross validation score using n_splits folds.
+    It uses the features and labels to train the k-folds.
+    Uses a stratified KFold with the random_state specified.
+    The score_function is the one used to score each k-fold.
 
-    :param df: pandas.DataFrame where is the data for train/test splits
+    :param list features: List of features
+    :param list labels: List of labels
     :param clf: classifier with methods fit, predict and score
     :param n_splits: number of splits
+    :param func score_function: function that receives X, y and return a score
     :param random_state: random state seed
-    :return: mean accuracy, std
-    '''
+    :return: mean score among k-folds test splits
+    """
     logging.info("KFold Stratified accuracy\nClassifier:{}\nn_splits:{}\n"
                  "score_metric:{}".format(clf, n_splits, score_function))
 
@@ -83,29 +89,32 @@ def KFoldStratifiedAccuracy(features, labels, clf, n_splits=4, score_function=ba
         kcounter += 1
         clfs.append(clf)
 
-    meanAccuracy = np.mean(accuracies_kfold)
+    mean_accuracy = np.mean(accuracies_kfold)
     std = np.std(accuracies_kfold)
-    logging.info("Accuracy: {:.3f} +- {:.3f}".format(round(meanAccuracy, 3), round(std, 3)))
+    logging.info("Accuracy: {:.3f} +- {:.3f}".format(round(mean_accuracy, 3), round(std, 3)))
 
-    # return meanAccuracy, std, labels, labels_predicted, clfs
-    return meanAccuracy
+    # return mean_accuracy, std, labels, labels_predicted, clfs
+    return mean_accuracy
 
 
-def TemporalKFoldAccuracy(features, labels, clf, n_splits=4, score_function=balanced_accuracy_score):
-    '''
-    Computes KFold cross validation accuracy using n_splits folds over the data in the pandas.DataFrame given.
-    Uses an stratified KFold with the random_state specified.
+def temporal_kfold_score(features, labels, clf, n_splits=4, score_function=balanced_accuracy_score):
+    """
+    Computes KFold cross validation score using n_splits folds.
+    It uses the features and labels to train the k-folds.
+    Uses a temporal KFold split.
+    The score_function is the one used to score each k-fold.
 
-    :param df: pandas.DataFrame where is the data for train/test splits
+    :param list features: List of features
+    :param list labels: List of labels
     :param clf: classifier with methods fit, predict and score
     :param n_splits: number of splits
-    :param random_state: random state seed
-    :return: mean accuracy, std
-    '''
+    :param func score_function: function that receives X, y and return a score
+    :return: mean score among k-folds test splits
+    """
     logging.info("TemporalKFold accuracy\nClassifier:{}\nn_splits:{}\n"
                  "score_metric:{}".format(clf, n_splits, score_function))
     print("TemporalKFold accuracy\nClassifier:{}\nn_splits:{}\n"
-                 "score_metric:{}".format(clf, n_splits, score_function))
+          "score_metric:{}".format(clf, n_splits, score_function))
 
     clfs = []
 
@@ -159,10 +168,10 @@ def TemporalKFoldAccuracy(features, labels, clf, n_splits=4, score_function=bala
             kcounter += 1
             clfs.append(clf)
 
-    meanAccuracy = np.mean(accuracies_kfold)
+    mean_accuracy = np.mean(accuracies_kfold)
     std = np.std(accuracies_kfold)
-    logging.info("Accuracy: {:.2f} +- {:.2f}".format(round(meanAccuracy, 3), round(std, 3)))
-    print("Accuracy: {:.2f} +- {:.2f}".format(round(meanAccuracy, 3), round(std, 3)))
+    logging.info("Accuracy: {:.2f} +- {:.2f}".format(round(mean_accuracy, 3), round(std, 3)))
+    print("Accuracy: {:.2f} +- {:.2f}".format(round(mean_accuracy, 3), round(std, 3)))
 
-    # return meanAccuracy, std, labels, labels_predicted, clfs
-    return meanAccuracy
+    # return mean_accuracy, std, labels, labels_predicted, clfs
+    return mean_accuracy

@@ -1,28 +1,28 @@
-import multiprocessing
-from abc import ABCMeta, abstractmethod, ABC
-from random import randint
+import os
 import random
+import shutil
+from abc import ABCMeta, abstractmethod, ABC
+from datetime import datetime
+from random import randint
+
+import joblib
 import matplotlib.pyplot as plt
 import numpy as np
-import copy
 import pandas as pd
+import xgboost as xgb
+from catboost import CatBoostClassifier
 from deap import creator, tools, base
 from deap.algorithms import varAnd
+from keras.wrappers.scikit_learn import KerasClassifier
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
+from sklearn.metrics import balanced_accuracy_score
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
-from mloptimizer.model_evaluation import KFoldStratifiedAccuracy
+
 from mloptimizer import miscellaneous
 from mloptimizer.alg_wrapper import CustomXGBClassifier, generate_model
-import xgboost as xgb
-from keras.wrappers.scikit_learn import KerasClassifier
-from catboost import CatBoostClassifier
-import joblib
-import os
-import shutil
-from datetime import datetime
-import time
+from mloptimizer.model_evaluation import kfold_stratified_score
 from mloptimizer.plots import plot_search_space, plot_logbook
 
 
@@ -34,12 +34,14 @@ class Param(object):
     def __init__(self, name: str, min_value: int, max_value: int, param_type,
                  denominator: int = 100, values_str: list = None):
         """
-        Init object
+        Init param
 
-        :param name: (str) Name of the param. It will be use as key in a dictionary
-        :param min_value: (int) Minimum value of the param
-        :param max_value: (int) Maximum value of the param
-        :param param_type: (type) type of the param (int, float, 'nexp', 'x10')
+        :param str name: Name of the param. It will be use as key in a dictionary
+        :param int min_value: Minimum value of the param
+        :param int max_value: Maximum value of the param
+        :param type param_type: Type of the param (int, float, 'nexp', 'x10')
+        :param int denominator: Optional param in case the type=float
+        :param list values_str: List of string with possible values (TODO)
         """
         if values_str is None:
             values_str = []
@@ -81,7 +83,6 @@ class Param(object):
 
     def __eq__(self, other_param):
         """Overrides the default implementation"""
-
         equals = (self.name == other_param.name and self.min_value == other_param.min_value and
                   self.type == other_param.type and self.denominator == other_param.denominator and
                   self.max_value == other_param.max_value)
@@ -89,12 +90,17 @@ class Param(object):
 
     def __str__(self):
         """Overrides the default implementation"""
+        if type(self.type) == type:
+            type_str = self.type.__name__
+        elif type(self.type) == str:
+            type_str = "'{}'".format(self.type)
+
         if self.type == float:
             param_str = "Param('{}', {}, {}, {}, {})".format(
                 self.name,
                 self.min_value,
                 self.max_value,
-                self.type.__name__,
+                type_str,
                 self.denominator
             )
         else:
@@ -102,7 +108,7 @@ class Param(object):
                 self.name,
                 self.min_value,
                 self.max_value,
-                self.type.__name__
+                type_str
             )
 
         return param_str
@@ -120,26 +126,54 @@ class BaseOptimizer(object):
 
     def __init__(self, features: np.array, labels: np.array, folder=None, log_file="mloptimizer.log",
                  custom_params: dict = {},
-                 custom_fixed_params: dict = {}, eval_function=KFoldStratifiedAccuracy):
-        self.logbook = None
-        self.progress_path = None
-        self.progress_path = None
-        self.exe_path = None
+                 custom_fixed_params: dict = {}, eval_function=kfold_stratified_score,
+                 score_function=balanced_accuracy_score):
+        """
+        Init the optimizer
+        :param list features: np.array with the features
+        :param list labels: np.array with the labels
+        :param path folder: folder to store the results
+        :param str log_file: log file name
+        :param dict custom_params: dictionary with custom params
+        :param dict custom_fixed_params: dictionary with custom fixed params
+        :param func eval_function: function to evaluate the model from X, y, clf
+        :param func score_function: function to score from y, y_pred
+        """
+        # Input mandatory variables
         self.features = features
         self.labels = labels
-        self.folder = miscellaneous.create_optimization_folder(folder)
+        # Input parameters (optional)
         self.custom_params = custom_params
         self.custom_fixed_params = custom_fixed_params
-        self.params = self.get_params()
         self.fixed_params = self.get_fixed_params()
-        self.eval_dict = {}
+        self.params = self.get_params()
+        # Main folder (autogenerated if None)
+        self.folder = miscellaneous.create_optimization_folder(folder)
+        # Log files
         self.mloptimizer_logger, self.log_file = miscellaneous.init_logger(log_file, self.folder)
         self.optimization_logger = None
         self.eval_function = eval_function
+        self.score_function = score_function
+        # Paths
+        self.exe_path = None
         self.checkpoint_path = None
-        self.populations = []
+        self.progress_path = None
+        self.progress_path = None
         self.results_path = None
         self.graphics_path = None
+        # State vars
+        self.eval_dict = {}
+        self.populations = []
+        self.logbook = None
+
+    @staticmethod
+    def get_subclasses(my_class):
+        subclasses = my_class.__subclasses__()
+        if len(subclasses) == 0:
+            return []
+        next_subclasses = []
+        [next_subclasses.extend(BaseOptimizer.get_subclasses(x)) for x in subclasses]
+        return [*subclasses, *next_subclasses]
 
     def get_folder(self):
         return self.folder
@@ -210,7 +244,6 @@ class BaseOptimizer(object):
     def get_clf(self, individual):
         pass
 
-
     def evaluate_clf(self, individual):
         """
         Method to evaluate the individual, in this case the classifier
@@ -218,7 +251,8 @@ class BaseOptimizer(object):
         :param individual: individual for evaluation
         :return: fitness
         """
-        mean = self.eval_function(self.features, self.labels, self.get_clf(individual))
+        mean = self.eval_function(self.features, self.labels, self.get_clf(individual),
+                                  score_function=self.score_function)
         return (mean,)
 
     def population_2_df(self):
@@ -256,12 +290,15 @@ class BaseOptimizer(object):
             self.optimization_logger.error("File {} does not exist".format(filename))
         return data
 
-    def optimize_clf(self, population: int = 10, generations: int = 3, checkpoint: str = None) -> object:
+    def optimize_clf(self, population: int = 10, generations: int = 3,
+                     checkpoint: str = None, exe_folder: str = None) -> object:
         """
         Searches through a genetic algorithm the best classifier
 
         :param int population: Number of members of the first generation
         :param int generations: Number of generations
+        :param str checkpoint: Path to a checkpoint file
+        :param str exe_folder: Path to the folder where the execution will be saved
         :return: Trained classifier
         """
         self.mloptimizer_logger.info("Initiating genetic optimization...")
@@ -309,9 +346,12 @@ class BaseOptimizer(object):
             self.logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
 
             # Create checkpoint_path from date and algorithm
-            exe_name = "{}_{}".format(
-                datetime.now().strftime("%Y%m%d_%s"),
-                type(self).__name__)
+            if exe_folder:
+                exe_name = exe_folder
+            else:
+                exe_name = "{}_{}".format(
+                    datetime.now().strftime("%Y%m%d_%s"),
+                    type(self).__name__)
             self.exe_path = os.path.join(self.folder, exe_name)
             self.checkpoint_path = os.path.join(self.exe_path, "checkpoints")
             self.results_path = os.path.join(self.exe_path, "results")
@@ -446,7 +486,7 @@ class BaseOptimizer(object):
         for gen in range(start_gen, ngen + 1):
             progress_gen_path = os.path.join(self.progress_path, "Generation_{}.csv".format(gen))
             progress_gen_file = open(progress_gen_path, "w")
-            header_progress_gen_file = "i;total;time(s);Individual;fitness\n"
+            header_progress_gen_file = "i;total;Individual;fitness\n"
             progress_gen_file.write(header_progress_gen_file)
             self.optimization_logger.info("Generation: {}".format(gen))
             # Vary the pool of individuals
@@ -463,16 +503,12 @@ class BaseOptimizer(object):
                         gen, c, evaluations_pending
                     )
                 )
-                t0_evaluation = time.time()
                 ind.fitness.values = fit
-                t1_evaluation = time.time()
-                t_evaluation = t1_evaluation - t0_evaluation
                 ind_formatted = self.individual2dict(ind)
                 progress_gen_file.write(
-                    "{};{};{};{};{}\n".format(c,
-                                              evaluations_pending,
-                                              t_evaluation,
-                                              ind_formatted, fit)
+                    "{};{};{};{}\n".format(c,
+                                           evaluations_pending,
+                                           ind_formatted, fit)
                 )
                 c = c + 1
 
@@ -575,7 +611,8 @@ class ForestOptimizer(TreeOptimizer, ABC):
                                      criterion="gini",
                                      max_depth=individual_dict['max_depth'],
                                      max_samples=individual_dict['max_samples'],
-                                     min_weight_fraction_leaf=0,
+                                     min_weight_fraction_leaf=individual_dict['min_weight_fraction_leaf'],
+                                     min_impurity_decrease=individual_dict['min_impurity_decrease'],
                                      max_features=individual_dict['max_features'],
                                      max_leaf_nodes=None,
                                      bootstrap=True,
@@ -595,9 +632,9 @@ class ForestOptimizer(TreeOptimizer, ABC):
             "n_estimators": Param("n_estimators", 5, 250, int),
             "max_samples": Param("max_samples", 10, 100, float, 100),
             "max_depth": Param("max_depth", 2, 14, int),
-            "scale_pos_weight": Param("scale_pos_weight", 1, 1000, float, 100),
             "min_impurity_decrease": Param("min_impurity_decrease", 0, 500, float, 100),
-            "min_weight_fraction_leaf": Param("min_weight_fraction_leaf", 1, 1000, float, 100)
+            # min_weight_fraction_leaf must be a float in the range [0.0, 0.5]
+            "min_weight_fraction_leaf": Param("min_weight_fraction_leaf", 0, 50, float, 100)
         }
         return default_params
 
@@ -638,7 +675,7 @@ class ExtraTreesOptimizer(ForestOptimizer, ABC):
                                    max_features=individual_dict['max_features'],
                                    max_samples=individual_dict['max_samples'],
                                    max_leaf_nodes=None,
-                                   bootstrap=False,
+                                   bootstrap=True,
                                    oob_score=False,
                                    n_jobs=-1,
                                    random_state=None,
@@ -664,9 +701,11 @@ class GradientBoostingOptimizer(ForestOptimizer, ABC):
         """
         params = super(GradientBoostingOptimizer, self).get_params()
         # learning_rate
-        params.append(Param("learning_rate", 1, 10000, float, 1000000))
+        params["learning_rate"] = Param('learning_rate', 1, 10000, float, 1000000)
         # subsample
-        params.append(Param("subsample", 0, 100, float, 100))
+        del params["max_samples"]
+        # subsample must be a float in the range (0.0, 1.0]
+        params["subsample"] = Param('subsample', 10, 100, float, 100)
         # Return all the params
         return params
 
@@ -681,9 +720,10 @@ class GradientBoostingOptimizer(ForestOptimizer, ABC):
         clf = GradientBoostingClassifier(n_estimators=individual_dict['n_estimators'],
                                          criterion="friedman_mse",
                                          max_depth=individual_dict['max_depth'],
-                                         min_samples_split=individual_dict['min_samples_split'],
-                                         min_samples_leaf=individual_dict['min_samples_leaf'],
-                                         min_weight_fraction_leaf=0,
+                                         # min_samples_split=individual_dict['min_samples_split'],
+                                         # min_samples_leaf=individual_dict['min_samples_leaf'],
+                                         min_weight_fraction_leaf=individual_dict['min_weight_fraction_leaf'],
+                                         min_impurity_decrease=individual_dict['min_impurity_decrease'],
                                          max_features=individual_dict['max_features'],
                                          max_leaf_nodes=None,
                                          random_state=None,

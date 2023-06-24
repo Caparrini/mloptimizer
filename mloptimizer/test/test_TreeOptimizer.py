@@ -1,12 +1,11 @@
-import numpy as np
-import pytest
-import pandas as pd
 import os
+import shutil
+
+import pytest
+from sklearn.datasets import load_iris, load_breast_cancer
 
 from mloptimizer.genoptimizer import Param
 from mloptimizer.genoptimizer import TreeOptimizer
-from sklearn.datasets import load_iris, load_breast_cancer
-import shutil
 
 
 @pytest.fixture
@@ -38,6 +37,18 @@ def custom_fixed_params_tree_optimizer():
     }
     X, y = load_iris(return_X_y=True)
     return TreeOptimizer(X, y, custom_fixed_params=fixed_params)
+
+
+@pytest.fixture
+def custom_all_params_tree_optimizer():
+    fixed_params = {
+        "min_samples_split": 10
+    }
+    custom_params = {
+        "max_depth": Param("max_depth", 2, 4, int),
+    }
+    X, y = load_iris(return_X_y=True)
+    return TreeOptimizer(X, y, custom_params=custom_params, custom_fixed_params=fixed_params)
 
 
 # Test vanilla TreeOptimizer
@@ -73,5 +84,5 @@ def test_create_tree_optimizer2(default_tree_optimizer2):
     shutil.rmtree(default_tree_optimizer2.get_folder())
 
 
-def test_tree_optimizer_get_params(default_tree_optimizer):
-    default_tree_optimizer.optimize_clf(8, 10)
+def test_tree_all_params_tree_optimizer(custom_all_params_tree_optimizer):
+    custom_all_params_tree_optimizer.optimize_clf(8, 10)
