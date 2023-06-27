@@ -75,7 +75,7 @@ def test_create_tree_optimizer(default_tree_optimizer):
 
 
 def test_create_custom_fixed_params_tree_optimizer(custom_fixed_params_tree_optimizer):
-    custom_fixed_params_tree_optimizer.optimize_clf(8, 10)
+    custom_fixed_params_tree_optimizer.optimize_clf(50, 30)
 
 
 def test_create_tree_optimizer2(default_tree_optimizer2):

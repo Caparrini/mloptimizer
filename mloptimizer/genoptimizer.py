@@ -23,7 +23,7 @@ from sklearn.tree import DecisionTreeClassifier
 from mloptimizer import miscellaneous
 from mloptimizer.alg_wrapper import CustomXGBClassifier, generate_model
 from mloptimizer.model_evaluation import kfold_stratified_score
-from mloptimizer.plots import plot_search_space, plot_logbook
+from mloptimizer.plots import plot_search_space, plot_logbook, plotly_logbook, plotly_search_space
 
 
 class Param(object):
@@ -402,13 +402,15 @@ class BaseOptimizer(object):
         # self.plot_logbook(logbook=logbook)
         param_names = list(self.get_params().keys())
         param_names.append("fitness")
-        df = self.population_2_df()[param_names]
-        g = plot_search_space(df)
-        g.savefig(os.path.join(self.graphics_path, "search_space.png"))
+        population_df = self.population_2_df()
+        df = population_df[param_names]
+        g = plotly_search_space(df)
+        g.write_html(os.path.join(self.graphics_path, "search_space.html"))
         plt.close()
 
-        g2 = plot_logbook(self.logbook)
-        g2.savefig(os.path.join(self.graphics_path, "logbook.png"))
+        g2 = plotly_logbook(self.logbook, population_df)
+        #g2.savefig(os.path.join(self.graphics_path, "logbook.png"))
+        g2.write_html(os.path.join(self.graphics_path, "logbook.html"))
         plt.close()
 
         return self.get_clf(hof[0])
@@ -488,6 +490,7 @@ class BaseOptimizer(object):
             progress_gen_file = open(progress_gen_path, "w")
             header_progress_gen_file = "i;total;Individual;fitness\n"
             progress_gen_file.write(header_progress_gen_file)
+            progress_gen_file.close()
             self.optimization_logger.info("Generation: {}".format(gen))
             # Vary the pool of individuals
             population = varAnd(population, toolbox, cxpb, mutpb)
@@ -505,11 +508,13 @@ class BaseOptimizer(object):
                 )
                 ind.fitness.values = fit
                 ind_formatted = self.individual2dict(ind)
+                progress_gen_file = open(progress_gen_path, "a")
                 progress_gen_file.write(
                     "{};{};{};{}\n".format(c,
                                            evaluations_pending,
                                            ind_formatted, fit)
                 )
+                progress_gen_file.close()
                 c = c + 1
 
             halloffame.update(population)
@@ -543,7 +548,6 @@ class BaseOptimizer(object):
                 joblib.dump(cp, cp_file)
             self._write_population_file()
             self._write_logbook_file()
-            progress_gen_file.close()
 
         return population, logbook, halloffame
 
