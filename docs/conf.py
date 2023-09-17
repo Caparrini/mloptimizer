@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = 'mloptimizer'
 copyright = '2023, Antonio Caparrini'
 author = 'Antonio Caparrini'
-release = '0.5.9.21'
+release = '0.5.9.22'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

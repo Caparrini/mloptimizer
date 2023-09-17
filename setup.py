@@ -24,7 +24,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/guides/single-sourcing-package-version/
-    version="0.5.9.21",  # Required
+    version="0.5.9.22",  # Required
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#summary
@@ -115,7 +115,7 @@ setup(
         "catboost>=1.1.1",
         "deap>=1.3.3",
         "joblib>=1.2.0",
-        "keras>=2.12.0",
+        "keras==2.12.0",
         #"numpy>=1.24.1",
         "pandas>=1.5.3",
         "python-dateutil>=2.8.1",
@@ -128,6 +128,7 @@ setup(
         "xgboost>=1.7.3",
         #"matplotlib~=3.7.1",
         "plotly>=5.15.0",
+        "sphinx-gallery==0.14.0"
     ],  # Optional
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"
