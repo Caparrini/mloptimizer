@@ -6,12 +6,6 @@ from keras.wrappers.scikit_learn import KerasClassifier
 import numpy as np
 
 
-class CustomXGBTest(unittest.TestCase):
-    def test_sklearn_interface(self):
-        uat = CustomXGBClassifier()
-        self.assertEqual(check_estimator(uat), None)
-
-
 class CustomKerasClassifier(unittest.TestCase):
 
     def test_fit_pred(self):

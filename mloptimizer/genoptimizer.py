@@ -16,32 +16,57 @@ from deap.algorithms import varAnd
 from keras.wrappers.scikit_learn import KerasClassifier
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
 from sklearn.metrics import balanced_accuracy_score
-from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
 from mloptimizer import miscellaneous
 from mloptimizer.alg_wrapper import CustomXGBClassifier, generate_model
 from mloptimizer.model_evaluation import kfold_stratified_score
-from mloptimizer.plots import plot_search_space, plot_logbook, plotly_logbook, plotly_search_space
+from mloptimizer.plots import plotly_logbook, plotly_search_space
 
 
 class Param(object):
     """
-    Object to store param info, type and range of values
+    Class to define a param to optimize. It defines the name, min value, max value and type.
+    This is used to control the precision of the param and avoid multiple evaluations
+    with close values of the param due to decimal positions.
+
+
+    Attributes
+    ----------
+    name : str
+        Name of the param. It will be used as key in a dictionary
+    min_value : int
+        Minimum value of the param
+    max_value : int
+        Maximum value of the param
+    type : type
+        Type of the param (int, float, 'nexp', 'x10')
+    denominator : int, optional (default=100)
+        Optional param in case the type=float
+    values_str : list, optional (default=[])
+        List of string with possible values (TODO)
     """
 
     def __init__(self, name: str, min_value: int, max_value: int, param_type,
                  denominator: int = 100, values_str: list = None):
         """
-        Init param
+        Creates object Param.
 
-        :param str name: Name of the param. It will be use as key in a dictionary
-        :param int min_value: Minimum value of the param
-        :param int max_value: Maximum value of the param
-        :param type param_type: Type of the param (int, float, 'nexp', 'x10')
-        :param int denominator: Optional param in case the type=float
-        :param list values_str: List of string with possible values (TODO)
+        Parameters
+        ----------
+        name : str
+            Name of the param. It will be used as key in a dictionary
+        min_value : int
+            Minimum value of the param
+        max_value : int
+            Maximum value of the param
+        type : type
+            Type of the param (int, float, 'nexp', 'x10')
+        denominator : int, optional (default=100)
+            Optional param in case the type=float
+        values_str : list, optional (default=[])
+            List of string with possible values (TODO)
         """
         if values_str is None:
             values_str = []
@@ -54,12 +79,20 @@ class Param(object):
 
     def correct(self, value: int):
         """
-        Returns the real value of the param:
+        Returns the real value of the param in case some mutation could surpass the limits.
             1) Verifies the input is int
             2) Enforce min and max value
             3) Apply the type of value
-        :param value: value to verify if accomplishes type, min and max due to mutations
-        :return: value fixed
+
+        Parameters
+        ----------
+        value : int
+            Value to correct
+
+        Returns
+        -------
+        ret : int, float
+            Corrected value
         """
         # Input value must be int
         value = int(value)
@@ -120,24 +153,82 @@ class Param(object):
 
 class BaseOptimizer(object):
     """
-    Abstract class to create optimizer for different machine learning classifier algorithms
+    Base class for the optimization of a classifier
+
+    Attributes
+    ----------
+    features : np.array
+        np.array with the features
+    labels : np.array
+        np.array with the labels
+    custom_params : dict
+        dictionary with custom params
+    custom_fixed_params : dict
+        dictionary with custom fixed params
+    fixed_params : dict
+        dictionary with fixed params
+    params : dict
+        dictionary with params
+    folder : path
+        folder to store the structure of files and folders product of executions
+    log_file : str
+        log file name
+    mloptimizer_logger : logger
+        logger for the mloptimizer
+    optimization_logger : logger
+        logger for the optimization
+    eval_function : func
+        function to evaluate the model from X, y, clf
+    score_function : func
+        function to score from y, y_pred
+    exe_path : path
+        path to the folder where the execution will be saved
+    checkpoint_path : path
+        path to the folder where the checkpoints will be saved
+    progress_path : path
+        path to the folder where the progress will be saved
+    results_path : path
+        path to the folder where the results will be saved
+    graphics_path : path
+        path to the folder where the graphics will be saved
+    eval_dict : dict
+        dictionary with the evaluation of the individuals
+    populations : list
+        list of populations
+    logbook : list
+        list of logbook
+    seed : int
+        seed for the random functions TODO
     """
     __metaclass__ = ABCMeta
 
     def __init__(self, features: np.array, labels: np.array, folder=None, log_file="mloptimizer.log",
                  custom_params: dict = {},
                  custom_fixed_params: dict = {}, eval_function=kfold_stratified_score,
-                 score_function=balanced_accuracy_score):
+                 score_function=balanced_accuracy_score, seed=0):
         """
-        Init the optimizer
-        :param list features: np.array with the features
-        :param list labels: np.array with the labels
-        :param path folder: folder to store the results
-        :param str log_file: log file name
-        :param dict custom_params: dictionary with custom params
-        :param dict custom_fixed_params: dictionary with custom fixed params
-        :param func eval_function: function to evaluate the model from X, y, clf
-        :param func score_function: function to score from y, y_pred
+        Creates object BaseOptimizer.
+
+        Parameters
+        ----------
+        features : np.array
+            np.array with the features
+        labels : np.array
+            np.array with the labels
+        folder : path, optional (default=None)
+            folder to store the structure of files and folders product of executions
+        log_file : str, optional (default="mloptimizer.log")
+            log file name
+        custom_params : dict, optional (default={})
+            dictionary with custom params
+        custom_fixed_params : dict, optional (default={})
+            dictionary with custom fixed params
+        eval_function : func, optional (default=kfold_stratified_score)
+            function to evaluate the model from X, y, clf
+        score_function : func, optional (default=balanced_accuracy_score)
+            function to score from y, y_pred
+        seed : int, optional (default=0)
+            seed for the random functions TODO
         """
         # Input mandatory variables
         self.features = features
@@ -165,9 +256,24 @@ class BaseOptimizer(object):
         self.eval_dict = {}
         self.populations = []
         self.logbook = None
+        self.seed = seed
 
     @staticmethod
     def get_subclasses(my_class):
+        """
+        Method to get all the subclasses of a class
+        (in this case use to get all the classifiers that can be optimized).
+
+        Parameters
+        ----------
+        my_class : class
+            class to get the subclasses
+
+        Returns
+        -------
+        list
+            list of subclasses
+        """
         subclasses = my_class.__subclasses__()
         if len(subclasses) == 0:
             return []
@@ -176,17 +282,30 @@ class BaseOptimizer(object):
         return [*subclasses, *next_subclasses]
 
     def get_folder(self):
+        """
+        Method to get the folder where the execution will be saved
+        """
         return self.folder
 
     def get_log_file(self):
+        """
+        Method to get the log file name
+        """
         return self.log_file
 
     def init_individual(self, pcls):
         """
-        Method to initialize an individual instance
+        Method to create an individual
 
-        :param pcls: Method to create the individual as an extension of the class list
-        :return: individual
+        Parameters
+        ----------
+        pcls : class
+            class of the individual
+
+        Returns
+        -------
+        ind : individual
+            individual
         """
         ps = []
         for k in self.params.keys():
@@ -196,6 +315,19 @@ class BaseOptimizer(object):
 
     @abstractmethod
     def individual2dict(self, individual):
+        """
+        Method to convert an individual to a dictionary of params
+
+        Parameters
+        ----------
+        individual : individual
+            individual to convert
+
+        Returns
+        -------
+        individual_dict : dict
+            dictionary of params
+        """
         individual_dict = {}
         keys = list(self.params.keys())
         for i in range(len(keys)):
@@ -205,10 +337,13 @@ class BaseOptimizer(object):
     @abstractmethod
     def get_params(self):
         """
-        Params for the creation of individuals (relative to the algorithm)
-        These params define the name of the param, min value, max value, and type
+        Method to get the params to optimize. First the fixed params are removed from the list, then
+        the custom override the default params.
 
-        :return: list of params
+        Returns
+        -------
+        params : dict
+            dictionary of params
         """
         params = {}
         default_params = self.get_default_params()
@@ -227,14 +362,28 @@ class BaseOptimizer(object):
     @abstractmethod
     def get_fixed_params(self):
         """
-        Params values as a dictionary of values for non optimizing params
-        :return: dict of params
+        Method to get the fixed params dictionary. These params are stores using
+        only the name of the param and the target values (not as Param objects that are only used
+        in hyperparameters that are evolved).
+
+        Returns
+        -------
+        fixed_params : dict
+            dictionary of fixed params
         """
         fixed_params = {**self.get_default_fixed_params(), **self.custom_fixed_params}
         return fixed_params
 
     @abstractmethod
     def get_default_fixed_params(self):
+        """
+        Method to get the default fixed params dictionary. Empty by default.
+
+        Returns
+        -------
+        default_fixed_params : dict
+            dictionary of default fixed params
+        """
         default_fixed_params = {
 
         }
@@ -242,20 +391,48 @@ class BaseOptimizer(object):
 
     @abstractmethod
     def get_clf(self, individual):
+        """
+        Method to get the classifier from an individual. Abstract method implemented in each specific optimizer.
+
+        Parameters
+        ----------
+        individual : individual
+            individual to convert
+
+        Returns
+        -------
+        clf : classifier
+            classifier specific for the optimizer
+        """
         pass
 
     def evaluate_clf(self, individual):
         """
-        Method to evaluate the individual, in this case the classifier
+        Method to evaluate the classifier from an individual. It uses the eval_function to evaluate the classifier.
 
-        :param individual: individual for evaluation
-        :return: fitness
+        Parameters
+        ----------
+        individual : individual
+            individual to convert
+
+        Returns
+        -------
+        mean : float
+            mean of the evaluation
         """
         mean = self.eval_function(self.features, self.labels, self.get_clf(individual),
                                   score_function=self.score_function)
         return (mean,)
 
     def population_2_df(self):
+        """
+        Method to convert the population to a pandas dataframe
+
+        Returns
+        -------
+        df : pandas dataframe
+            dataframe with the population
+        """
         data = []
         n = 0
         for p in self.populations:
@@ -270,17 +447,41 @@ class BaseOptimizer(object):
         return df
 
     def _write_population_file(self, filename=None):
+        """
+        Method to write the population to a csv file
+
+        Parameters
+        ----------
+        filename : str, optional (default=None)
+            filename to save the population
+        """
         if filename is None:
             filename = os.path.join(self.results_path, 'populations.csv')
         self.population_2_df().sort_values(by=['fitness'], ascending=False
                                            ).to_csv(filename, index=False)
 
     def _write_logbook_file(self, filename=None):
+        """
+        Method to write the logbook to a csv file
+
+        Parameters
+        ----------
+        filename : str, optional (default=None)
+            filename to save the logbook
+        """
         if filename is None:
             filename = os.path.join(self.results_path, 'logbook.csv')
         pd.DataFrame(self.logbook).to_csv(filename, index=False)
 
     def _read_logbook_file(self, filename=None):
+        """
+        Method to read the logbook from a csv file
+
+        Parameters
+        ----------
+        filename : str, optional (default=None)
+            filename to read the logbook
+        """
         if filename is None:
             filename = os.path.join(self.results_path, 'logbook.csv')
         data = []
@@ -293,13 +494,23 @@ class BaseOptimizer(object):
     def optimize_clf(self, population: int = 10, generations: int = 3,
                      checkpoint: str = None, exe_folder: str = None) -> object:
         """
-        Searches through a genetic algorithm the best classifier
+        Method to optimize the classifier. It uses the custom_ea_simple method to optimize the classifier.
 
-        :param int population: Number of members of the first generation
-        :param int generations: Number of generations
-        :param str checkpoint: Path to a checkpoint file
-        :param str exe_folder: Path to the folder where the execution will be saved
-        :return: Trained classifier
+        Parameters
+        ----------
+        population : int, optional (default=10)
+            number of individuals in each generation
+        generations : int, optional (default=3)
+            number of generations
+        checkpoint : str, optional (default=None)
+            path to the checkpoint file
+        exe_folder : str, optional (default=None)
+            name of the folder where the execution will be saved
+
+        Returns
+        -------
+        clf : classifier
+            classifier with the best params
         """
         self.mloptimizer_logger.info("Initiating genetic optimization...")
         self.mloptimizer_logger.info("Algorithm: {}".format(type(self).__name__))
@@ -554,16 +765,12 @@ class BaseOptimizer(object):
 
 class TreeOptimizer(BaseOptimizer, ABC):
     """
-    Concrete optimizer for sklearn classifier -> sklearn.tree.DecisionTreeClassifier
+    Class for the optimization of a tree classifier from sklearn.tree.DecisionTreeClassifier.
+    It inherits from BaseOptimizer.
+
     """
 
     def get_clf(self, individual):
-        """
-        Build a classifier object from an individual one
-
-        :param individual: individual to create classifier
-        :return: classifier sklearn.tree.DecisionTreeClassifier
-        """
         individual_dict = self.individual2dict(individual)
 
         if "scale_pos_weight" in individual_dict.keys():
@@ -599,16 +806,12 @@ class TreeOptimizer(BaseOptimizer, ABC):
 
 class ForestOptimizer(TreeOptimizer, ABC):
     """
-    Concrete optimizer for sklearn random forest -> sklearn.ensemble.RandomForestClassifier
+    Class for the optimization of a forest classifier from sklearn.ensemble.RandomForestClassifier.
+    It inherits from TreeOptimizer.
+
     """
 
     def get_clf(self, individual):
-        """
-        Builds a classifier object from an individual one
-
-        :param individual: individual to create classifier
-        :return: classifier sklearn.ensemble.RandomForestClassifier
-        """
         individual_dict = self.individual2dict(individual)
 
         clf = RandomForestClassifier(n_estimators=individual_dict['n_estimators'],
@@ -645,17 +848,10 @@ class ForestOptimizer(TreeOptimizer, ABC):
 
 class ExtraTreesOptimizer(ForestOptimizer, ABC):
     """
-    Concrete optimizer for sklearn extra trees -> sklearn.ensemble.ExtraTreesClassifier
-    Use the same get_params() as ForestOptimizer
+    Class for the optimization of a extra trees classifier from sklearn.ensemble.ExtraTreesClassifier.
+    It inherits from ForestOptimizer.
     """
-
     def get_clf(self, individual):
-        """
-        Builds a classifier object from an individual one
-
-        :param individual: individual to create a classifier
-        :return: classifier ExtraTreesClassifier
-        """
         individual_dict = self.individual2dict(individual)
 
         class_weight = "balanced"
@@ -692,10 +888,9 @@ class ExtraTreesOptimizer(ForestOptimizer, ABC):
 
 class GradientBoostingOptimizer(ForestOptimizer, ABC):
     """
-    Concrete optimizer for sklearn gradient boosting -> sklearn.ensemble.GradientBoostingClassifier
-    Use the same get_params() as ForestOptimizer
+    Class for the optimization of a gradient boosting classifier from sklearn.ensemble.GradientBoostingClassifier.
+    It inherits from ForestOptimizer.
     """
-
     def get_params(self):
         """
         Params for the creation of individuals (relative to the algorithm)
@@ -714,12 +909,6 @@ class GradientBoostingOptimizer(ForestOptimizer, ABC):
         return params
 
     def get_clf(self, individual):
-        """
-        Builds a classifier object from an individual one
-
-        :param individual: individual to create a classifier
-        :return: classifier ExtraTreesClassifier
-        """
         individual_dict = self.individual2dict(individual)
         clf = GradientBoostingClassifier(n_estimators=individual_dict['n_estimators'],
                                          criterion="friedman_mse",
@@ -740,9 +929,9 @@ class GradientBoostingOptimizer(ForestOptimizer, ABC):
 
 class XGBClassifierOptimizer(BaseOptimizer, ABC):
     """
-    Concrete optimizer for extreme gradient boosting classifier -> xgb.XGBRegressor
+    Class for the optimization of a gradient boosting classifier from xgboost.XGBClassifier.
+    It inherits from BaseOptimizer.
     """
-
     @staticmethod
     def get_default_params():
         default_params = {
@@ -757,12 +946,6 @@ class XGBClassifierOptimizer(BaseOptimizer, ABC):
         return default_params
 
     def get_clf(self, individual):
-        """
-        Build a classifier object from an individual one
-
-        :param individual: individual to create classifier
-        :return: classifier xgb.XGBRegressor
-        """
         individual_dict = self.individual2dict(individual)
         clf = xgb.XGBClassifier(base_score=0.5,
                                 booster='gbtree',
@@ -788,9 +971,9 @@ class XGBClassifierOptimizer(BaseOptimizer, ABC):
 
 class CustomXGBClassifierOptimizer(BaseOptimizer, ABC):
     """
-    Concrete optimizer for extreme gradient boosting classifier -> using xgb.train
+    Class for the optimization of a gradient boosting classifier from alg_wrapper.CustomXGBClassifier.
+    It inherits from BaseOptimizer.
     """
-
     @staticmethod
     def get_default_params():
         default_params = {
@@ -815,12 +998,6 @@ class CustomXGBClassifierOptimizer(BaseOptimizer, ABC):
         return default_fixed_params
 
     def get_clf(self, individual):
-        """
-        Build a classifier object from an individual one
-
-        :param individual: individual to create classifier
-        :return: classifier alg_wrapper.CustomXGBClassifier
-        """
         individual_dict = self.individual2dict(individual)
         clf = CustomXGBClassifier(base_score=0.5,
                                   booster="gbtree",
@@ -845,9 +1022,9 @@ class CustomXGBClassifierOptimizer(BaseOptimizer, ABC):
 
 class CatBoostClassifierOptimizer(BaseOptimizer, ABC):
     """
-    Concrete optimizer for cat gradient boosting classifier -> CatBoostClassifier
+    Class for the optimization of a gradient boosting classifier from catboost.CatBoostClassifier.
+    It inherits from BaseOptimizer.
     """
-
     @staticmethod
     def get_default_params():
         default_params = {
@@ -859,12 +1036,6 @@ class CatBoostClassifierOptimizer(BaseOptimizer, ABC):
         return default_params
 
     def get_clf(self, individual):
-        """
-        Build a classifier object from an individual one
-
-        :param individual: individual to create classifier
-        :return: classifier CatBoostClassifier
-        """
         individual_dict = self.individual2dict(individual)
         clf = CatBoostClassifier(
             **individual_dict, auto_class_weights="Balanced",
@@ -875,9 +1046,9 @@ class CatBoostClassifierOptimizer(BaseOptimizer, ABC):
 
 class KerasClassifierOptimizer(BaseOptimizer, ABC):
     """
-    Concrete optimizer for KerasClassifier
+    Class for the optimization of a gradient boosting classifier from keras.wrappers.scikit_learn.KerasClassifier.
+    It inherits from BaseOptimizer.
     """
-
     @staticmethod
     def get_default_params():
         default_params = {
@@ -892,12 +1063,6 @@ class KerasClassifierOptimizer(BaseOptimizer, ABC):
         return default_params
 
     def get_clf(self, individual):
-        """
-        Build a classifier object from an individual one
-
-        :param individual: individual to create classifier
-        :return: classifier KerasClassifier
-        """
         individual_dict = self.individual2dict(individual)
         print(individual_dict)
         clf = KerasClassifier(build_fn=generate_model,
@@ -907,9 +1072,9 @@ class KerasClassifierOptimizer(BaseOptimizer, ABC):
 
 class SVCOptimizer(BaseOptimizer, ABC):
     """
-        Concrete optimizer for support vector machine SVC classifier -> sklearn.svm.SVC
-        """
-
+    Class for the optimization of a support vector machine classifier from sklearn.svm.SVC.
+    It inherits from BaseOptimizer.
+    """
     @staticmethod
     def get_default_params():
         default_params = {
@@ -920,12 +1085,6 @@ class SVCOptimizer(BaseOptimizer, ABC):
         return default_params
 
     def get_clf(self, individual):
-        """
-        Build a classifier object from an individual one
-
-        :param individual: individual to create classifier
-        :return: classifier SVM
-        """
         individual_dict = self.individual2dict(individual)
         clf = SVC(C=individual_dict['C'],
                   cache_size=8000000,
@@ -941,44 +1100,4 @@ class SVCOptimizer(BaseOptimizer, ABC):
                   tol=0.001,
                   verbose=False
                   )
-        return clf
-
-
-class MLPOptimizer(BaseOptimizer, ABC):
-    """
-        Concrete optimizer for support vector machine SVC classifier -> sklearn.svm.SVC
-        """
-
-    @staticmethod
-    def get_default_params():
-        default_params = {
-            'learning_rate_init': Param("lr", 1, 6, "nexp"),
-            'alpha': Param("alpha", 1, 6, "nexp"),
-            'layer1': Param("layer1", 5, 30, "x10"),
-            'layer2': Param("layer1", 1, 20, "x10"),
-            'layer3': Param("layer1", 1, 10, "x10")
-        }
-        return default_params
-
-    def get_clf(self, individual):
-        """
-        Build a classifier object from an individual one
-
-        :param individual: individual to create classifier
-        :return: classifier SVM
-        """
-        individual_dict = self.individual2dict(individual)
-
-        clf = MLPClassifier(activation="relu",
-                            solver="adam",
-                            learning_rate="constant",
-                            hidden_layer_sizes=(individual_dict['layer1'], individual_dict['layer2'],
-                                                individual_dict['layer3']),
-                            validation_fraction=0.1,
-                            early_stopping=True,
-                            max_iter=300,
-                            learning_rate_init=individual_dict['learning_rate_init'],
-                            alpha=individual_dict['alpha'],
-                            batch_size=200
-                            )
         return clf

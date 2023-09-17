@@ -6,12 +6,19 @@ from logging import Formatter
 
 def init_logger(filename='mloptimizer.log', log_path="."):
     """
-    Initializes a logger with the given filename and log_path.
-    The logger is configured to log INFO messages and above.
-    :param filename: the name of the log file
-    :param log_path: the path where the log file will be created
-    :return: the logger object and the log file path
-    :rtype: tuple
+    Initializes a logger and returns it.
+
+    Parameters
+    ----------
+    filename : str, optional
+        The name of the log file. The default is 'mloptimizer.log'.
+    log_path : str, optional
+        The path of the log file. The default is ".".
+
+    Returns
+    -------
+    custom_logger : logging.Logger
+        The logger.
     """
     filename = os.path.join(log_path, filename)
     log_format = (
@@ -29,11 +36,17 @@ def init_logger(filename='mloptimizer.log', log_path="."):
 
 def create_optimization_folder(folder):
     """
-    Creates a folder at the given path, if it doesn't already exist.
-    If the folder already exists, prompts the user to delete it.
-    :param folder: the path of the folder to be created
-    :return: the path of the folder
-    :rtype: str
+    Creates a folder to save the results of the optimization.
+
+    Parameters
+    ----------
+    folder : str
+        The path of the folder to create.
+
+    Returns
+    -------
+    folder : str
+        The path of the folder created.
     """
     if folder is None:
         folder = os.path.join(os.curdir, "Optimizer")

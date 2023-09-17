@@ -6,8 +6,17 @@ import plotly.graph_objects as go
 
 def logbook_to_pandas(logbook):
     """
-    :param logbook: A logbook from :class:`~mloptimizer.genoptimizer.BaseOptimizer`
-    :return: A pandas dataframe with the logbook
+    Function to transform a deap logbook to a pandas dataframe.
+
+    Parameters
+    ----------
+    logbook : deap.tools.Logbook
+        The logbook to transform
+
+    Returns
+    -------
+    df : pd.DataFrame
+        The logbook as a pandas dataframe
     """
     data = logbook.chapters["parameters"]
     df = pd.DataFrame(data)
@@ -16,8 +25,19 @@ def logbook_to_pandas(logbook):
 
 def plotly_logbook(logbook, population):
     """
-    :param logbook: A logbook from :class:`~mloptimizer.genoptimizer.BaseOptimizer`
-    :return: A plotly line plot of the logbook
+    Generate plotly figure from logbook. Evolution of fitness and population.
+
+    Parameters
+    ----------
+    logbook : deap.tools.Logbook
+        The logbook to plot
+    population : pd.DataFrame
+        The population to plot
+
+    Returns
+    -------
+    fig : plotly.graph_objects.Figure
+        The figure
     """
     df = pd.DataFrame(logbook)
     fig = go.Figure()
@@ -93,8 +113,17 @@ def plotly_logbook(logbook, population):
 
 def plot_logbook(logbook):
     """
-    :param logbook: A logbook from :class:`~mloptimizer.genoptimizer.BaseOptimizer`
-    :return: A line plot of the logbook
+    Generate sns figure from logbook. Evolution of fitness and population.
+
+    Parameters
+    ----------
+    logbook : deap.tools.Logbook
+        The logbook to plot
+
+    Returns
+    -------
+    fig : plotly.graph_objects.Figure
+        The figure
     """
     df = pd.DataFrame(logbook)
     g = sns.lineplot(df.drop(columns=['gen', 'nevals']))
@@ -103,9 +132,19 @@ def plot_logbook(logbook):
 
 def plotly_search_space(populations_df: pd.DataFrame, features: list = None):
     """
-    :param pd.DataFrame populations_df: A dataframe with the population
-    :param list features: The features to plot
-    :return: A pairplot of the search space
+    Generate plotly figure from populations dataframe and features. Search space.
+
+    Parameters
+    ----------
+    populations_df : pd.DataFrame
+        The dataframe with the population
+    features : list
+        The features to plot
+
+    Returns
+    -------
+    fig : plotly.graph_objects.Figure
+        The figure
     """
     if features is None:
         features = populations_df.columns
@@ -129,11 +168,23 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None):
 
 def plot_search_space(populations_df: pd.DataFrame, height=2, s=25, features: list = None):
     """
-    :param pd.DataFrame populations_df: A dataframe with the population
-    :param int height: The height of the plot
-    :param int s: The size of the points
-    :param list features: The features to plot
-    :return: A pairplot of the search space
+    Generate sns figure from populations dataframe and features. Search space.
+
+    Parameters
+    ----------
+    populations_df : pd.DataFrame
+        The dataframe with the population
+    height : int
+        The height of the figure
+    s : int
+        The size of the points
+    features : list
+        The features to plot
+
+    Returns
+    -------
+    fig : plotly.graph_objects.Figure
+        The figure
     """
     sns.set_style("white")
     g = sns.PairGrid(populations_df, diag_sharey=False, height=height)

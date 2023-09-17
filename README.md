@@ -1,4 +1,7 @@
 [![Documentation Status](https://readthedocs.org/projects/mloptimizer/badge/?version=latest)](https://mloptimizer.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/mloptimizer.svg)](https://badge.fury.io/py/mloptimizer)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/mloptimizer.svg)](https://pypi.python.org/pypi/mloptimizer/)
+[![Coverage Status](http://codecov.io/github/Caparrini/mloptimizer/coverage.svg?branch=master)](https://codecov.io/gh/Caparrini/mloptmizer/branch/master)
 
 # mloptimizer
 
@@ -24,6 +27,8 @@ To install `mloptimizer`, run:
 pip install mloptimizer
 ```
 
+You can get more information about the package installation at https://pypi.org/project/mloptimizer/.
+
 
 ### Quickstart
 
@@ -35,14 +40,18 @@ from sklearn.datasets import load_iris
 
 X, y = load_iris(return_X_y=True)
 
-# The log file will be created in the current directory and will have info about optimizations performed
-opt = TreeOptimizer(X, y, "output_log_file.log")
+#   
+opt = TreeOptimizer(X, y, "Optimizer")
 
 clf = opt.optimize_clf(10, 10)
 ```
 
-The las line of code will create a directory in the current folder with a name similar to `YYYYMMDD_nnnnnnnnnn_TreeOptimizer`.
-This folder contains a backup file for each generation and an `opt.log` inform with all the steps, the best estimator and the result of the optimization.
+The last line of code will create a directory in the current folder with a name like `YYYYMMDD_nnnnnnnnnn_TreeOptimizer`.
+This folder contains the results of the optimization, 
+including the best estimator found and the log file `opt.log` informing with all the steps, 
+the best estimator and the result of the optimization.
+
+More details in the [documentation](http://mloptimizer.readthedocs.io/).
 
 ## Dependencies
 
@@ -50,11 +59,13 @@ The following dependencies are used in `mloptimizer`:
 
 * [Deap](https://github.com/DEAP/deap) - Genetic Algorithms
 * [XGBoost](https://github.com/dmlc/xgboost) - Gradient boosting classifier
-* [Scikit-Learn](https://github.com/scikit-learn/scikit-learn) - Usado para generar RSS
+* [Scikit-Learn](https://github.com/scikit-learn/scikit-learn) - Machine learning algorithms and utilities
+* [Keras](https://keras.io) - Deep learning library
 
 ## Documentation
 
 The documentation for `mloptimizer` can be found in the project's [wiki](http://mloptimizer.readthedocs.io/)
+with examples and classes and methods reference.
 
 ## Authors
 

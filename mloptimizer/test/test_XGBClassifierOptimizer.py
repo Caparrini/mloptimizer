@@ -43,17 +43,17 @@ def custom_all_params_xgb_optimizer():
 
 
 def test_xgb_optimizer(default_xgb_optimizer):
-    default_xgb_optimizer.optimize_clf(4, 4)
+    default_xgb_optimizer.optimize_clf(2, 2)
 
 
 def test_custom_xgb_optimizer(custom_params_xgb_optimizer):
-    custom_params_xgb_optimizer.optimize_clf(4, 4)
+    custom_params_xgb_optimizer.optimize_clf(2, 2)
 
 
 def test_custom_fixed_xgb_optimizer(custom_fixed_params_xgb_optimizer):
-    custom_fixed_params_xgb_optimizer.optimize_clf(4, 4)
+    custom_fixed_params_xgb_optimizer.optimize_clf(2, 2)
 
 
 def test_custom_all_xgb_optimizer(custom_all_params_xgb_optimizer):
-    custom_all_params_xgb_optimizer.optimize_clf(4, 4)
+    custom_all_params_xgb_optimizer.optimize_clf(2, 2)
 

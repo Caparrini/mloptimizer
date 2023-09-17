@@ -8,13 +8,23 @@ from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit
 
 def unpack_df(df, target_variable="class"):
     """
-    Extract classes, features, and labels from a pandas.DataFrame.
-    One column of the DataFrame should be called as target_variable="class" and
-    the rest are features.
+    Unpacks a dataframe into a list of classes, a np.array of features and a np.array of labels.
 
-    :param DataFrame df: pandas.DataFrame with the dataset
-    :param str target_variable: str with the name of the target column
-    :return: Classes, features, labels
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe with the data
+    target_variable : str
+        Name of the target variable column
+
+    Returns
+    -------
+    class_list : list
+        List of classes
+    features : np.array
+        Array of features
+    labels : np.array
+        Array of labels
     """
     class_list = list(df[target_variable].drop_duplicates())
     labels = df[target_variable]
@@ -27,16 +37,28 @@ def kfold_stratified_score(features, labels, clf, n_splits=4, score_function=bal
     """
     Computes KFold cross validation score using n_splits folds.
     It uses the features and labels to train the k-folds.
-    Uses a stratified KFold with the random_state specified.
+    Uses a stratified KFold split.
     The score_function is the one used to score each k-fold.
 
-    :param list features: List of features
-    :param list labels: List of labels
-    :param clf: classifier with methods fit, predict and score
-    :param n_splits: number of splits
-    :param func score_function: function that receives X, y and return a score
-    :param random_state: random state seed
-    :return: mean score among k-folds test splits
+    Parameters
+    ----------
+    features : list
+        List of features
+    labels : list
+        List of labels
+    clf : object
+        classifier with methods fit, predict and score
+    n_splits : int
+        number of splits
+    score_function : func
+        function that receives X, y and return a score
+    random_state : int
+        random state for the stratified kfold
+
+    Returns
+    -------
+    mean_accuracy : float
+        mean score among k-folds test splits
     """
     logging.info("KFold Stratified accuracy\nClassifier:{}\nn_splits:{}\n"
                  "score_metric:{}".format(clf, n_splits, score_function))
@@ -104,12 +126,23 @@ def temporal_kfold_score(features, labels, clf, n_splits=4, score_function=balan
     Uses a temporal KFold split.
     The score_function is the one used to score each k-fold.
 
-    :param list features: List of features
-    :param list labels: List of labels
-    :param clf: classifier with methods fit, predict and score
-    :param n_splits: number of splits
-    :param func score_function: function that receives X, y and return a score
-    :return: mean score among k-folds test splits
+    Parameters
+    ----------
+    features : list
+        List of features
+    labels : list
+        List of labels
+    clf : object
+        classifier with methods fit, predict and score
+    n_splits : int
+        number of splits
+    score_function : func
+        function that receives X, y and return a score
+
+    Returns
+    -------
+    mean_accuracy : float
+        mean score among k-folds test splits
     """
     logging.info("TemporalKFold accuracy\nClassifier:{}\nn_splits:{}\n"
                  "score_metric:{}".format(clf, n_splits, score_function))
