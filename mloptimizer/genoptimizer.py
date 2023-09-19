@@ -561,7 +561,7 @@ class BaseOptimizer(object):
                 exe_name = exe_folder
             else:
                 exe_name = "{}_{}".format(
-                    datetime.now().strftime("%Y%m%d_%s"),
+                    datetime.now().strftime("%Y%m%d_%H%M%S"),
                     type(self).__name__)
             self.exe_path = os.path.join(self.folder, exe_name)
             self.checkpoint_path = os.path.join(self.exe_path, "checkpoints")
