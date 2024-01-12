@@ -6,32 +6,6 @@ from sklearn.metrics import balanced_accuracy_score
 from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit
 
 
-def unpack_df(df, target_variable="class"):
-    """
-    Unpacks a dataframe into a list of classes, a np.array of features and a np.array of labels.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Dataframe with the data
-    target_variable : str
-        Name of the target variable column
-
-    Returns
-    -------
-    class_list : list
-        List of classes
-    features : np.array
-        Array of features
-    labels : np.array
-        Array of labels
-    """
-    class_list = list(df[target_variable].drop_duplicates())
-    labels = df[target_variable]
-    features = np.array(df.drop(columns=[target_variable]))
-    return class_list, features, labels
-
-
 def kfold_stratified_score(features, labels, clf, n_splits=4, score_function=balanced_accuracy_score,
                            random_state=None):
     """
