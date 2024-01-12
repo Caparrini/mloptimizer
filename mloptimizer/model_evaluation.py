@@ -2,8 +2,36 @@ import logging
 import time
 
 import numpy as np
-from sklearn.metrics import balanced_accuracy_score
+from sklearn.metrics import balanced_accuracy_score, accuracy_score
 from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit
+
+
+def train_score(features, labels, clf, score_function=accuracy_score):
+    """
+    Trains the classifier with the features and labels.
+
+    Parameters
+    ----------
+    features : list
+        List of features
+    labels : list
+        List of labels
+    clf : object
+        classifier with methods fit, predict and score
+    score_function : func
+        function that receives y, y_pred and return a score
+
+    Returns
+    -------
+    accuracy : float
+        score of the classifier
+    """
+    logging.info("Score metric over training data\nClassifier:{}\nscore_metric:{}".format(clf, score_function))
+    clf.fit(features, labels)
+    predictions = clf.predict(features)
+    accuracy = score_function(labels, predictions)
+    logging.info("Accuracy: {:.3f}".format(round(accuracy, 3)))
+    return accuracy
 
 
 def kfold_stratified_score(features, labels, clf, n_splits=4, score_function=balanced_accuracy_score,
