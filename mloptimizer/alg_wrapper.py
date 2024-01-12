@@ -215,7 +215,7 @@ class CustomXGBClassifier(BaseEstimator):
         """
         check_array(X)
         dtest = xgb.DMatrix(X)
-        preds = np.array(self._xclf.predict(dtest, ntree_limit=self._xclf.best_iteration))
+        preds = np.array(self._xclf.predict(dtest))
         preds = preds > 0.5
         preds = preds.astype(int)
         return preds
