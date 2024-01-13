@@ -49,4 +49,4 @@ def test_x10_param_correct(x10_param):
 
 def test_str_float_param(float_param):
     float_param_str = str(float_param)
-    assert float_param_str == "Param('float_param', 1, 200, float, 100)"
+    assert float_param_str == "Hyperparam('float_param', 1, 200, float, 100)"
