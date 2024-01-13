@@ -3,7 +3,8 @@ import time
 
 import numpy as np
 from sklearn.metrics import balanced_accuracy_score, accuracy_score
-from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit
+from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit, \
+    train_test_split, KFold
 
 
 def train_score(features, labels, clf, score_function=accuracy_score):
@@ -31,6 +32,51 @@ def train_score(features, labels, clf, score_function=accuracy_score):
     predictions = clf.predict(features)
     accuracy = score_function(labels, predictions)
     logging.info("Accuracy: {:.3f}".format(round(accuracy, 3)))
+    return accuracy
+
+
+def train_test_score(features, labels, clf, score_function=accuracy_score, test_size=0.2, random_state=None):
+    """
+    Trains the classifier with the train set features and labels,
+    then uses the test features and labels to create score.
+
+    Parameters
+    ----------
+    features : list
+        List of features
+    labels : list
+        List of labels
+    clf : object
+        Classifier with methods fit, predict, and score
+    score_function : func, optional
+        Function that receives y_true and y_pred and returns a score
+    test_size : float, optional
+        Proportion of the dataset to include in the test split
+    random_state : int, optional
+        Controls the shuffling applied to the data before applying the split
+
+    Returns
+    -------
+    accuracy : float
+        Score of the classifier on the test set
+    """
+    # Splitting the dataset into training and testing sets
+    features_train, features_test, labels_train, labels_test = train_test_split(
+        features, labels, test_size=test_size, random_state=random_state
+    )
+
+    # Training the classifier
+    clf.fit(features_train, labels_train)
+
+    # Making predictions on the test set
+    predictions = clf.predict(features_test)
+
+    # Calculating the accuracy
+    accuracy = score_function(labels_test, predictions)
+
+    logging.info("Score metric over test data\nClassifier:{}\nscore_metric:{}".format(clf, score_function))
+    logging.info("Accuracy: {:.3f}".format(round(accuracy, 3)))
+
     return accuracy
 
 
