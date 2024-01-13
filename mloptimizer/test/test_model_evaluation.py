@@ -1,5 +1,5 @@
 from mloptimizer.model_evaluation import kfold_stratified_score, temporal_kfold_score, \
-    train_score, train_test_score
+    train_score, train_test_score, kfold_score
 import pytest
 from sklearn.datasets import make_classification
 from sklearn.tree import DecisionTreeClassifier
@@ -41,5 +41,13 @@ def test_test_train_score(classification_mock_data):
     features, labels = classification_mock_data
     clf = DecisionTreeClassifier()
     accuracy = train_test_score(features, labels, clf, score_function=accuracy_score)
+    assert isinstance(accuracy, float)
+    assert 0 <= accuracy <= 1
+
+
+def test_kfold_score(classification_mock_data):
+    features, labels = classification_mock_data
+    clf = DecisionTreeClassifier()
+    accuracy = kfold_score(features, labels, clf, score_function=accuracy_score)
     assert isinstance(accuracy, float)
     assert 0 <= accuracy <= 1

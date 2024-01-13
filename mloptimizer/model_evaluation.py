@@ -80,6 +80,52 @@ def train_test_score(features, labels, clf, score_function=accuracy_score, test_
     return accuracy
 
 
+def kfold_score(features, labels, clf, score_function=accuracy_score, n_splits=5, random_state=None):
+    """
+    Evaluates the classifier using K-Fold cross-validation.
+
+    Parameters
+    ----------
+    features : array-like
+        Array of features
+    labels : array-like
+        Array of labels
+    clf : object
+        Classifier with methods fit and predict
+    score_function : func, optional
+        Function that receives y_true and y_pred and returns a score
+    n_splits : int, optional
+        Number of folds. Must be at least 2
+    random_state : int, optional
+        Controls the randomness of the fold assignment
+
+    Returns
+    -------
+    average_score : float
+        Average score of the classifier across all folds
+    """
+    logging.info("K-Fold accuracy\nClassifier:{}\nn_splits:{}\nscore_metric:{}".format(
+        clf, n_splits, score_function))
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+    scores = []
+
+    for train_index, test_index in kf.split(features):
+        features_train, features_test = features[train_index], features[test_index]
+        labels_train, labels_test = labels[train_index], labels[test_index]
+
+        clf.fit(features_train, labels_train)
+        predictions = clf.predict(features_test)
+        score = score_function(labels_test, predictions)
+        scores.append(score)
+
+        logging.info("Fold score: {:.3f}".format(score))
+
+    average_score = np.mean(scores)
+    logging.info("Average K-Fold Score: {:.3f}".format(average_score))
+
+    return average_score
+
+
 def kfold_stratified_score(features, labels, clf, n_splits=4, score_function=balanced_accuracy_score,
                            random_state=None):
     """
