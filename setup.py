@@ -129,6 +129,7 @@ setup(
         #"matplotlib~=3.7.1",
         "plotly>=5.15.0",
         "sphinx-gallery==0.14.0",
+        "sphinx_rtd_theme",
         "kaleido"
     ],  # Optional
     # List additional groups of dependencies here (e.g. development
