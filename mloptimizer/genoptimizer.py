@@ -198,14 +198,14 @@ class BaseOptimizer(object):
     logbook : list
         list of logbook
     seed : int
-        seed for the random functions TODO
+        seed for the random functions
     """
     __metaclass__ = ABCMeta
 
     def __init__(self, features: np.array, labels: np.array, folder=None, log_file="mloptimizer.log",
                  custom_params: dict = {},
                  custom_fixed_params: dict = {}, eval_function=kfold_stratified_score,
-                 score_function=balanced_accuracy_score, seed=0):
+                 score_function=balanced_accuracy_score, seed=random.randint(0, 1000000)):
         """
         Creates object BaseOptimizer.
 
@@ -228,7 +228,7 @@ class BaseOptimizer(object):
         score_function : func, optional (default=balanced_accuracy_score)
             function to score from y, y_pred
         seed : int, optional (default=0)
-            seed for the random functions TODO
+            seed for the random functions (deap, models, and splits on evaluations)
         """
         # Input mandatory variables
         self.features = features
@@ -256,7 +256,21 @@ class BaseOptimizer(object):
         self.eval_dict = {}
         self.populations = []
         self.logbook = None
-        self.seed = seed
+        self.mlopt_seed = None
+        self.set_mlopt_seed(seed)
+
+    def set_mlopt_seed(self, seed):
+        """
+        Method to set the seed for the random functions
+
+        Parameters
+        ----------
+        seed : int
+            seed for the random functions
+        """
+        self.mlopt_seed = seed
+        random.seed(seed)
+        np.random.seed(seed)
 
     @staticmethod
     def get_subclasses(my_class):
@@ -620,7 +634,7 @@ class BaseOptimizer(object):
         plt.close()
 
         g2 = plotly_logbook(self.logbook, population_df)
-        #g2.savefig(os.path.join(self.graphics_path, "logbook.png"))
+        # g2.savefig(os.path.join(self.graphics_path, "logbook.png"))
         g2.write_html(os.path.join(self.graphics_path, "logbook.html"))
         plt.close()
 
@@ -851,6 +865,7 @@ class ExtraTreesOptimizer(ForestOptimizer, ABC):
     Class for the optimization of a extra trees classifier from sklearn.ensemble.ExtraTreesClassifier.
     It inherits from ForestOptimizer.
     """
+
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
 
@@ -891,6 +906,7 @@ class GradientBoostingOptimizer(ForestOptimizer, ABC):
     Class for the optimization of a gradient boosting classifier from sklearn.ensemble.GradientBoostingClassifier.
     It inherits from ForestOptimizer.
     """
+
     def get_params(self):
         """
         Params for the creation of individuals (relative to the algorithm)
@@ -932,6 +948,7 @@ class XGBClassifierOptimizer(BaseOptimizer, ABC):
     Class for the optimization of a gradient boosting classifier from xgboost.XGBClassifier.
     It inherits from BaseOptimizer.
     """
+
     @staticmethod
     def get_default_params():
         default_params = {
@@ -962,7 +979,7 @@ class XGBClassifierOptimizer(BaseOptimizer, ABC):
                                 # reg_alpha=0,
                                 # reg_lambda=1,
                                 scale_pos_weight=individual_dict['scale_pos_weight'],
-                                seed=0,
+                                seed=self.mlopt_seed,
                                 subsample=individual_dict['subsample'],
                                 # tree_method="gpu_hist"
                                 )
@@ -974,6 +991,7 @@ class CustomXGBClassifierOptimizer(BaseOptimizer, ABC):
     Class for the optimization of a gradient boosting classifier from alg_wrapper.CustomXGBClassifier.
     It inherits from BaseOptimizer.
     """
+
     @staticmethod
     def get_default_params():
         default_params = {
@@ -1010,7 +1028,7 @@ class CustomXGBClassifierOptimizer(BaseOptimizer, ABC):
                                   max_delta_step=0,
                                   max_depth=individual_dict['max_depth'],
                                   min_child_weight=individual_dict['min_child_weight'],
-                                  seed=1,
+                                  seed=self.mlopt_seed,
                                   alpha=individual_dict['alpha'],
                                   reg_lambda=individual_dict['lambda'],
                                   num_boost_round=individual_dict['num_boost_round'],
@@ -1025,6 +1043,7 @@ class CatBoostClassifierOptimizer(BaseOptimizer, ABC):
     Class for the optimization of a gradient boosting classifier from catboost.CatBoostClassifier.
     It inherits from BaseOptimizer.
     """
+
     @staticmethod
     def get_default_params():
         default_params = {
@@ -1049,6 +1068,7 @@ class KerasClassifierOptimizer(BaseOptimizer, ABC):
     Class for the optimization of a gradient boosting classifier from keras.wrappers.scikit_learn.KerasClassifier.
     It inherits from BaseOptimizer.
     """
+
     @staticmethod
     def get_default_params():
         default_params = {
@@ -1075,6 +1095,7 @@ class SVCOptimizer(BaseOptimizer, ABC):
     Class for the optimization of a support vector machine classifier from sklearn.svm.SVC.
     It inherits from BaseOptimizer.
     """
+
     @staticmethod
     def get_default_params():
         default_params = {
