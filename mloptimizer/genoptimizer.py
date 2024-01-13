@@ -124,10 +124,10 @@ class Hyperparam(object):
     def __str__(self):
         """Overrides the default implementation"""
         type_str = ""
-        if self.type is type:
-            type_str = self.type.__name__
-        elif self.type is str:
+        if self.type is str:
             type_str = "'{}'".format(self.type)
+        else:
+            type_str = self.type.__name__
 
         if self.type == float:
             hyperparam_str = "Hyperparam('{}', {}, {}, {}, {})".format(
