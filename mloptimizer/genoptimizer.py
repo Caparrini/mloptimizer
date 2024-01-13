@@ -811,7 +811,7 @@ class TreeOptimizer(BaseOptimizer, ABC):
         default_params = {
             "min_samples_split": Param("min_samples_split", 2, 50, int),
             "min_samples_leaf": Param("min_samples_leaf", 1, 20, int),
-            "max_depth": Param("max_depth", 2, 50, int),
+            "max_depth": Param("max_depth", 2, 20, int),
             "min_impurity_decrease": Param("min_impurity_decrease", 0, 150, float, 1000),
             "ccp_alpha": Param("ccp_alpha", 0, 300, float, 100000)
         }
@@ -955,7 +955,7 @@ class XGBClassifierOptimizer(BaseOptimizer, ABC):
             'colsample_bytree': Param("colsample_bytree", 3, 10, float, 10),
             'gamma': Param("gamma", 0, 20, int),
             'learning_rate': Param("learning_rate", 1, 100, float, 1000),
-            'max_depth': Param("max_depth", 3, 30, int),
+            'max_depth': Param("max_depth", 3, 20, int),
             'n_estimators': Param("n_estimators", 100, 500, int),
             'subsample': Param("subsample", 700, 1000, float, 1000),
             'scale_pos_weight': Param("scale_pos_weight", 15, 40, float, 100)
