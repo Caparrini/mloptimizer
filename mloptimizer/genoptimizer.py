@@ -25,44 +25,44 @@ from mloptimizer.model_evaluation import kfold_stratified_score
 from mloptimizer.plots import plotly_logbook, plotly_search_space
 
 
-class Param(object):
+class Hyperparam(object):
     """
-    Class to define a param to optimize. It defines the name, min value, max value and type.
-    This is used to control the precision of the param and avoid multiple evaluations
-    with close values of the param due to decimal positions.
+    Class to define a hyperparam to optimize. It defines the name, min value, max value and type.
+    This is used to control the precision of the hyperparam and avoid multiple evaluations
+    with close values of the hyperparam due to decimal positions.
 
 
     Attributes
     ----------
     name : str
-        Name of the param. It will be used as key in a dictionary
+        Name of the hyperparam. It will be used as key in a dictionary
     min_value : int
-        Minimum value of the param
+        Minimum value of the hyperparam
     max_value : int
-        Maximum value of the param
+        Maximum value of the hyperparam
     type : type
-        Type of the param (int, float, 'nexp', 'x10')
+        Type of the hyperparam (int, float, 'nexp', 'x10')
     denominator : int, optional (default=100)
         Optional param in case the type=float
     values_str : list, optional (default=[])
         List of string with possible values (TODO)
     """
 
-    def __init__(self, name: str, min_value: int, max_value: int, param_type,
+    def __init__(self, name: str, min_value: int, max_value: int, hyperparam_type,
                  denominator: int = 100, values_str: list = None):
         """
-        Creates object Param.
+        Creates object Hyperparam.
 
         Parameters
         ----------
         name : str
-            Name of the param. It will be used as key in a dictionary
+            Name of the hyperparam. It will be used as key in a dictionary
         min_value : int
-            Minimum value of the param
+            Minimum value of the hyperparam
         max_value : int
-            Maximum value of the param
+            Maximum value of the hyperparam
         type : type
-            Type of the param (int, float, 'nexp', 'x10')
+            Type of the hyperparam (int, float, 'nexp', 'x10')
         denominator : int, optional (default=100)
             Optional param in case the type=float
         values_str : list, optional (default=[])
@@ -73,13 +73,13 @@ class Param(object):
         self.name = name
         self.min_value = min_value
         self.max_value = max_value
-        self.type = param_type
+        self.type = hyperparam_type
         self.denominator = denominator
         self.values_str = values_str
 
     def correct(self, value: int):
         """
-        Returns the real value of the param in case some mutation could surpass the limits.
+        Returns the real value of the hyperparam in case some mutation could surpass the limits.
             1) Verifies the input is int
             2) Enforce min and max value
             3) Apply the type of value
@@ -114,22 +114,23 @@ class Param(object):
             ret = value * 10
         return ret
 
-    def __eq__(self, other_param):
+    def __eq__(self, other_hyperparam):
         """Overrides the default implementation"""
-        equals = (self.name == other_param.name and self.min_value == other_param.min_value and
-                  self.type == other_param.type and self.denominator == other_param.denominator and
-                  self.max_value == other_param.max_value)
+        equals = (self.name == other_hyperparam.name and self.min_value == other_hyperparam.min_value and
+                  self.type == other_hyperparam.type and self.denominator == other_hyperparam.denominator and
+                  self.max_value == other_hyperparam.max_value)
         return equals
 
     def __str__(self):
         """Overrides the default implementation"""
-        if type(self.type) == type:
+        type_str = ""
+        if self.type is type:
             type_str = self.type.__name__
-        elif type(self.type) == str:
+        elif self.type is str:
             type_str = "'{}'".format(self.type)
 
         if self.type == float:
-            param_str = "Param('{}', {}, {}, {}, {})".format(
+            hyperparam_str = "Hyperparam('{}', {}, {}, {}, {})".format(
                 self.name,
                 self.min_value,
                 self.max_value,
@@ -137,14 +138,14 @@ class Param(object):
                 self.denominator
             )
         else:
-            param_str = "Param('{}', {}, {}, {})".format(
+            hyperparam_str = "Hyperparam('{}', {}, {}, {})".format(
                 self.name,
                 self.min_value,
                 self.max_value,
                 type_str
             )
 
-        return param_str
+        return hyperparam_str
 
     def __repr__(self):
         """Overrides the default implementation"""
@@ -161,14 +162,14 @@ class BaseOptimizer(object):
         np.array with the features
     labels : np.array
         np.array with the labels
-    custom_params : dict
-        dictionary with custom params
-    custom_fixed_params : dict
-        dictionary with custom fixed params
-    fixed_params : dict
-        dictionary with fixed params
-    params : dict
-        dictionary with params
+    custom_hyperparams : dict
+        dictionary with custom hyperparams
+    custom_fixed_hyperparams : dict
+        dictionary with custom fixed hyperparams
+    fixed_hyperparams : dict
+        dictionary with fixed hyperparams
+    hyperparams : dict
+        dictionary with hyperparams
     folder : path
         folder to store the structure of files and folders product of executions
     log_file : str
@@ -203,8 +204,8 @@ class BaseOptimizer(object):
     __metaclass__ = ABCMeta
 
     def __init__(self, features: np.array, labels: np.array, folder=None, log_file="mloptimizer.log",
-                 custom_params: dict = {},
-                 custom_fixed_params: dict = {}, eval_function=kfold_stratified_score,
+                 custom_hyperparams: dict = {},
+                 custom_fixed_hyperparams: dict = {}, eval_function=kfold_stratified_score,
                  score_function=balanced_accuracy_score, seed=random.randint(0, 1000000)):
         """
         Creates object BaseOptimizer.
@@ -219,10 +220,10 @@ class BaseOptimizer(object):
             folder to store the structure of files and folders product of executions
         log_file : str, optional (default="mloptimizer.log")
             log file name
-        custom_params : dict, optional (default={})
-            dictionary with custom params
-        custom_fixed_params : dict, optional (default={})
-            dictionary with custom fixed params
+        custom_hyperparams : dict, optional (default={})
+            dictionary with custom hyperparams
+        custom_fixed_hyperparams : dict, optional (default={})
+            dictionary with custom fixed hyperparams
         eval_function : func, optional (default=kfold_stratified_score)
             function to evaluate the model from X, y, clf
         score_function : func, optional (default=balanced_accuracy_score)
@@ -233,11 +234,11 @@ class BaseOptimizer(object):
         # Input mandatory variables
         self.features = features
         self.labels = labels
-        # Input parameters (optional)
-        self.custom_params = custom_params
-        self.custom_fixed_params = custom_fixed_params
-        self.fixed_params = self.get_fixed_params()
-        self.params = self.get_params()
+        # Input hyperparameters (optional)
+        self.custom_hyperparams = custom_hyperparams
+        self.custom_fixed_hyperparams = custom_fixed_hyperparams
+        self.fixed_hyperparams = self.get_fixed_hyperparams()
+        self.hyperparams = self.get_hyperparams()
         # Main folder (autogenerated if None)
         self.folder = miscellaneous.create_optimization_folder(folder)
         # Log files
@@ -322,15 +323,15 @@ class BaseOptimizer(object):
             individual
         """
         ps = []
-        for k in self.params.keys():
-            ps.append(randint(self.params[k].min_value, self.params[k].max_value))
+        for k in self.hyperparams.keys():
+            ps.append(randint(self.hyperparams[k].min_value, self.hyperparams[k].max_value))
         ind = pcls(ps)
         return ind
 
     @abstractmethod
     def individual2dict(self, individual):
         """
-        Method to convert an individual to a dictionary of params
+        Method to convert an individual to a dictionary of hyperparams
 
         Parameters
         ----------
@@ -340,68 +341,68 @@ class BaseOptimizer(object):
         Returns
         -------
         individual_dict : dict
-            dictionary of params
+            dictionary of hyperparams
         """
         individual_dict = {}
-        keys = list(self.params.keys())
+        keys = list(self.hyperparams.keys())
         for i in range(len(keys)):
-            individual_dict[keys[i]] = self.params[keys[i]].correct(individual[i])
-        return {**individual_dict, **self.get_fixed_params()}
+            individual_dict[keys[i]] = self.hyperparams[keys[i]].correct(individual[i])
+        return {**individual_dict, **self.get_fixed_hyperparams()}
 
     @abstractmethod
-    def get_params(self):
+    def get_hyperparams(self):
         """
-        Method to get the params to optimize. First the fixed params are removed from the list, then
-        the custom override the default params.
+        Method to get the hyperparams to optimize. First the fixed hyperparams are removed from the list, then
+        the custom override the default hyperparams.
 
         Returns
         -------
-        params : dict
-            dictionary of params
+        hyperparams : dict
+            dictionary of hyperparams
         """
-        params = {}
-        default_params = self.get_default_params()
-        for k in self.custom_fixed_params.keys():
-            default_params.pop(k, None)
+        hyperparams = {}
+        default_hyperparams = self.get_default_hyperparams()
+        for k in self.custom_fixed_hyperparams.keys():
+            default_hyperparams.pop(k, None)
 
-        for k in default_params.keys():
-            if k in self.custom_params:
-                params[k] = self.custom_params[k]
+        for k in default_hyperparams.keys():
+            if k in self.custom_hyperparams:
+                hyperparams[k] = self.custom_hyperparams[k]
             else:
-                params[k] = default_params[k]
+                hyperparams[k] = default_hyperparams[k]
 
-        # Return all the params
-        return params
+        # Return all the hyperparams
+        return hyperparams
 
     @abstractmethod
-    def get_fixed_params(self):
+    def get_fixed_hyperparams(self):
         """
-        Method to get the fixed params dictionary. These params are stores using
-        only the name of the param and the target values (not as Param objects that are only used
+        Method to get the fixed hyperparams dictionary. These hyperparams are stores using
+        only the name of the hyperparam and the target values (not as Hyperparam objects that are only used
         in hyperparameters that are evolved).
 
         Returns
         -------
-        fixed_params : dict
-            dictionary of fixed params
+        fixed_hyperparams : dict
+            dictionary of fixed hyperparams
         """
-        fixed_params = {**self.get_default_fixed_params(), **self.custom_fixed_params}
-        return fixed_params
+        fixed_hyperparams = {**self.get_default_fixed_hyperparams(), **self.custom_fixed_hyperparams}
+        return fixed_hyperparams
 
     @abstractmethod
-    def get_default_fixed_params(self):
+    def get_default_fixed_hyperparams(self):
         """
-        Method to get the default fixed params dictionary. Empty by default.
+        Method to get the default fixed hyperparams dictionary. Empty by default.
 
         Returns
         -------
-        default_fixed_params : dict
-            dictionary of default fixed params
+        default_fixed_hyperparams : dict
+            dictionary of default fixed hyperparams
         """
-        default_fixed_params = {
+        default_fixed_hyperparams = {
 
         }
-        return default_fixed_params
+        return default_fixed_hyperparams
 
     @abstractmethod
     def get_clf(self, individual):
@@ -451,10 +452,10 @@ class BaseOptimizer(object):
         n = 0
         for p in self.populations:
             for i in p:
-                i_params = self.get_clf(i[0]).get_params()
-                i_params['fitness'] = i[1].values[0]
-                i_params['population'] = n
-                data.append(i_params)
+                i_hyperparams = self.get_clf(i[0]).get_params()
+                i_hyperparams['fitness'] = i[1].values[0]
+                i_hyperparams['population'] = n
+                data.append(i_hyperparams)
             n += 1
 
         df = pd.DataFrame(data)
@@ -524,7 +525,7 @@ class BaseOptimizer(object):
         Returns
         -------
         clf : classifier
-            classifier with the best params
+            classifier with the best hyperparams
         """
         self.mloptimizer_logger.info("Initiating genetic optimization...")
         self.mloptimizer_logger.info("Algorithm: {}".format(type(self).__name__))
@@ -593,8 +594,8 @@ class BaseOptimizer(object):
 
         # Methods for genetic algorithm
         toolbox.register("mate", tools.cxTwoPoint)
-        toolbox.register("mutate", tools.mutUniformInt, low=[x.min_value for x in self.params.values()],
-                         up=[x.max_value for x in self.params.values()], indpb=0.5)
+        toolbox.register("mutate", tools.mutUniformInt, low=[x.min_value for x in self.hyperparams.values()],
+                         up=[x.max_value for x in self.hyperparams.values()], indpb=0.5)
         toolbox.register("select", tools.selTournament, tournsize=4)
         toolbox.register("evaluate", self.evaluate_clf)
 
@@ -617,7 +618,7 @@ class BaseOptimizer(object):
             self.optimization_logger.info("Individual TOP {}".format(i + 1))
             self.optimization_logger.info("Individual accuracy: {}".format(best_score))
             self.optimization_logger.info("Best classifier: {}".format(str(self.get_clf(hof[i]))))
-            self.optimization_logger.info("Params: {}".format(str(self.get_clf(hof[i]).get_params())))
+            self.optimization_logger.info("Hyperparams: {}".format(str(self.get_clf(hof[i]).get_params())))
 
         # self.file_out.write("LOGBOOK: \n"+str(logbook)+"\n")
         # self.file_out.write("Best accuracy: "+str(best_score[0])+"\n")
@@ -625,10 +626,10 @@ class BaseOptimizer(object):
         self._write_population_file()
         self._write_logbook_file()
         # self.plot_logbook(logbook=logbook)
-        param_names = list(self.get_params().keys())
-        param_names.append("fitness")
+        hyperparam_names = list(self.get_hyperparams().keys())
+        hyperparam_names.append("fitness")
         population_df = self.population_2_df()
-        df = population_df[param_names]
+        df = population_df[hyperparam_names]
         g = plotly_search_space(df)
         g.write_html(os.path.join(self.graphics_path, "search_space.html"))
         plt.close()
@@ -759,9 +760,9 @@ class BaseOptimizer(object):
                 self.optimization_logger.info("Individual accuracy: {}".format(best_score))
                 self.optimization_logger.info("Best classifier: {}".format(str(self.get_clf(halloffame[i]))))
                 self.optimization_logger.info(
-                    "Params: {}".format(str(self.get_clf(halloffame[i]).get_params())))
+                    "Hyperparams: {}".format(str(self.get_clf(halloffame[i]).get_params())))
 
-            # Store the space param and fitness for each
+            # Store the space hyperparams and fitness for each individual
             self.populations.append([[ind, ind.fitness] for ind in population])
 
             if checkpoint_flag:
@@ -807,15 +808,15 @@ class TreeOptimizer(BaseOptimizer, ABC):
         return clf
 
     @staticmethod
-    def get_default_params():
-        default_params = {
-            "min_samples_split": Param("min_samples_split", 2, 50, int),
-            "min_samples_leaf": Param("min_samples_leaf", 1, 20, int),
-            "max_depth": Param("max_depth", 2, 20, int),
-            "min_impurity_decrease": Param("min_impurity_decrease", 0, 150, float, 1000),
-            "ccp_alpha": Param("ccp_alpha", 0, 300, float, 100000)
+    def get_default_hyperparams():
+        default_hyperparams = {
+            "min_samples_split": Hyperparam("min_samples_split", 2, 50, int),
+            "min_samples_leaf": Hyperparam("min_samples_leaf", 1, 20, int),
+            "max_depth": Hyperparam("max_depth", 2, 20, int),
+            "min_impurity_decrease": Hyperparam("min_impurity_decrease", 0, 150, float, 1000),
+            "ccp_alpha": Hyperparam("ccp_alpha", 0, 300, float, 100000)
         }
-        return default_params
+        return default_hyperparams
 
 
 class ForestOptimizer(TreeOptimizer, ABC):
@@ -847,17 +848,17 @@ class ForestOptimizer(TreeOptimizer, ABC):
         return clf
 
     @staticmethod
-    def get_default_params():
-        default_params = {
-            "max_features": Param("max_features", 1, 100, float, 100),
-            "n_estimators": Param("n_estimators", 5, 250, int),
-            "max_samples": Param("max_samples", 10, 100, float, 100),
-            "max_depth": Param("max_depth", 2, 14, int),
-            "min_impurity_decrease": Param("min_impurity_decrease", 0, 500, float, 100),
+    def get_default_hyperparams():
+        default_hyperparams = {
+            "max_features": Hyperparam("max_features", 1, 100, float, 100),
+            "n_estimators": Hyperparam("n_estimators", 5, 250, int),
+            "max_samples": Hyperparam("max_samples", 10, 100, float, 100),
+            "max_depth": Hyperparam("max_depth", 2, 14, int),
+            "min_impurity_decrease": Hyperparam("min_impurity_decrease", 0, 500, float, 100),
             # min_weight_fraction_leaf must be a float in the range [0.0, 0.5]
-            "min_weight_fraction_leaf": Param("min_weight_fraction_leaf", 0, 50, float, 100)
+            "min_weight_fraction_leaf": Hyperparam("min_weight_fraction_leaf", 0, 50, float, 100)
         }
-        return default_params
+        return default_hyperparams
 
 
 class ExtraTreesOptimizer(ForestOptimizer, ABC):
@@ -907,22 +908,22 @@ class GradientBoostingOptimizer(ForestOptimizer, ABC):
     It inherits from ForestOptimizer.
     """
 
-    def get_params(self):
+    def get_hyperparams(self):
         """
-        Params for the creation of individuals (relative to the algorithm)
-        These params define the name of the param, min value, max value, and type
+        Hyperparams for the creation of individuals (relative to the algorithm)
+        These hyperparams define the name of the hyperparam, min value, max value, and type
 
-        :return: list of params
+        :return: list of hyperparams
         """
-        params = super(GradientBoostingOptimizer, self).get_params()
+        hyperparams = super(GradientBoostingOptimizer, self).get_hyperparams()
         # learning_rate
-        params["learning_rate"] = Param('learning_rate', 1, 10000, float, 1000000)
+        hyperparams["learning_rate"] = Hyperparam('learning_rate', 1, 10000, float, 1000000)
         # subsample
-        del params["max_samples"]
+        del hyperparams["max_samples"]
         # subsample must be a float in the range (0.0, 1.0]
-        params["subsample"] = Param('subsample', 10, 100, float, 100)
-        # Return all the params
-        return params
+        hyperparams["subsample"] = Hyperparam('subsample', 10, 100, float, 100)
+        # Return all the hyperparams
+        return hyperparams
 
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
@@ -950,17 +951,17 @@ class XGBClassifierOptimizer(BaseOptimizer, ABC):
     """
 
     @staticmethod
-    def get_default_params():
-        default_params = {
-            'colsample_bytree': Param("colsample_bytree", 3, 10, float, 10),
-            'gamma': Param("gamma", 0, 20, int),
-            'learning_rate': Param("learning_rate", 1, 100, float, 1000),
-            'max_depth': Param("max_depth", 3, 20, int),
-            'n_estimators': Param("n_estimators", 100, 500, int),
-            'subsample': Param("subsample", 700, 1000, float, 1000),
-            'scale_pos_weight': Param("scale_pos_weight", 15, 40, float, 100)
+    def get_default_hyperparams():
+        default_hyperparams = {
+            'colsample_bytree': Hyperparam("colsample_bytree", 3, 10, float, 10),
+            'gamma': Hyperparam("gamma", 0, 20, int),
+            'learning_rate': Hyperparam("learning_rate", 1, 100, float, 1000),
+            'max_depth': Hyperparam("max_depth", 3, 20, int),
+            'n_estimators': Hyperparam("n_estimators", 100, 500, int),
+            'subsample': Hyperparam("subsample", 700, 1000, float, 1000),
+            'scale_pos_weight': Hyperparam("scale_pos_weight", 15, 40, float, 100)
         }
-        return default_params
+        return default_hyperparams
 
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
@@ -993,27 +994,27 @@ class CustomXGBClassifierOptimizer(BaseOptimizer, ABC):
     """
 
     @staticmethod
-    def get_default_params():
-        default_params = {
-            'eta': Param("eta", 0, 100, float, 100),
-            'colsample_bytree': Param("colsample_bytree", 3, 10, float, 10),
-            'alpha': Param("alpha", 0, 100, float, 100),
-            'lambda': Param("lambda", 0, 100, float, 100),
-            'gamma': Param("gamma", 0, 100, float, 100),
-            'max_depth': Param("max_depth", 3, 14, int),
-            'subsample': Param("subsample", 70, 100, float, 100),
-            'num_boost_round': Param("num_boost_round", 2, 100, int),
-            'scale_pos_weight': Param("scale_pos_weight", 10, 10000, float, 100),
-            'min_child_weight': Param("min_child_weight", 0, 100, float, 10)
+    def get_default_hyperparams():
+        default_hyperparams = {
+            'eta': Hyperparam("eta", 0, 100, float, 100),
+            'colsample_bytree': Hyperparam("colsample_bytree", 3, 10, float, 10),
+            'alpha': Hyperparam("alpha", 0, 100, float, 100),
+            'lambda': Hyperparam("lambda", 0, 100, float, 100),
+            'gamma': Hyperparam("gamma", 0, 100, float, 100),
+            'max_depth': Hyperparam("max_depth", 3, 14, int),
+            'subsample': Hyperparam("subsample", 70, 100, float, 100),
+            'num_boost_round': Hyperparam("num_boost_round", 2, 100, int),
+            'scale_pos_weight': Hyperparam("scale_pos_weight", 10, 10000, float, 100),
+            'min_child_weight': Hyperparam("min_child_weight", 0, 100, float, 10)
         }
-        return default_params
+        return default_hyperparams
 
-    def get_default_fixed_params(self):
-        default_fixed_params = {
+    def get_default_fixed_hyperparams(self):
+        default_fixed_hyperparams = {
             'obj': None,
             'feval': None
         }
-        return default_fixed_params
+        return default_fixed_hyperparams
 
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
@@ -1033,8 +1034,8 @@ class CustomXGBClassifierOptimizer(BaseOptimizer, ABC):
                                   reg_lambda=individual_dict['lambda'],
                                   num_boost_round=individual_dict['num_boost_round'],
                                   scale_pos_weight=individual_dict['scale_pos_weight'],
-                                  obj=self.fixed_params['obj'],
-                                  feval=self.fixed_params['feval'])
+                                  obj=self.fixed_hyperparams['obj'],
+                                  feval=self.fixed_hyperparams['feval'])
         return clf
 
 
@@ -1045,14 +1046,14 @@ class CatBoostClassifierOptimizer(BaseOptimizer, ABC):
     """
 
     @staticmethod
-    def get_default_params():
-        default_params = {
-            'eta': Param("eta", 1, 10, float, 10),
-            'max_depth': Param("max_depth", 3, 16, int),  # Max is 16
-            'n_estimators': Param("n_estimators", 100, 500, int),
-            'subsample': Param("subsample", 700, 1000, float, 1000),
+    def get_default_hyperparams():
+        default_hyperparams = {
+            'eta': Hyperparam("eta", 1, 10, float, 10),
+            'max_depth': Hyperparam("max_depth", 3, 16, int),  # Max is 16
+            'n_estimators': Hyperparam("n_estimators", 100, 500, int),
+            'subsample': Hyperparam("subsample", 700, 1000, float, 1000),
         }
-        return default_params
+        return default_hyperparams
 
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
@@ -1070,17 +1071,17 @@ class KerasClassifierOptimizer(BaseOptimizer, ABC):
     """
 
     @staticmethod
-    def get_default_params():
-        default_params = {
-            'epochs': Param("epochs", 1, 10, "x10"),
-            'batch_size': Param("batch_size", 1, 5, "x10"),
-            'learning_rate': Param("learning_rate", 1, 20, float, 1000),
-            'layer_1': Param("layer_1", 10, 50, "x10"),
-            'layer_2': Param("layer_2", 5, 20, "x10"),
-            'dropout_rate_1': Param("dropout_rate_1", 0, 5, float, 10),
-            'dropout_rate_2': Param("dropout_rate_2", 0, 5, float, 10),
+    def get_default_hyperparams():
+        default_hyperparams = {
+            'epochs': Hyperparam("epochs", 1, 10, "x10"),
+            'batch_size': Hyperparam("batch_size", 1, 5, "x10"),
+            'learning_rate': Hyperparam("learning_rate", 1, 20, float, 1000),
+            'layer_1': Hyperparam("layer_1", 10, 50, "x10"),
+            'layer_2': Hyperparam("layer_2", 5, 20, "x10"),
+            'dropout_rate_1': Hyperparam("dropout_rate_1", 0, 5, float, 10),
+            'dropout_rate_2': Hyperparam("dropout_rate_2", 0, 5, float, 10),
         }
-        return default_params
+        return default_hyperparams
 
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
@@ -1097,13 +1098,13 @@ class SVCOptimizer(BaseOptimizer, ABC):
     """
 
     @staticmethod
-    def get_default_params():
-        default_params = {
-            'C': Param("C", 1, 10000, float, 10),
-            'degree': Param("degree", 0, 6, int),
-            'gamma': Param("gamma", 10, 100000000, float, 100)
+    def get_default_hyperparams():
+        default_hyperparams = {
+            'C': Hyperparam("C", 1, 10000, float, 10),
+            'degree': Hyperparam("degree", 0, 6, int),
+            'gamma': Hyperparam("gamma", 10, 100000000, float, 100)
         }
-        return default_params
+        return default_hyperparams
 
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)

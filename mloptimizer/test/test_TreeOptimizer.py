@@ -4,7 +4,7 @@ import shutil
 import pytest
 from sklearn.datasets import load_iris, load_breast_cancer
 
-from mloptimizer.genoptimizer import Param
+from mloptimizer.genoptimizer import Hyperparam
 from mloptimizer.genoptimizer import TreeOptimizer
 
 
@@ -23,10 +23,10 @@ def default_tree_optimizer2():
 @pytest.fixture
 def custom_params_tree_optimizer():
     custom_params = {
-        "max_depth": Param("max_depth", 2, 4, int),
+        "max_depth": Hyperparam("max_depth", 2, 4, int),
     }
     X, y = load_iris(return_X_y=True)
-    return TreeOptimizer(X, y, custom_params=custom_params)
+    return TreeOptimizer(X, y, custom_hyperparams=custom_params)
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ def custom_fixed_params_tree_optimizer():
         "min_samples_split": 10
     }
     X, y = load_iris(return_X_y=True)
-    return TreeOptimizer(X, y, custom_fixed_params=fixed_params)
+    return TreeOptimizer(X, y, custom_fixed_hyperparams=fixed_params)
 
 
 @pytest.fixture
@@ -45,10 +45,10 @@ def custom_all_params_tree_optimizer():
         "min_samples_split": 10
     }
     custom_params = {
-        "max_depth": Param("max_depth", 2, 4, int),
+        "max_depth": Hyperparam("max_depth", 2, 4, int),
     }
     X, y = load_iris(return_X_y=True)
-    return TreeOptimizer(X, y, custom_params=custom_params, custom_fixed_params=fixed_params)
+    return TreeOptimizer(X, y, custom_hyperparams=custom_params, custom_fixed_hyperparams=fixed_params)
 
 
 # Test vanilla TreeOptimizer
@@ -56,16 +56,16 @@ def custom_all_params_tree_optimizer():
 # Test fixed parameters TreeOptimizer
 
 def test_tree_optimizer_get_params(default_tree_optimizer):
-    assert default_tree_optimizer.get_params() == default_tree_optimizer.get_default_params()
+    assert default_tree_optimizer.get_hyperparams() == default_tree_optimizer.get_default_hyperparams()
 
 
 def test_custom_tree_optimizer_get_params(custom_params_tree_optimizer):
-    assert custom_params_tree_optimizer.get_params() != custom_params_tree_optimizer.get_default_params()
+    assert custom_params_tree_optimizer.get_hyperparams() != custom_params_tree_optimizer.get_default_hyperparams()
 
 
 def test_custom_fixed_tree_optimizer_get_params(custom_fixed_params_tree_optimizer):
-    custom_p = custom_fixed_params_tree_optimizer.get_params()
-    default_p = custom_fixed_params_tree_optimizer.get_default_params()
+    custom_p = custom_fixed_params_tree_optimizer.get_hyperparams()
+    default_p = custom_fixed_params_tree_optimizer.get_default_hyperparams()
     assert custom_p != default_p
 
 

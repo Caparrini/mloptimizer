@@ -29,7 +29,7 @@ clf = opt.optimize_clf(10, 10)
 # %%
 # Following we can generate the plot of the search space
 population_df = opt.population_2_df()
-param_names = list(opt.get_params().keys())
+param_names = list(opt.get_hyperparams().keys())
 param_names.append("fitness")
 df = population_df[param_names]
 g_search_space = plotly_search_space(df, param_names)
