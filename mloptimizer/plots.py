@@ -166,7 +166,7 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None):
     return fig
 
 
-def plot_search_space(populations_df: pd.DataFrame, height=2, s=25, features: list = None):
+def plot_search_space(populations_df: pd.DataFrame, height=2, s=25):
     """
     Generate sns figure from populations dataframe and features. Search space.
 
@@ -178,8 +178,6 @@ def plot_search_space(populations_df: pd.DataFrame, height=2, s=25, features: li
         The height of the figure
     s : int
         The size of the points
-    features : list
-        The features to plot
 
     Returns
     -------

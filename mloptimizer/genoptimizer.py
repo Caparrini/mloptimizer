@@ -123,7 +123,6 @@ class Hyperparam(object):
 
     def __str__(self):
         """Overrides the default implementation"""
-        type_str = ""
         if self.type is str:
             type_str = "'{}'".format(self.type)
         else:

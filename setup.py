@@ -116,7 +116,7 @@ setup(
         "deap>=1.3.3",
         "joblib>=1.2.0",
         "keras==2.12.0",
-        #"numpy>=1.24.1",
+        # "numpy>=1.24.1",
         "pandas>=1.5.3",
         "python-dateutil>=2.8.1",
         "pytz>=2022.7.1",
@@ -126,7 +126,7 @@ setup(
         "six>=1.15.0",
         "tensorflow>=2.12.0",
         "xgboost>=1.7.3",
-        #"matplotlib~=3.7.1",
+        # "matplotlib~=3.7.1",
         "plotly>=5.15.0",
         "sphinx-gallery==0.14.0",
         "sphinx_rtd_theme",
@@ -140,22 +140,22 @@ setup(
     #
     # Similar to `install_requires` above, these must be valid existing
     # projects.
-    #extras_require={  # Optional
+    # extras_require={  # Optional
     #    "dev": ["check-manifest"],
     #    "test": ["coverage"],
-    #},
+    # },
     # If there are data files included in your packages that need to be
     # installed, specify them here.
-    #package_data={  # Optional
+    # package_data={  # Optional
     #    "sample": ["package_data.dat"],
-    #},
+    # },
     # Entry points. The following would provide a command called `sample` which
     # executes the function `main` from this package when invoked:
-    #entry_points={  # Optional
+    # entry_points={  # Optional
     #    "console_scripts": [
     #        "sample=sample:main",
     #    ],
-    #},
+    # },
     # List additional URLs that are relevant to your project as a dict.
     #
     # This field corresponds to the "Project-URL" metadata fields:
@@ -166,9 +166,9 @@ setup(
     # maintainers, and where to support the project financially. The key is
     # what's used to render the link text on PyPI.
     project_urls={  # Optional
-    #    "Bug Reports": "https://github.com/pypa/sampleproject/issues",
-    #    "Funding": "https://donate.pypi.org",
-    #    "Say Thanks!": "http://saythanks.io/to/example",
+        #    "Bug Reports": "https://github.com/pypa/sampleproject/issues",
+        #    "Funding": "https://donate.pypi.org",
+        #    "Say Thanks!": "http://saythanks.io/to/example",
         "Source": "https://github.com/Caparrini/mloptimizer",
     },
 )
