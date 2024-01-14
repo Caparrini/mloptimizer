@@ -15,13 +15,13 @@ from deap import creator, tools, base
 from deap.algorithms import varAnd
 from keras.wrappers.scikit_learn import KerasClassifier
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
-from sklearn.metrics import balanced_accuracy_score
+from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
 from mloptimizer import miscellaneous
 from mloptimizer.alg_wrapper import CustomXGBClassifier, generate_model
-from mloptimizer.model_evaluation import kfold_stratified_score
+from mloptimizer.model_evaluation import train_score
 from mloptimizer.plots import plotly_logbook, plotly_search_space
 
 
@@ -204,8 +204,8 @@ class BaseOptimizer(object):
 
     def __init__(self, features: np.array, labels: np.array, folder=None, log_file="mloptimizer.log",
                  custom_hyperparams: dict = {},
-                 custom_fixed_hyperparams: dict = {}, eval_function=kfold_stratified_score,
-                 score_function=balanced_accuracy_score, seed=random.randint(0, 1000000)):
+                 custom_fixed_hyperparams: dict = {}, eval_function=train_score,
+                 score_function=accuracy_score, seed=random.randint(0, 1000000)):
         """
         Creates object BaseOptimizer.
 
