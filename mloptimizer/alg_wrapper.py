@@ -102,6 +102,7 @@ class CustomXGBClassifier(BaseEstimator):
         num_boost_round : int, optional (default=50)
             Number of boosting iterations.
         """
+        self._xclf = None
         self.base_score = base_score
         self.booster = booster
         self.eval_metric = eval_metric
