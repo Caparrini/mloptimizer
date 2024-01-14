@@ -202,7 +202,7 @@ class BaseOptimizer(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, features: np.array, labels: np.array, folder=None, log_file="mloptimizer.log",
+    def __init__(self, features: np.array, labels: np.array, folder=os.curdir, log_file="mloptimizer.log",
                  custom_hyperparams: dict = {},
                  custom_fixed_hyperparams: dict = {}, eval_function=train_score,
                  score_function=accuracy_score, seed=random.randint(0, 1000000)):
@@ -215,7 +215,7 @@ class BaseOptimizer(object):
             np.array with the features
         labels : np.array
             np.array with the labels
-        folder : path, optional (default=None)
+        folder : path, optional (default=os.curdir)
             folder to store the structure of files and folders product of executions
         log_file : str, optional (default="mloptimizer.log")
             log file name

@@ -48,11 +48,10 @@ def create_optimization_folder(folder):
     folder : str
         The path of the folder created.
     """
-    if folder is None:
-        folder = os.path.join(os.curdir, "Optimizer")
     if os.path.exists(folder):
-        print("The folder {} already exists and it will be used".format(folder))
+        logging.warning("The folder {} already exists and it will be used".format(folder))
+    elif os.makedirs(folder, exist_ok=True):
+        logging.info("The folder {} has been created.".format(folder))
     else:
-        os.mkdir(folder)
-        print("The folder {} has been created.".format(folder))
+        logging.error("The folder {} could not be created.".format(folder))
     return folder

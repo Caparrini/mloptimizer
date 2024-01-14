@@ -1,5 +1,5 @@
 import os
-import shutil
+# import shutil
 
 import pytest
 from sklearn.datasets import load_iris, load_breast_cancer

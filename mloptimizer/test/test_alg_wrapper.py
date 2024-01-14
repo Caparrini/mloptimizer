@@ -1,5 +1,4 @@
 import unittest
-from sklearn.utils.estimator_checks import check_estimator
 from mloptimizer.alg_wrapper import CustomXGBClassifier, generate_model
 from sklearn.datasets import load_breast_cancer
 from keras.wrappers.scikit_learn import KerasClassifier
