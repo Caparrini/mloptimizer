@@ -4,6 +4,14 @@ mloptimizer.test package
 Submodules
 ----------
 
+mloptimizer.test.test\_CustomXGBClassifier module
+-------------------------------------------------
+
+.. automodule:: mloptimizer.test.test_CustomXGBClassifier
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 mloptimizer.test.test\_Optimizers module
 ----------------------------------------
 
@@ -44,10 +52,26 @@ mloptimizer.test.test\_alg\_wrapper module
    :undoc-members:
    :show-inheritance:
 
-mloptimizer.test.test\_param module
------------------------------------
+mloptimizer.test.test\_hyperparam module
+----------------------------------------
 
-.. automodule:: mloptimizer.test.test_param
+.. automodule:: mloptimizer.test.test_hyperparam
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+mloptimizer.test.test\_miscellaneous module
+-------------------------------------------
+
+.. automodule:: mloptimizer.test.test_miscellaneous
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+mloptimizer.test.test\_model\_evaluation module
+-----------------------------------------------
+
+.. automodule:: mloptimizer.test.test_model_evaluation
    :members:
    :undoc-members:
    :show-inheritance:
