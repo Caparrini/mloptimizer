@@ -48,3 +48,8 @@ sphinx_gallery_conf = {
     },
     'image_scrapers': image_scrapers,
 }
+
+html_theme_options = {
+    "repository_url": "https://github.com/Caparrini/mloptimizer",
+    "use_repository_button": True,
+}
