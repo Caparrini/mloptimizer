@@ -130,7 +130,9 @@ setup(
         "plotly>=5.15.0",
         "sphinx-gallery==0.14.0",
         "sphinx_book_theme",
-        "kaleido"
+        "kaleido",
+        "sphinx_mdinclude",
+        "sphinx-autoapi"
     ],  # Optional
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"

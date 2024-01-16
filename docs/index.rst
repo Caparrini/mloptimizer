@@ -8,14 +8,41 @@ Welcome to mloptimizer's documentation!
 
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Table of Contents:
+   :maxdepth: 1
+   :caption: Home:
 
+   readme_link
+
+.. toctree::
+   :maxdepth: 1
+   :caption: User guide:
+
+   sections/introduction
    sections/installation
+   sections/Basics/index
+   sections/Concepts/index
    sections/quickstart
    auto_examples/index
    sections/mloptimizerUI
-   modules
+
+.. toctree::
+   :maxdepth: 3
+   :caption: API reference:
+
+   autoapi/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Development:
+
+   sections/development
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Releases:
+
+   sections/changelog
+
 
 Indices and tables
 ==================
@@ -23,3 +50,4 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+

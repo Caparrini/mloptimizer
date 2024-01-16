@@ -16,3 +16,5 @@ pytest-cov
 kaleido
 sphinx-gallery==0.14.0
 sphinx_book_theme
+sphinx_mdinclude
+sphinx-autoapi
