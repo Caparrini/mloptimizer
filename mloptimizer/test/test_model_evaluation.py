@@ -1,4 +1,4 @@
-from mloptimizer.model_evaluation import kfold_stratified_score, temporal_kfold_score, \
+from mloptimizer.evaluation import kfold_stratified_score, temporal_kfold_score, \
     train_score, train_test_score, kfold_score
 import pytest
 from sklearn.datasets import make_classification
