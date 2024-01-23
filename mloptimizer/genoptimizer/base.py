@@ -71,8 +71,8 @@ class BaseOptimizer(object):
     __metaclass__ = ABCMeta
 
     def __init__(self, features: np.array, labels: np.array, folder=os.curdir, log_file="mloptimizer.log",
-                 custom_hyperparams: dict = {},
-                 custom_fixed_hyperparams: dict = {}, eval_function=train_score,
+                 custom_hyperparams=None,
+                 custom_fixed_hyperparams=None, eval_function=train_score,
                  score_function=accuracy_score, seed=random.randint(0, 1000000)):
         """
         Creates object BaseOptimizer.
@@ -99,6 +99,10 @@ class BaseOptimizer(object):
             seed for the random functions (deap, models, and splits on evaluations)
         """
         # Input mandatory variables
+        if custom_fixed_hyperparams is None:
+            custom_fixed_hyperparams = {}
+        if custom_hyperparams is None:
+            custom_hyperparams = {}
         self.features = features
         self.labels = labels
         # Input hyperparameters (optional)
