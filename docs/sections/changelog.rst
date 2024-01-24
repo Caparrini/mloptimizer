@@ -3,11 +3,11 @@ Changelog
 
 This document provides a comprehensive list of changes for each version of the mloptimizer library.
 
-Version X.X.X (YYYY-MM-DD)
+Version 0.6.0 (2024-01-24)
 --------------------------
 
-Initial Release
-^^^^^^^^^^^^^^^
+"Initial" Release
+^^^^^^^^^^^^^^^^^
 - Launched the first version of the mloptimizer library.
 - Features include optimization for decision trees, random forests, and gradient boosting classifiers.
 - Basic documentation and example scripts provided.

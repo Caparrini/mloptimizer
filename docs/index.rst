@@ -21,7 +21,6 @@ Welcome to mloptimizer's documentation!
    sections/installation
    sections/Basics/index
    sections/Concepts/index
-   sections/quickstart
    auto_examples/index
    sections/mloptimizerUI
 

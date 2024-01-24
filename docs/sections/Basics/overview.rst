@@ -1,0 +1,139 @@
+=========================
+Overview
+=========================
+
+Introduction
+------------
+Every subclass of BaseOptimizer should be used in a similar way. As example we are taking the Optimizer
+for the XGBoost Classifier, the `XGBClassifierOptimizer`.
+
+Usage
+-----
+To use the `XGBClassifierOptimizer` class:
+
+1. Define your features and labels.
+2. Create an instance of `XGBClassifierOptimizer` with your data and any optional parameters.
+3. Call the `optimize_clf()` method to start the optimization process.
+
+There are several parameters than can be passed to the `XGBClassifierOptimizer`
+(or any subclass of `BaseOptimizer`) constructor:
+
+- `X`: The features of your dataset.
+- `y`: The labels of your dataset.
+- `folder`: The folder where the files and folder will be saved. Defaults to the current directory.
+- `log_file`: The name of the log file. Defaults to `mloptimizer.log`.
+- `custom_hyperparams`: A dictionary of custom hyperparameters. The key of each hyperparameter is the name of the hyperparameter, and the value is the `Hyperparam` object itself. The `Hyperparam` object constructor takes the following parameters:
+- `fixed_hyperparams`: A dictionary of fixed hyperparameters. The key of each hyperparameter is the name of the hyperparameter, and the value is the value of the hyperparameter.
+- `eval_function`: The function to use to evaluate the model. Defaults to `train_score`.
+- `score_function`: The function to use to score the model. Defaults to `accuracy_score`.
+- `seed`: The seed to use for reproducibility. Defaults to a random integer between 0 and 1000000.
+
+
+Default Usage Example
+---------------------
+
+The simplest example of using the Optimizer is:
+
+- Store your features and labels in `X` and `y` respectively.
+- Create an instance of `XGBClassifierOptimizer` with your data and leave all other parameters to their default values.
+- Call the `optimize_clf()` method to start the optimization process. You can pass the population size and the number of generations to the method.
+- The result of the optimization process will be a object of type XGBClassifier with the best hyperparameters found.
+
+.. code-block:: python
+
+    # Load your data
+    X, y = load_your_data()
+
+    # Create an instance of XGBClassifierOptimizer
+    xgb_optimizer = XGBClassifierOptimizer(X, y)
+
+    # Start the optimization process
+    result = xgb_optimizer.optimize_clf(3, 3)
+
+This will create a folder (in the current location) with name `YYYYMMDD_nnnnnnnnnn_XGBClassifierOptimizer`
+(where `YYYYMMDD_nnnnnnnnnn` is the current timestamp) and a log file named `mloptimizer.log`.
+To inspect the structure of the folder and what can you find in it, please refer to the `Folder Structure` section.
+
+Custom Hyperparameters Example
+------------------------------
+
+Among the parameters that can be passed to the `XGBClassifierOptimizer` (or other Optimizer) constructor,
+there are two that are used to define custom hyperparameters: `custom_hyperparams` and `fixed_hyperparams`.
+
+The `custom_hyperparams` parameter is a dictionary of custom hyperparameters.
+The key of each hyperparameter is the name of the hyperparameter, and the value is the `Hyperparam` object itself.
+To understand how to use the `Hyperparam` object, please refer to the `Hyperparam` section inside Concepts.
+
+An example of using custom hyperparameters is:
+
+.. code-block:: python
+
+    # Define your custom hyperparameters
+    custom_hyperparams = {
+        'colsample_bytree': Hyperparam("colsample_bytree", 3, 10, float, 10),
+        'gamma': Hyperparam("gamma", 0, 20, int),
+        'learning_rate': Hyperparam("learning_rate", 1, 100, float, 1000),
+        'max_depth': Hyperparam("max_depth", 3, 20, int),
+        'n_estimators': Hyperparam("n_estimators", 100, 500, int),
+        'subsample': Hyperparam("subsample", 700, 1000, float, 1000),
+        'scale_pos_weight': Hyperparam("scale_pos_weight", 15, 40, float, 100)
+    }
+
+    # Create an instance of XGBClassifierOptimizer with custom hyperparameters
+    xgb_optimizer = XGBClassifierOptimizer(X, y, hyperparams=custom_hyperparams)
+
+    # Start the optimization process
+    result = xgb_optimizer.optimize_clf(3, 3)
+
+
+The `fixed_hyperparams` parameter is a dictionary of fixed hyperparameters.
+This is simply a dictionary where the key is the name of the hyperparameter, and the value is the value of the hyperparameter.
+These hyperparameters will not be optimized, but will be used as fixed values during the optimization process.
+
+An example of using fixed hyperparameters is:
+
+.. code-block:: python
+
+    # Define your fixed parameters
+    fixed_params = {
+        'n_estimators': 100,
+        'max_depth': 5
+    }
+
+    # Create an instance of XGBClassifierOptimizer with fixed parameters
+    xgb_optimizer = XGBClassifierOptimizer(X, y, fixed_hyperparams=fixed_params)
+
+    # Start the optimization process
+    result = xgb_optimizer.optimize_clf(3, 3)
+
+
+Both `custom_hyperparams` and `fixed_hyperparams` can be used together,
+providing several different ways to customize the optimization process.
+
+Reproducibility
+---------------
+
+Researchers often need to be able to reproduce their results. During the research process it could be
+advisable to run several optimizations processes with different parameters or input data.
+However, if the results of the optimization process are not reproducible, it will be difficult to compare
+the results of the different optimization processes.
+In order to make the results reproducible, the `XGBClassifierOptimizer` (and all other Optimizers) have a `seed` parameter.
+This parameter is used to set the seed of the random number generator used during the optimization process.
+If you set the same seed, the results of the optimization process will be the same.
+
+An example of two executions of the optimization process with the same seed that will produce the same result is:
+
+.. code-block:: python
+
+    # Create two instances of XGBClassifierOptimizer with the same seed
+    xgb_optimizer1 = XGBClassifierOptimizer(X, y, seed=42)
+    result1 = xgb_optimizer1.optimize(3, 3)
+
+    xgb_optimizer2 = XGBClassifierOptimizer(X, y, seed=42)
+    result2 = xgb_optimizer2.optimize(3, 3)
+
+    # Verify that the results are the same
+    # The comparison is done using the string representation of the result objects
+    # which are the hyperparameters of the best model found
+    assert str(result1)== str(result2)
+

@@ -8,12 +8,18 @@
 **mloptimizer** is a Python library for optimizing hyperparameters of machine learning algorithms using genetic algorithms. With mloptimizer, you can find the optimal set of hyperparameters for a given machine learning model and dataset, which can significantly improve the performance of the model. The library supports several popular machine learning algorithms, including decision trees, random forests, and gradient boosting classifiers. The genetic algorithm used in mloptimizer provides an efficient and flexible approach to search for the optimal hyperparameters in a large search space.
 
 ## Features
-- [List key features of the library]
-- [Highlight unique selling points and usability]
-- [Briefly explain how it improves ML model performance]
+- Easy to use
+- DEAP-based genetic algorithm ready to use with several machine learning algorithms
+- Default hyperparameter ranges
+- Default score functions for evaluating the performance of the model
+- Reproducibility of results
+
+## Advanced Features
+- Extensible with more machine learning algorithms that comply with the Scikit-Learn API
+- Customizable hyperparameter ranges
+- Customizable score functions
 
 ## Installation
-[Installation instructions, including virtual environment setup and package installation]
 
 It is recommended to create a virtual environment using the `venv` package. 
 To learn more about how to use `venv`, 
@@ -57,19 +63,49 @@ This folder contains the results of the optimization,
 including the best estimator found and the log file `opt.log` informing with all the steps, 
 the best estimator and the result of the optimization.
 
+A structure like this will be created:
+
+```
+├── checkpoints
+│   ├── cp_gen_0.pkl
+│   └── cp_gen_1.pkl
+├── graphics
+│   ├── logbook.html
+│   └── search_space.html
+├── opt.log
+├── progress
+│   ├── Generation_0.csv
+│   └── Generation_1.csv
+└── results
+    ├── logbook.csv
+    └── populations.csv
+```
+
+Each item in the directory is described below:
+
+- `checkpoints`: This directory contains the checkpoint files for each generation of the genetic optimization process. These files are used to save the state of the optimization process at each generation, allowing for the process to be resumed from a specific point if needed.
+    - `cp_gen_0.pkl`, `cp_gen_1.pkl`: These are the individual checkpoint files for each generation. They are named according to the generation number and are saved in Python's pickle format.
+
+- `graphics`: This directory contains HTML files for visualizing the optimization process.
+    - `logbook.html`: This file provides a graphical representation of the logbook, which records the statistics of the optimization process over generations.
+    - `search_space.html`: This file provides a graphical representation of the search space of the optimization process.
+
+- `opt.log`: This is the log file for the optimization process. It contains detailed logs of the optimization process, including the performance of the algorithm at each generation.
+
+- `progress`: This directory contains CSV files that record the progress of the optimization process for each generation.
+    - `Generation_0.csv`, `Generation_1.csv`: These are the individual progress files for each generation. They contain detailed information about each individual in the population at each generation.
+
+- `results`: This directory contains CSV files with the results of the optimization process.
+    - `logbook.csv`: This file is a CSV representation of the logbook, which records the statistics of the optimization process over generations.
+    - `populations.csv`: This file contains the final populations of the optimization process. It includes the hyperparameters and fitness values of each individual in the population.
+
 More details in the [documentation](http://mloptimizer.readthedocs.io/).
 
-## Usage
-- [How to use the library in different scenarios]
-- [Configuration options and customization]
 
-## Advanced Features
-- [Description of advanced features]
-- [Instructions for utilizing these features]
 
 ## Examples
-- [Link to examples or tutorials]
-- [Short description of each example]
+
+Examples can be found in [examples](https://mloptimizer.readthedocs.io/en/latest/auto_examples/index.html) on readthedocs.io.
 
 ## Dependencies
 
@@ -83,15 +119,8 @@ The following dependencies are used in `mloptimizer`:
 ## Documentation
 
 The documentation for `mloptimizer` can be found in the project's [wiki](http://mloptimizer.readthedocs.io/)
-with examples and classes and methods reference.
+with examples, classes and methods reference.
 
-## Contributing
-- [Guidelines for contributing to the project]
-- [How to submit issues or pull requests]
-
-## Versioning
-- [Information about versioning system used]
-- [How to find and use different versions]
 
 ## Authors
 
@@ -101,19 +130,5 @@ with examples and classes and methods reference.
 
 This project is licensed under the [MIT License](LICENSE).
 
-## Contact
-- [Project maintainer's contact information]
-- [How to reach out for support or inquiries]
-
 ## FAQs
-- [Commonly asked questions and their answers]
-
-## Changelog
-- [History of changes and updates]
-
-## Community and Support
-- [Information about community channels, like forums or chat rooms]
-- [Guidelines for getting support]
-
-## Additional Resources
-- [Links to additional resources like blogs, articles, or community projects]
+- TODO
