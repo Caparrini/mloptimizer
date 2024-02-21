@@ -5,6 +5,12 @@ import pathlib
 here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / "README.md").read_text(encoding="utf-8")
 
+
+def read_requirements(requirements_file):
+    with open(requirements_file) as f:
+        return f.read().splitlines()
+
+
 setup(
     # This is the name of your project. The first time you publish this
     # package, this name will be registered for you. It will determine how
@@ -24,7 +30,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/guides/single-sourcing-package-version/
-    version="0.6.0",  # Required
+    version="0.6.1",  # Required
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#summary
@@ -111,29 +117,8 @@ setup(
     #
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/discussions/install-requires-vs-requirements/
-    install_requires=[
-        "catboost>=1.1.1",
-        "deap>=1.3.3",
-        "joblib>=1.2.0",
-        "keras==2.12.0",
-        # "numpy>=1.24.1",
-        "pandas>=1.5.3",
-        "python-dateutil>=2.8.1",
-        "pytz>=2022.7.1",
-        "scikit-learn>=1.2.1",
-        "scipy>=1.10.0",
-        "seaborn==0.12.2",
-        "six>=1.15.0",
-        "tensorflow>=2.12.0",
-        "xgboost>=1.7.3",
-        # "matplotlib~=3.7.1",
-        "plotly>=5.15.0",
-        "sphinx-gallery==0.14.0",
-        "sphinx_book_theme",
-        "kaleido",
-        "sphinx_mdinclude",
-        "sphinx-autoapi"
-    ],  # Optional
+    install_requires=read_requirements("requirements_prod.txt"),
+    # Optional
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"
     # syntax, for example:
@@ -142,10 +127,10 @@ setup(
     #
     # Similar to `install_requires` above, these must be valid existing
     # projects.
-    # extras_require={  # Optional
-    #    "dev": ["check-manifest"],
-    #    "test": ["coverage"],
-    # },
+    extras_require={  # Optional
+        "dev": read_requirements("requirements_dev.txt"),
+        "docs": read_requirements("requirements_docs.txt"),
+    },
     # If there are data files included in your packages that need to be
     # installed, specify them here.
     # package_data={  # Optional
