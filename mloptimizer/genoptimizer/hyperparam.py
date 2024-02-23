@@ -122,4 +122,3 @@ class Hyperparam(object):
     def __repr__(self):
         """Overrides the default implementation"""
         return self.__str__()
-
