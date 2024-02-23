@@ -66,6 +66,20 @@ class ExtraTreesOptimizer(ForestOptimizer, ABC):
     It inherits from ForestOptimizer.
     """
 
+    @staticmethod
+    def get_default_hyperparams():
+        """
+        Hyperparams for the creation of individuals (relative to the algorithm)
+        These hyperparams define the name of the hyperparam, min value, max value, and type
+
+        :return: list of hyperparams
+        """
+        hyperparams = ForestOptimizer.get_default_hyperparams()
+        # learning_rate
+        del hyperparams["max_samples"]
+        # Return all the hyperparams
+        return hyperparams
+
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
 
@@ -81,25 +95,24 @@ class GradientBoostingOptimizer(ForestOptimizer, ABC):
     It inherits from ForestOptimizer.
     """
 
-    def get_hyperparams(self):
+    def get_clf(self, individual):
+        individual_dict = self.individual2dict(individual)
+        clf = GradientBoostingClassifier(random_state=self.mlopt_seed,
+                                         **individual_dict)
+        return clf
+
+    @staticmethod
+    def get_default_hyperparams():
         """
         Hyperparams for the creation of individuals (relative to the algorithm)
         These hyperparams define the name of the hyperparam, min value, max value, and type
 
         :return: list of hyperparams
         """
-        hyperparams = super(GradientBoostingOptimizer, self).get_hyperparams()
+        hyperparams = ExtraTreesOptimizer.get_default_hyperparams()
         # learning_rate
         hyperparams["learning_rate"] = Hyperparam('learning_rate', 1, 10000, float, 1000000)
-        # subsample
-        del hyperparams["max_samples"]
         # subsample must be a float in the range (0.0, 1.0]
         hyperparams["subsample"] = Hyperparam('subsample', 10, 100, float, 100)
         # Return all the hyperparams
         return hyperparams
-
-    def get_clf(self, individual):
-        individual_dict = self.individual2dict(individual)
-        clf = GradientBoostingClassifier(random_state=self.mlopt_seed,
-                                         **individual_dict)
-        return clf

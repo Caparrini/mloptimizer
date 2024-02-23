@@ -18,7 +18,7 @@ from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, \
                          (balanced_accuracy_score, accuracy_score))
 @pytest.mark.parametrize('optimizer',
                          (TreeOptimizer, ForestOptimizer,
-                          # ExtraTreesOptimizer, GradientBoostingOptimizer,
+                          ExtraTreesOptimizer, GradientBoostingOptimizer,
                           XGBClassifierOptimizer,
                           # SVCOptimizer,
                           KerasClassifierOptimizer))
@@ -27,7 +27,7 @@ from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, \
 def test_optimizer(optimizer, dataset, target_metric):
     X, y = dataset(return_X_y=True)
     opt = optimizer(X, y, score_function=target_metric)
-    clf = opt.optimize_clf(2, 1)
+    clf = opt.optimize_clf(2, 2)
     assert clf is not None
 
 
