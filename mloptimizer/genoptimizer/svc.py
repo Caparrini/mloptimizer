@@ -15,24 +15,14 @@ class SVCOptimizer(BaseOptimizer, ABC):
         default_hyperparams = {
             'C': Hyperparam("C", 1, 10000, float, 10),
             'degree': Hyperparam("degree", 0, 6, int),
-            'gamma': Hyperparam("gamma", 10, 100000000, float, 100)
+            'gamma': Hyperparam("gamma", 10, 100000000, float, 100),
+            'max_iter': Hyperparam("max_iter", 100, 1000, int)
         }
         return default_hyperparams
 
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
-        clf = SVC(C=individual_dict['C'],
-                  cache_size=8000000,
-                  class_weight="balanced",
-                  coef0=0.0,
-                  decision_function_shape='ovr',
-                  degree=individual_dict['degree'], gamma=individual_dict['gamma'],
-                  kernel='rbf',
-                  max_iter=100000,
-                  probability=False,
-                  random_state=None,
-                  shrinking=True,
-                  tol=0.001,
-                  verbose=False
+        clf = SVC(random_state=self.mlopt_seed,
+                  **individual_dict
                   )
         return clf

@@ -20,7 +20,7 @@ from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, \
                          (TreeOptimizer, ForestOptimizer,
                           ExtraTreesOptimizer, GradientBoostingOptimizer,
                           XGBClassifierOptimizer,
-                          # SVCOptimizer,
+                          SVCOptimizer,
                           KerasClassifierOptimizer))
 @pytest.mark.parametrize('dataset',
                          (load_breast_cancer, load_iris))
@@ -44,7 +44,7 @@ def test_get_subclasses():
 
 @pytest.mark.parametrize('optimizer',
                          (TreeOptimizer, ForestOptimizer,
-                          # ExtraTreesOptimizer, GradientBoostingOptimizer,
+                          ExtraTreesOptimizer, GradientBoostingOptimizer,
                           XGBClassifierOptimizer,
                           # SVCOptimizer,KerasClassifierOptimizer
                           ))
