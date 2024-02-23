@@ -15,23 +15,8 @@ class TreeOptimizer(BaseOptimizer, ABC):
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
 
-        if "scale_pos_weight" in individual_dict.keys():
-            class_weight = {0: 1, 1: individual_dict["scale_pos_weight"]}
-        else:
-            class_weight = "balanced"
-
-        clf = DecisionTreeClassifier(criterion="gini",
-                                     class_weight=class_weight,
-                                     splitter="best",
-                                     max_features=None,
-                                     max_depth=individual_dict['max_depth'],
-                                     min_samples_split=individual_dict['min_samples_split'],
-                                     min_samples_leaf=individual_dict['min_samples_leaf'],
-                                     min_impurity_decrease=individual_dict['min_impurity_decrease'],
-                                     # min_weight_fraction_leaf=individual_dict['min_weight_fraction_leaf'],
-                                     ccp_alpha=individual_dict['ccp_alpha'],
-                                     max_leaf_nodes=None,
-                                     random_state=None)
+        clf = DecisionTreeClassifier(random_state=self.mlopt_seed,
+                                     **individual_dict)
         return clf
 
     @staticmethod
@@ -56,21 +41,8 @@ class ForestOptimizer(TreeOptimizer, ABC):
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
 
-        clf = RandomForestClassifier(n_estimators=individual_dict['n_estimators'],
-                                     criterion="gini",
-                                     max_depth=individual_dict['max_depth'],
-                                     max_samples=individual_dict['max_samples'],
-                                     min_weight_fraction_leaf=individual_dict['min_weight_fraction_leaf'],
-                                     min_impurity_decrease=individual_dict['min_impurity_decrease'],
-                                     max_features=individual_dict['max_features'],
-                                     max_leaf_nodes=None,
-                                     bootstrap=True,
-                                     oob_score=True,
-                                     n_jobs=-1,
-                                     random_state=None,
-                                     verbose=0,
-                                     warm_start=False,
-                                     class_weight="balanced"
+        clf = RandomForestClassifier(random_state=self.mlopt_seed,
+                                     **individual_dict
                                      )
         return clf
 
@@ -97,34 +69,8 @@ class ExtraTreesOptimizer(ForestOptimizer, ABC):
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
 
-        class_weight = "balanced"
-
-        if "scale_pos_weight" in individual_dict.keys():
-            perc_class_one = individual_dict["scale_pos_weight"]
-            total = 10
-            class_one = total * perc_class_one
-            class_zero = total - class_one
-            real_weight_zero = total / (2 * class_zero)
-            real_weight_one = total / (2 * class_one)
-            class_weight = {0: real_weight_zero, 1: real_weight_one}
-
-        clf = ExtraTreesClassifier(n_estimators=individual_dict['n_estimators'],
-                                   criterion="gini",
-                                   max_depth=individual_dict['max_depth'],
-                                   # min_samples_split=individual_dict['min_samples_split'],
-                                   # min_samples_leaf=individual_dict['min_samples_leaf'],
-                                   min_weight_fraction_leaf=individual_dict['min_weight_fraction_leaf'],
-                                   min_impurity_decrease=individual_dict['min_impurity_decrease'],
-                                   max_features=individual_dict['max_features'],
-                                   max_samples=individual_dict['max_samples'],
-                                   max_leaf_nodes=None,
-                                   bootstrap=True,
-                                   oob_score=False,
-                                   n_jobs=-1,
-                                   random_state=None,
-                                   verbose=0,
-                                   warm_start=False,
-                                   class_weight=class_weight
+        clf = ExtraTreesClassifier(random_state=self.mlopt_seed,
+                                   **individual_dict
                                    )
         return clf
 
@@ -154,18 +100,6 @@ class GradientBoostingOptimizer(ForestOptimizer, ABC):
 
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
-        clf = GradientBoostingClassifier(n_estimators=individual_dict['n_estimators'],
-                                         criterion="friedman_mse",
-                                         max_depth=individual_dict['max_depth'],
-                                         # min_samples_split=individual_dict['min_samples_split'],
-                                         # min_samples_leaf=individual_dict['min_samples_leaf'],
-                                         min_weight_fraction_leaf=individual_dict['min_weight_fraction_leaf'],
-                                         min_impurity_decrease=individual_dict['min_impurity_decrease'],
-                                         max_features=individual_dict['max_features'],
-                                         max_leaf_nodes=None,
-                                         random_state=None,
-                                         verbose=0,
-                                         warm_start=False,
-                                         learning_rate=individual_dict['learning_rate'],
-                                         subsample=individual_dict['subsample'])
+        clf = GradientBoostingClassifier(random_state=self.mlopt_seed,
+                                         **individual_dict)
         return clf

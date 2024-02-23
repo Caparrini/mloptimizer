@@ -26,24 +26,9 @@ class XGBClassifierOptimizer(BaseOptimizer, ABC):
 
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
-        clf = xgb.XGBClassifier(base_score=0.5,
-                                booster='gbtree',
-                                colsample_bytree=individual_dict['colsample_bytree'],
-                                colsample_bylevel=1,
-                                eval_metric='logloss',
-                                gamma=individual_dict['gamma'],
-                                learning_rate=individual_dict['learning_rate'],
-                                max_depth=individual_dict['max_depth'],
-                                n_estimators=individual_dict['n_estimators'],
-                                n_jobs=-1,
-                                objective='binary:logistic',
-                                random_state=0,
-                                # reg_alpha=0,
-                                # reg_lambda=1,
-                                scale_pos_weight=individual_dict['scale_pos_weight'],
-                                seed=self.mlopt_seed,
-                                subsample=individual_dict['subsample'],
-                                # tree_method="gpu_hist"
+        clf = xgb.XGBClassifier(seed=self.mlopt_seed,
+                                random_state=self.mlopt_seed,
+                                **individual_dict
                                 )
         return clf
 
