@@ -66,13 +66,16 @@ class BaseOptimizer(object):
         list of logbook
     seed : int
         seed for the random functions
+    use_parallel : bool
+        flag to use parallel processing
     """
     __metaclass__ = ABCMeta
 
     def __init__(self, features: np.array, labels: np.array, folder=os.curdir, log_file="mloptimizer.log",
                  custom_hyperparams=None,
                  custom_fixed_hyperparams=None, eval_function=train_score,
-                 score_function=accuracy_score, seed=random.randint(0, 1000000)):
+                 score_function=accuracy_score, seed=random.randint(0, 1000000),
+                 use_parallel=False):
         """
         Creates object BaseOptimizer.
 
@@ -129,6 +132,8 @@ class BaseOptimizer(object):
         self.logbook = None
         self.mlopt_seed = None
         self.set_mlopt_seed(seed)
+        # Parallel
+        self.use_parallel = use_parallel
 
     def set_mlopt_seed(self, seed):
         """
@@ -421,9 +426,15 @@ class BaseOptimizer(object):
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
         creator.create("Individual", list, fitness=creator.FitnessMax)
 
-        # Paralel
-        # pool = multiprocessing.Pool()
-        # toolbox.register("map", pool.map)
+        # Parallel https://deap.readthedocs.io/en/master/tutorials/basic/part4.html
+        # TODO: Scoop compatibility
+        if self.use_parallel:
+            try:
+                import multiprocessing
+                pool = multiprocessing.Pool()
+                toolbox.register("map", pool.map)
+            except ImportError as e:
+                self.optimization_logger.warning("Multiprocessing not available: {}".format(e))
 
         toolbox.register("individual", self.init_individual, creator.Individual)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
