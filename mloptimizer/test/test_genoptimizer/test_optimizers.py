@@ -36,7 +36,8 @@ def test_get_subclasses():
     subclasses_names = [
         'TreeOptimizer', 'ForestOptimizer', 'ExtraTreesOptimizer',
         'GradientBoostingOptimizer', 'SVCOptimizer', 'XGBClassifierOptimizer',
-        'CustomXGBClassifierOptimizer', 'KerasClassifierOptimizer', 'CatBoostClassifierOptimizer'
+        'CustomXGBClassifierOptimizer', 'KerasClassifierOptimizer', 'CatBoostClassifierOptimizer',
+        'SklearnOptimizer'
     ]
     assert all([subclass.__name__ in subclasses_names for subclass in subclasses]) and \
            len(subclasses) == len(subclasses_names)

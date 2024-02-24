@@ -13,7 +13,6 @@ from deap import creator, tools, base
 from deap.algorithms import varAnd
 from sklearn.metrics import accuracy_score
 
-
 from mloptimizer import miscellaneous
 from mloptimizer.evaluation import train_score
 from mloptimizer.plots import plotly_logbook, plotly_search_space
@@ -199,7 +198,6 @@ class BaseOptimizer(object):
         ind = pcls(ps)
         return ind
 
-    @abstractmethod
     def individual2dict(self, individual):
         """
         Method to convert an individual to a dictionary of hyperparams
@@ -220,7 +218,6 @@ class BaseOptimizer(object):
             individual_dict[keys[i]] = self.hyperparams[keys[i]].correct(individual[i])
         return {**individual_dict, **self.get_fixed_hyperparams()}
 
-    @abstractmethod
     def get_hyperparams(self):
         """
         Method to get the hyperparams to optimize. First the fixed hyperparams are removed from the list, then
@@ -231,6 +228,13 @@ class BaseOptimizer(object):
         hyperparams : dict
             dictionary of hyperparams
         """
+        default_hyperparams_keys = set(self.get_default_hyperparams().keys())
+        custom_hyperparams_keys = set(self.custom_hyperparams.keys())
+        custom_fixed_hyperparams_keys = set(self.custom_fixed_hyperparams.keys())
+
+        additional_custom_hyperparams_keys = (custom_hyperparams_keys -
+                                              default_hyperparams_keys.union(custom_fixed_hyperparams_keys))
+
         hyperparams = {}
         default_hyperparams = self.get_default_hyperparams()
         for k in self.custom_fixed_hyperparams.keys():
@@ -242,10 +246,11 @@ class BaseOptimizer(object):
             else:
                 hyperparams[k] = default_hyperparams[k]
 
+        for k in additional_custom_hyperparams_keys:
+            hyperparams[k] = self.custom_hyperparams[k]
         # Return all the hyperparams
         return hyperparams
 
-    @abstractmethod
     def get_fixed_hyperparams(self):
         """
         Method to get the fixed hyperparams dictionary. These hyperparams are stores using
@@ -260,7 +265,6 @@ class BaseOptimizer(object):
         fixed_hyperparams = {**self.get_default_fixed_hyperparams(), **self.custom_fixed_hyperparams}
         return fixed_hyperparams
 
-    @abstractmethod
     def get_default_fixed_hyperparams(self):
         """
         Method to get the default fixed hyperparams dictionary. Empty by default.
@@ -274,6 +278,10 @@ class BaseOptimizer(object):
 
         }
         return default_fixed_hyperparams
+
+    @abstractmethod
+    def get_default_hyperparams(self):
+        pass
 
     @abstractmethod
     def get_clf(self, individual):
@@ -647,4 +655,3 @@ class BaseOptimizer(object):
             self._write_logbook_file()
 
         return population, logbook, halloffame
-
