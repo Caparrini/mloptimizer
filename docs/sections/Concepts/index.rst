@@ -12,4 +12,5 @@ even create new Optimizers subclasses inheriting from the ObtimizerBase class.
 
    hyperparam
    score_functions
+   reproducibility
    parallel
