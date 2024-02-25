@@ -321,6 +321,7 @@ class BaseOptimizer(object):
         """
         mean = self.eval_function(self.features, self.labels, self.get_clf(individual),
                                   score_function=self.score_function)
+        # TODO: Log parameters and metrics to MLFlow if it is active
         return (mean,)
 
     def population_2_df(self):
@@ -528,6 +529,8 @@ class BaseOptimizer(object):
         # g2.savefig(os.path.join(self.graphics_path, "logbook.png"))
         g2.write_html(os.path.join(self.graphics_path, "logbook.html"))
         plt.close()
+
+        #TODO: Log the best model (or top n)
 
         return self.get_clf(hof[0])
 
