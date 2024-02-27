@@ -1,4 +1,3 @@
-from .hyperparam import Hyperparam
 from .base import BaseOptimizer
 from .trees import TreeOptimizer, ForestOptimizer, ExtraTreesOptimizer, GradientBoostingOptimizer
 from .xgb import XGBClassifierOptimizer, CustomXGBClassifierOptimizer

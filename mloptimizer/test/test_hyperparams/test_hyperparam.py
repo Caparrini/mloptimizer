@@ -1,16 +1,16 @@
 import pytest
 
-from mloptimizer.genoptimizer import Hyperparam
+from mloptimizer.hyperparams import Hyperparam
 
 
 @pytest.fixture
 def int_param():
-    return Hyperparam('int_param', 1, 10, int)
+    return Hyperparam('int_param', 1, 10, 'int')
 
 
 @pytest.fixture
 def float_param():
-    return Hyperparam('float_param', 1, 200, float, denominator=100)
+    return Hyperparam('float_param', 1, 200, 'float', scale=100)
 
 
 @pytest.fixture
