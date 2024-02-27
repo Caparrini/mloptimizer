@@ -2,7 +2,8 @@ from abc import ABC
 from keras.wrappers.scikit_learn import KerasClassifier
 
 from mloptimizer.alg_wrapper import generate_model
-from mloptimizer.genoptimizer import Hyperparam, BaseOptimizer
+from mloptimizer.genoptimizer import BaseOptimizer
+from mloptimizer.hyperparams import Hyperparam
 
 
 class KerasClassifierOptimizer(BaseOptimizer, ABC):

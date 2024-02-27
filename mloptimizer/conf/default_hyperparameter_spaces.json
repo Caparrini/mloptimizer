@@ -1,0 +1,9 @@
+{
+    "DecisionTreeClassifier": "DecisionTreeClassifier_default_HyperparamSpace.json",
+    "RandomForestClassifier": "RandomForestClassifier_default_HyperparamSpace.json",
+    "ExtraTreesClassifier": "ExtraTreesClassifier_default_HyperparamSpace.json",
+    "GradientBoostingClassifier": "GradientBoostingClassifier_default_HyperparamSpace.json",
+    "XGBClassifier": "XGBClassifier_default_HyperparamSpace.json",
+    "CustomXGBClassifier": "CustomXGBClassifier_default_HyperparamSpace.json",
+    "SVC": "SVC_default_HyperparamSpace.json"
+}

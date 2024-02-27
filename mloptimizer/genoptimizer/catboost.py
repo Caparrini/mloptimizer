@@ -1,7 +1,8 @@
 from abc import ABC
 from catboost import CatBoostClassifier
 
-from mloptimizer.genoptimizer import Hyperparam, BaseOptimizer
+from mloptimizer.genoptimizer import BaseOptimizer
+from mloptimizer.hyperparams import Hyperparam
 
 
 class CatBoostClassifierOptimizer(BaseOptimizer, ABC):

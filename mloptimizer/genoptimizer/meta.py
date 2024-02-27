@@ -1,4 +1,6 @@
 from mloptimizer.genoptimizer import BaseOptimizer
+import json
+import os
 
 
 class SklearnOptimizer(BaseOptimizer):
@@ -9,6 +11,7 @@ class SklearnOptimizer(BaseOptimizer):
     hyperparameters specified in the individual. The get_default_hyperparams method returns a dictionary with the
     default hyperparameters for the scikit-learn classifier.
     """
+
     def __init__(self, clf_class, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.clf_class = clf_class
@@ -17,10 +20,3 @@ class SklearnOptimizer(BaseOptimizer):
         individual_dict = self.individual2dict(individual)
         clf = self.clf_class(random_state=self.mlopt_seed, **individual_dict)
         return clf
-
-    def get_default_hyperparams(self):
-        """
-        This method returns a dictionary with the default hyperparameters for the scikit-learn classifier.
-        TODO: Implement this method based on the clf_class attribute.
-        """
-        return {}

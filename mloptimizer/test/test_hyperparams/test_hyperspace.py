@@ -16,7 +16,8 @@ def hyperparam_space():
 
 @pytest.fixture
 def json_file_path():
-    return '../../conf/DecisionTreeClassifier_default_HyperparamSpace.json'
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "..", "..", "conf", "DecisionTreeClassifier_default_HyperparamSpace.json")
 
 
 def test_from_json(json_file_path):

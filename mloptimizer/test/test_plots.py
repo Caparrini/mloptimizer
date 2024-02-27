@@ -1,13 +1,17 @@
 import pytest
 from mloptimizer.plots import logbook_to_pandas, plot_logbook, plot_search_space
-from mloptimizer.genoptimizer import TreeOptimizer
+from mloptimizer.genoptimizer import SklearnOptimizer
+from mloptimizer.hyperparams import HyperparameterSpace
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.datasets import load_iris
 
 
 @pytest.fixture
 def default_tree_optimizer():
     X, y = load_iris(return_X_y=True)
-    opt = TreeOptimizer(X, y)
+    default_hyperparameter_space = HyperparameterSpace.get_default_hyperparameter_space(DecisionTreeClassifier)
+    opt = SklearnOptimizer(features=X, labels=y, clf_class=DecisionTreeClassifier,
+                           hyperparam_space=default_hyperparameter_space)
     opt.optimize_clf(10, 10)
     return opt
 
