@@ -17,11 +17,11 @@ class KerasClassifierOptimizer(BaseOptimizer, ABC):
         default_hyperparams = {
             'epochs': Hyperparam("epochs", 1, 10, "x10"),
             'batch_size': Hyperparam("batch_size", 1, 5, "x10"),
-            'learning_rate': Hyperparam("learning_rate", 1, 20, float, 1000),
+            'learning_rate': Hyperparam("learning_rate", 1, 20, 'float', 1000),
             'layer_1': Hyperparam("layer_1", 10, 50, "x10"),
             'layer_2': Hyperparam("layer_2", 5, 20, "x10"),
-            'dropout_rate_1': Hyperparam("dropout_rate_1", 0, 5, float, 10),
-            'dropout_rate_2': Hyperparam("dropout_rate_2", 0, 5, float, 10),
+            'dropout_rate_1': Hyperparam("dropout_rate_1", 0, 5, 'float', 10),
+            'dropout_rate_2': Hyperparam("dropout_rate_2", 0, 5, 'float', 10),
         }
         return default_hyperparams
 
