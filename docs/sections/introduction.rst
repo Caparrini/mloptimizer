@@ -18,7 +18,8 @@ The goal of mloptimizer is to provide a user-friendly, yet powerful optimization
 
 - Easy to use
 - DEAP-based genetic algorithm ready to use with several machine learning algorithms
-- Default hyperparameter ranges
+- Compatible with any machine learning algorithm that complies with the Scikit-Learn API
+- Default hyperparameter spaces for the most common machine learning algorithms
 - Default score functions for evaluating the performance of the model
 - Reproducibility of results
 - Extensible with more machine learning algorithms that comply with the Scikit-Learn API
@@ -31,24 +32,25 @@ Using mloptimizer
 
 Step 1: Select and Setup the Algorithm to Optimize
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-MLOptimizer uses a wrapper for the algorithm for classification or regression that is going to be optimized.
-It currently supports the following wrappers and their corresponding algorithms:
+MLOptimizer uses a wrapper, `SklearnOptimizer`, for the algorithm for classification or regression that is going to be optimized.
+It currently have default hyperparameter spaces the following algorithms:
 
-- `TreeOptimizer`: Decision Tree Classifier from scikit-learn
-- `RandomForestOptimizer`: Random Forest Classifier from scikit-learn
-- `ExtraTreesOptimizer`: Extra Trees Classifier from scikit-learn
-- `GradientBoostingOptimizer`: Gradient Boosting Classifier from scikit-learn
-- `SVCClassifierOptimizer`: Support Vector Classifier from scikit-learn
-- `KerasClassifierOptimizer`: Keras Classifier
-- `XGBClassifierOptimizer`: XGBoost Classifier
+- `DecisionTreeClassifier`: Decision Tree Classifier from scikit-learn
+- `RandomForestClassifier`: Random Forest Classifier from scikit-learn
+- `ExtraTreesClassifier`: Extra Trees Classifier from scikit-learn
+- `GradientBoostingClassifier`: Gradient Boosting Classifier from scikit-learn
+- `SVC`: Support Vector Classifier from scikit-learn
+- `KerasClassifier`: Custom Keras Classifier class
+- `XGBClassifier`: XGBoost Classifier
 
-Let’s assume that we want to fine-tune the decision tree classifier from scikit-learn, wrapped in `TreeOptimizer`.
+Let’s assume that we want to fine-tune the decision tree classifier from scikit-learn, wrapped in `SklearnOptimizer`.
 
-To instantiate the wrapper, you need to specify the dataset to work with, the input features (as a matrix),
+To instantiate the wrapper, you need to specify the class of the machine learning algorithm,
+the dataset to work with, the hyperparameter space (fixed and evolvable), the input features (as a matrix),
 and the output features (as a column).
 
 The wrapper has a variable with the set of hyperparameters to be explored.
-For the case of the decision tree classifier in `TreeOptimizer`,
+For the case of the decision tree classifier in `DecisionTreeClassifier` from `sklearn.tree`
 the default hyperparameters and their exploration ranges are:
 
 - `min_samples_split`, range [2, 50]

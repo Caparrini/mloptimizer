@@ -31,7 +31,7 @@ The `Hyperparam` class supports several types of hyperparameters. Here are examp
 .. code-block:: python
 
    hyperparam_int = Hyperparam(name='max_depth', min_value=1,
-                               max_value=10, hyperparam_type=int)
+                               max_value=10, hyperparam_type='int')
 
 
 - Float hyperparameter:
@@ -39,7 +39,7 @@ The `Hyperparam` class supports several types of hyperparameters. Here are examp
 .. code-block:: python
 
     hyperparam_float = Hyperparam(name='learning_rate', min_value=0.01, max_value=1.0,
-                                  hyperparam_type=float, denominator=100)
+                                  hyperparam_type='float', scale=100)
 
 
 - 'nexp' hyperparameter:
@@ -67,7 +67,7 @@ Here's an example of how to use the Hyperparam class:
 
    # Define a hyperparameter
    hyperparam = Hyperparam(name='learning_rate', min_value=0, max_value=1,
-                           hyperparam_type=float, denominator=100)
+                           hyperparam_type='float', scale=100)
 
    # Correct a value
    # This will return 1.0 as 150 is beyond the max_value
@@ -76,28 +76,40 @@ Here's an example of how to use the Hyperparam class:
 
 In this example, we define a hyperparameter named 'learning_rate' with a minimum value of 0, a maximum value of 1, and a type of float. The 'correct' method is then used to correct a value that is beyond the defined maximum value.
 
-Here's an example of how you can create a `TreeOptimizer` instance and pass custom hyperparameters to it:
+Here's an example of how you can create a `HyperparameterSpace` instance and pass custom hyperparameters to it:
 
 .. code-block:: python
 
-   from mloptimizer.genoptimizer import Hyperparam
-   from mloptimizer.genoptimizer.trees import TreeOptimizer
+   from mloptimizer.hyperparams import Hyperparam, HyperparameterSpace
 
    # Define custom hyperparameters
-   custom_hyperparams = {
-   "min_samples_split": Hyperparam("min_samples_split", 2, 50, int),
-   "min_samples_leaf": Hyperparam("min_samples_leaf", 1, 20, int),
-   "max_depth": Hyperparam("max_depth", 2, 20, int),
-   "min_impurity_decrease": Hyperparam("min_impurity_decrease", 0, 150, float, 1000),
-   "ccp_alpha": Hyperparam("ccp_alpha", 0, 300, float, 100000)
+   fixed_hyperparams = {
+       "criterion": "gini"
+   }
+   evolvable_hyperparams = {
+       "min_samples_split": Hyperparam("min_samples_split", 2, 50, 'int'),
+       "min_samples_leaf": Hyperparam("min_samples_leaf", 1, 20, 'int'),
+       "max_depth": Hyperparam("max_depth", 2, 20, 'int'),
+       "min_impurity_decrease": Hyperparam("min_impurity_decrease", 0, 150, 'float', 1000),
+       "ccp_alpha": Hyperparam("ccp_alpha", 0, 300, 'float', 100000)
    }
 
-   # Create a TreeOptimizer instance
-   tree_optimizer = TreeOptimizer()
 
-   # Set the custom hyperparameters
-   tree_optimizer.hyperparams = custom_hyperparams
+   # Create a HyperparameterSpace instance
+   hyperparam_space = HyperparameterSpace(fixed_hyperparams, evolvable_hyperparams)
 
-In this example, we first define a dictionary of custom hyperparameters. Each hyperparameter is an instance of the `Hyperparam` class, which takes the name, minimum value, maximum value, type, and an optional denominator as arguments.
+   # Then we can use the hyperparam_space instance to optimize the hyperparameters
+   from sklearn.tree import DecisionTreeClassifier
+   from sklearn.datasets import load_iris
+   from mloptimizer.genoptimizer import SklearnOptimizer
 
-Then, we create an instance of the `TreeOptimizer` class and set its `hyperparams` attribute to our custom hyperparameters.
+   # Load the iris dataset
+   X,y = load_iris(return_X_y=True)
+
+   tree_optimizer = SklearnOptimizer(clf_class=DecisionTreeClassifier,
+                                    hyperparam_space=hyperparam_space,
+                                    features=X, labels=y)
+   tree_optimizer.optimize_clf(3, 3)
+
+
+In this example, we define custom hyperparameters and create a `HyperparameterSpace` instance. We then use the `HyperparameterSpace` instance to optimize the hyperparameters of a `DecisionTreeClassifier` using the `SklearnOptimizer` class.

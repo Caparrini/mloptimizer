@@ -10,6 +10,7 @@
 ## Features
 - Easy to use
 - DEAP-based genetic algorithm ready to use with several machine learning algorithms
+- Adaptable to use with any machine learning algorithm that complies with the Scikit-Learn API
 - Default hyperparameter ranges
 - Default score functions for evaluating the performance of the model
 - Reproducibility of results
@@ -47,18 +48,24 @@ You can get more information about the package installation at https://pypi.org/
 Here's a simple example of how to optimize hyperparameters in a decision tree classifier using the iris dataset:
 
 ```python
-from mloptimizer.genoptimizer import TreeOptimizer
+from mloptimizer.genoptimizer import SklearnOptimizer
+from mloptimizer.hyperparams import HyperparameterSpace
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.datasets import load_iris
 
+# 1) Load the dataset and get the features and target
 X, y = load_iris(return_X_y=True)
 
-#   
-opt = TreeOptimizer(X, y, "Optimizer")
+# 2) Define the hyperparameter space (a default space is provided for some algorithms)
+hyperparameter_space = HyperparameterSpace.get_default_hyperparameter_space(DecisionTreeClassifier)
+
+# 3) Create the optimizer and optimize the classifier
+opt = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y, hyperparam_space=hyperparameter_space)
 
 clf = opt.optimize_clf(10, 10)
 ```
 
-The last line of code will create a directory in the current folder with a name like `YYYYMMDD_nnnnnnnnnn_TreeOptimizer`.
+The last line of code will create a directory in the current folder with a name like `YYYYMMDD_nnnnnnnnnn_SklearnOptimizer`.
 This folder contains the results of the optimization, 
 including the best estimator found and the log file `opt.log` informing with all the steps, 
 the best estimator and the result of the optimization.

@@ -4,7 +4,9 @@ Evolution (logbook) graph
 mloptimizer provides a function to plot the evolution of the fitness function.
 """
 
-from mloptimizer.genoptimizer import TreeOptimizer
+from mloptimizer.genoptimizer import SklearnOptimizer
+from mloptimizer.hyperparams import HyperparameterSpace
+from sklearn.tree import DecisionTreeClassifier
 from mloptimizer.plots import plotly_logbook
 import plotly
 import os
@@ -16,8 +18,15 @@ from sklearn.datasets import load_iris
 X, y = load_iris(return_X_y=True)
 
 # %%
+# Define the HyperparameterSpace, you can use the default hyperparameters for the machine learning model
+# that you want to optimize. In this case we use the default hyperparameters for a DecisionTreeClassifier.
+# Another dataset or a custom one can be used
+hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(DecisionTreeClassifier)
+
+# %%
 # We use the default TreeOptimizer class to optimize a decision tree classifier.
-opt = TreeOptimizer(X, y, "Evolution_example")
+opt = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y,
+                       hyperparam_space=hyperparam_space, folder="Evolution_example")
 
 # %%
 # To optimizer the classifier we need to call the optimize_clf method.

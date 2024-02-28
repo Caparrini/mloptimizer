@@ -16,30 +16,31 @@ An example of usage is:
 .. code-block:: python
 
     from sklearn.datasets import load_breast_cancer as dataset
-    from sklearn.model_selection import train_test_split
     from sklearn.tree import DecisionTreeClassifier
-    from sklearn.metrics import accuracy_score
-    from mloptimizer.genoptimizer import TreeOptimizer
+    from mloptimizer.genoptimizer import SklearnOptimizer
+    from mloptimizer.hyperparams import HyperparameterSpace
 
     X, y = load_iris(return_X_y=True)
+    default_hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(DecisionTreeClassifier)
     population = 2
     generations = 2
     seed = 25
     distinct_seed = 2
     # It is important to run the optimization
     # right after the creation of the optimizer
-    optimizer1 = TreeOptimizer(X, y, seed=seed)
+    optimizer1 = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y,
+                                  hyperparam_space=default_hyperparam_space, seed=seed)
     result1 = optimizer1.optimize_clf(population=population,
                                       generations=generations)
     # WARNING: In case the optimizer2 would be created after the optimizer1,
     # the results would be different
-    optimizer2 = TreeOptimizer(X, y, score_function=target_metric,
-                           eval_function=target_score, seed=seed)
+    optimizer2 = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y,
+                                  hyperparam_space=default_hyperparam_space, seed=seed)
     result2 = optimizer2.optimize_clf(population=population,
                                       generations=generations)
 
-    optimizer3 = TreeOptimizer(X, y, score_function=target_metric,
-                           eval_function=target_score, seed=distinct_seed)
+    optimizer3 = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y,
+                                  hyperparam_space=default_hyperparam_space, seed=distinct_seed)
     result3 = optimizer3.optimize_clf(population=population,
                                       generations=generations)
     str(result1) == str(result2)

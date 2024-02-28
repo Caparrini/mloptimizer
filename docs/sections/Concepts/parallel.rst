@@ -14,28 +14,36 @@ An example of the speedup that can be achieved using parallel processing is show
    In the example below, the seed is set to 25 to ensure the result using parallel processing is the same as the one without parallel processing.
 
 .. warning::
-   Parallel processing is not supported for the ``XGB`` and ``Keras`` classifiers.
+   Parallel processing is not supported for the ``XGBClassifier`` and ``KerasClassifier`` classifiers.
 
 .. code-block:: python
 
+    from mloptimizer.genoptimizer import SklearnOptimizer
+    from mloptimizer.hyperparams import HyperparameterSpace
+    from sklearn.tree import DecisionTreeClassifier
     from sklearn.datasets import load_iris
     import time
 
-    from mloptimizer.genoptimizer import TreeOptimizer
+    # Load the dataset and get the features and target
+    X, y = load_iris(return_X_y=True)
 
-    X, y = dataset(return_X_y=True)
+    # Define the hyperparameter space (a default space is provided for some algorithms)
+    hyperparameter_space = HyperparameterSpace.get_default_hyperparameter_space(DecisionTreeClassifier)
+
+    # Set the seed to ensure the result using parallel processing is the same as the one without parallel processing
     my_seed = 25
     population = 50
     generations = 4
 
-    opt_with_parallel = optimizer(X, y, seed=my_seed, use_parallel=True)
+    opt_with_parallel = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y,
+                                  hyperparam_space=hyperparameter_space, seed=my_seed, use_parallel=True)
 
     start_time_parallel = time.time()
     clf_with_parallel = opt_with_parallel.optimize_clf(population, generations)
     end_time_parallel = time.time()
 
-    opt = optimizer(X, y, seed=my_seed, use_parallel=False)
-
+    opt = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y,
+                    hyperparam_space=hyperparameter_space, seed=my_seed, use_parallel=False)
     start_time = time.time()
     clf = opt.optimize_clf(population, generations)
     end_time = time.time()
