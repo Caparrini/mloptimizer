@@ -1,5 +1,5 @@
 import pytest
-from mloptimizer import SklearnOptimizer
+from mloptimizer.genoptimizer import SklearnOptimizer
 from mloptimizer.hyperparams import Hyperparam, HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
