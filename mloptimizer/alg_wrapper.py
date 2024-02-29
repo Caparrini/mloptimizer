@@ -1,8 +1,5 @@
-import keras
 import numpy as np
 import xgboost as xgb
-from keras.layers import Dense, Dropout
-from keras.models import Sequential
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
 
@@ -224,6 +221,13 @@ class CustomXGBClassifier(BaseEstimator):
 
 def generate_model(learning_rate=0.01, layer_1=100, layer_2=50,
                    dropout_rate_1=0, dropout_rate_2=0):
+    try:
+        import keras
+        from keras.layers import Dense, Dropout
+        from keras.models import Sequential
+    except ImportError as e:
+        print(f"{e}: Keras is not installed. Please install it to use this function.")
+        return None
     model = Sequential()
     model.add(Dense(layer_1, activation="relu"))
     model.add(Dropout(dropout_rate_1))
