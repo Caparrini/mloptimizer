@@ -1,6 +1,4 @@
 from abc import ABC
-from keras.wrappers.scikit_learn import KerasClassifier
-
 from mloptimizer.alg_wrapper import generate_model
 from mloptimizer.genoptimizer import BaseOptimizer
 from mloptimizer.hyperparams import Hyperparam
@@ -26,6 +24,11 @@ class KerasClassifierOptimizer(BaseOptimizer, ABC):
         return default_hyperparams
 
     def get_clf(self, individual):
+        try:
+            from keras.wrappers.scikit_learn import KerasClassifier
+        except ImportError as e:
+            print(f"{e}: Keras is not installed. Please install it to use this function.")
+            return None
         individual_dict = self.individual2dict(individual)
         print(individual_dict)
         clf = KerasClassifier(build_fn=generate_model,

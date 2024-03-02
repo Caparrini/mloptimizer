@@ -222,7 +222,7 @@ class CustomXGBClassifier(BaseEstimator):
 def generate_model(learning_rate=0.01, layer_1=100, layer_2=50,
                    dropout_rate_1=0, dropout_rate_2=0):
     try:
-        import keras
+        from keras.optimizers import Adam
         from keras.layers import Dense, Dropout
         from keras.models import Sequential
     except ImportError as e:
@@ -235,7 +235,7 @@ def generate_model(learning_rate=0.01, layer_1=100, layer_2=50,
     model.add(Dropout(dropout_rate_2))
     model.add(Dense(1, activation="sigmoid"))
 
-    opt = keras.optimizers.Adam(learning_rate=learning_rate)
+    opt = Adam(learning_rate=learning_rate)
     model.compile(loss='binary_crossentropy', optimizer=opt,
                   metrics=['accuracy'])
     return model
