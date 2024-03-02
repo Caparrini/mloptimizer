@@ -11,7 +11,7 @@ jobs:
         with:
           python-version: '3.8'
       - name: Install dependencies
-        run: pip install -r requirements_prod.txt
+        run: pip install -r requirements.txt
       - name: Install pytest and pytest-cov
         run: pip install pytest pytest-cov
       - name: Run tests and collect coverage
