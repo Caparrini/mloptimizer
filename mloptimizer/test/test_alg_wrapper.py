@@ -11,6 +11,7 @@ def test_keras_classifier():
     except ImportError as e:
         print(f"{e}: Keras is not installed. It will be installed to test.")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "keras==2.12.0"])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "tensorflow==2.12.1"])
         from keras.wrappers.scikit_learn import KerasClassifier
 
     uat = KerasClassifier(build_fn=generate_model, epochs=10,
