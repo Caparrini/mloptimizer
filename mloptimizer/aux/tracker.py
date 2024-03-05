@@ -79,3 +79,10 @@ class Tracker:
         self.optimization_logger, _ = init_logger(
             os.path.join(self.opt_run_folder, "opt.log")
         )
+
+    def log_clfs(self, classifiers_list: list, generation: int, fitness_list: list[int]):
+        for i in range(len(classifiers_list)):
+            self.optimization_logger.info(f"Generation {generation} - Classifier TOP {i}")
+            self.optimization_logger.info(f"Classifier: {classifiers_list[i]}")
+            self.optimization_logger.info(f"Fitness: {fitness_list[i]}")
+            self.optimization_logger.info("Hyperparams: {}".format(str(classifiers_list[i].get_params())))
