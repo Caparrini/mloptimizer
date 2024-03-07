@@ -44,6 +44,8 @@ class BaseOptimizer(object):
         seed for the random functions
     use_parallel : bool
         flag to use parallel processing
+    use_mlflow : bool
+        flag to use mlflow
     """
     __metaclass__ = ABCMeta
 
@@ -51,7 +53,7 @@ class BaseOptimizer(object):
                  hyperparam_space: HyperparameterSpace = None,
                  eval_function=train_score,
                  score_function=accuracy_score, seed=random.randint(0, 1000000),
-                 use_parallel=False):
+                 use_parallel=False, use_mlflow=False):
         """
         Creates object BaseOptimizer.
 
@@ -71,6 +73,10 @@ class BaseOptimizer(object):
             function to evaluate the model from X, y, clf
         score_function : func, optional (default=balanced_accuracy_score)
             function to score from y, y_pred
+        use_parallel : bool, optional (default=False)
+            flag to use parallel processing
+        use_mlflow : bool, optional (default=False)
+            flag to use mlflow
         seed : int, optional (default=0)
             seed for the random functions (deap, models, and splits on evaluations)
         """
@@ -79,9 +85,6 @@ class BaseOptimizer(object):
         self.labels = labels
         # Input search space hyperparameters
         self.hyperparam_space = hyperparam_space
-
-        # Tracker
-        self.tracker = Tracker(name="mloptimizer", folder=folder, log_file=log_file)
 
         self.eval_function = eval_function
         self.score_function = score_function
@@ -95,6 +98,12 @@ class BaseOptimizer(object):
 
         # Parallel
         self.use_parallel = use_parallel
+
+        # mlflow
+        self.use_mlflow = use_mlflow
+
+        # Tracker
+        self.tracker = Tracker(name="mloptimizer", folder=folder, log_file=log_file, use_mlflow=self.use_mlflow)
 
     def set_mlopt_seed(self, seed):
         """
@@ -207,7 +216,7 @@ class BaseOptimizer(object):
         """
         mean = self.eval_function(self.features, self.labels, self.get_clf(individual),
                                   score_function=self.score_function)
-        # TODO: Log parameters and metrics to MLFlow if it is active
+        self.tracker.log_evaluation(self.get_clf(individual), mean)
         return (mean,)
 
     def population_2_df(self):
@@ -309,7 +318,6 @@ class BaseOptimizer(object):
         stats.register("max", np.max)
 
         start_gen = 0
-        # self.file_out.write("Optimizing accuracy:\n")
         # Using deap, custom for decision tree
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
         creator.create("Individual", list, fitness=creator.FitnessMax)

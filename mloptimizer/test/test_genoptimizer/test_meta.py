@@ -33,12 +33,12 @@ def test_sklearn_optimizer(clf_class):
     assert mlopt is not None
 
 
-def test_mloptimizer():
+@pytest.mark.parametrize('use_mlflow', [True, False])
+def test_mloptimizer(use_mlflow):
     X, y = load_iris(return_X_y=True)
-    mlopt = SklearnOptimizer(clf_class=DecisionTreeClassifier,
-                             hyperparam_space=HyperparameterSpace(fixed_hyperparams={},
-                                                                  evolvable_hyperparams=custom_evolvable_hyperparams),
-                             features=X, labels=y)
+    mlopt = SklearnOptimizer(clf_class=XGBClassifier,
+                             hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBClassifier),
+                             features=X, labels=y, use_mlflow=use_mlflow)
     mlopt.optimize_clf(5, 5)
     assert mlopt is not None
 

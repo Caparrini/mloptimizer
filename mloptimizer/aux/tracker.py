@@ -2,6 +2,7 @@ from mloptimizer.utils import create_optimization_folder, init_logger
 import os
 import shutil
 from datetime import datetime
+import importlib
 
 
 class Tracker:
@@ -17,9 +18,10 @@ class Tracker:
     log_file : str
         Name of the log file.
     """
-    def __init__(self, name, folder=os.curdir, log_file="mloptimizer.log"):
+
+    def __init__(self, name, folder=os.curdir, log_file="mloptimizer.log", use_mlflow=False):
         self.name = name
-        self.bugs = []
+        self.gen = 0
         # Main folder, current by default
         self.folder = create_optimization_folder(folder)
         # Log files
@@ -33,6 +35,12 @@ class Tracker:
         self.progress_path = None
         self.results_path = None
         self.graphics_path = None
+
+        # MLFlow
+        self.use_mlflow = use_mlflow
+
+        if self.use_mlflow:
+            self.mlflow = importlib.import_module("mlflow")
 
     def start_optimization(self, opt_class):
         """
@@ -63,6 +71,9 @@ class Tracker:
                 datetime.now().strftime("%Y%m%d_%H%M%S"),
                 type(self).__name__)
 
+        if self.use_mlflow:
+            self.mlflow.set_experiment(opt_run_folder_name)
+
         self.opt_run_folder = os.path.join(self.folder, opt_run_folder_name)
         self.opt_run_checkpoint_path = os.path.join(self.opt_run_folder, "checkpoints")
         self.results_path = os.path.join(self.opt_run_folder, "results")
@@ -81,8 +92,19 @@ class Tracker:
         )
 
     def log_clfs(self, classifiers_list: list, generation: int, fitness_list: list[int]):
+        self.gen = generation
         for i in range(len(classifiers_list)):
             self.optimization_logger.info(f"Generation {generation} - Classifier TOP {i}")
             self.optimization_logger.info(f"Classifier: {classifiers_list[i]}")
             self.optimization_logger.info(f"Fitness: {fitness_list[i]}")
             self.optimization_logger.info("Hyperparams: {}".format(str(classifiers_list[i].get_params())))
+        self.gen = generation + 1
+
+    def log_evaluation(self, classifier, metric):
+        self.optimization_logger.info(f"Adding to mlflow...\nClassifier: {classifier}\nFitness: {metric}")
+
+        if self.use_mlflow:
+            with self.mlflow.start_run():
+                self.mlflow.log_params(classifier.get_params())
+                # We use the generation as the step
+                self.mlflow.log_metric(key="fitness", value=metric, step=self.gen)
