@@ -1,4 +1,4 @@
-from mloptimizer.utils import create_optimization_folder, init_logger
+from mloptimizer.aux.utils import create_optimization_folder, init_logger
 import os
 import shutil
 from datetime import datetime

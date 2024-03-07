@@ -1,6 +1,5 @@
 import os
-import pytest
-from mloptimizer.utils import init_logger, create_optimization_folder
+from mloptimizer.aux.utils import init_logger, create_optimization_folder
 
 
 def test_init_logger(tmp_path):

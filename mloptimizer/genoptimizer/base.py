@@ -11,11 +11,10 @@ from deap import creator, tools, base
 from deap.algorithms import varAnd
 from sklearn.metrics import accuracy_score
 
-from mloptimizer import utils
 from mloptimizer.evaluation import train_score
 from mloptimizer.plots import plotly_logbook, plotly_search_space
 from mloptimizer.hyperparams import HyperparameterSpace
-from mloptimizer.aux import Tracker
+from mloptimizer.aux import Tracker, utils
 
 
 class BaseOptimizer(object):
