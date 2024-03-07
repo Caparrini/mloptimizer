@@ -1,4 +1,4 @@
-![mloptimizer_banner](https://github.com/Caparrini/mloptimizer-static/blob/b3bb3de14641e3993ffeed33d39f0932426ff812/logos/mloptimizer_banner_readme.png?raw=true)
+![mloptimizer_banner](https://raw.githubusercontent.com/Caparrini/mloptimizer-static/main/logos/mloptimizer_banner_readme.png)
 
 [![Documentation Status](https://readthedocs.org/projects/mloptimizer/badge/?version=master)](https://mloptimizer.readthedocs.io/en/master/?badge=master)
 [![PyPI version](https://badge.fury.io/py/mloptimizer.svg)](https://badge.fury.io/py/mloptimizer)
@@ -7,7 +7,10 @@
 [![Coverage Status](http://codecov.io/github/Caparrini/mloptimizer/coverage.svg?branch=master)](https://app.codecov.io/gh/Caparrini/mloptimizer)
 
 
-**mloptimizer** is a Python library for optimizing hyperparameters of machine learning algorithms using genetic algorithms. With mloptimizer, you can find the optimal set of hyperparameters for a given machine learning model and dataset, which can significantly improve the performance of the model. The library supports several popular machine learning algorithms, including decision trees, random forests, and gradient boosting classifiers. The genetic algorithm used in mloptimizer provides an efficient and flexible approach to search for the optimal hyperparameters in a large search space.
+**mloptimizer** is a Python library for optimizing hyperparameters of machine learning algorithms using genetic algorithms. 
+With mloptimizer, you can find the optimal set of hyperparameters for a given machine learning model and dataset, which can significantly improve the performance of the model. 
+The library supports several popular machine learning algorithms, including decision trees, random forests, and gradient boosting classifiers. 
+The genetic algorithm used in mloptimizer provides an efficient and flexible approach to search for the optimal hyperparameters in a large search space.
 
 ## Features
 - Easy to use
@@ -21,6 +24,7 @@
 - Extensible with more machine learning algorithms that comply with the Scikit-Learn API
 - Customizable hyperparameter ranges
 - Customizable score functions
+- Optional mlflow compatibility for tracking the optimization process
 
 ## Installation
 
@@ -64,10 +68,16 @@ hyperparameter_space = HyperparameterSpace.get_default_hyperparameter_space(Deci
 # 3) Create the optimizer and optimize the classifier
 opt = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y, hyperparam_space=hyperparameter_space)
 
-clf = opt.optimize_clf(10, 10)
+# 4) Optimize the classifier, the optimization returns the best estimator found in the optimization process
+# - 10 generations starting with a population of 10 individuals, other parameters are set to default
+clf = opt.optimize_clf(population=10, generations=10)
 ```
+Other algorithms can be used, such as `RandomForestClassifier` or `XGBClassifier` which have a 
+default hyperparameter space defined in the library.
+Even if the algorithm is not included in the default hyperparameter space, you can define your own hyperparameter space
+following the documentation.
 
-The last line of code will create a directory in the current folder with a name like `YYYYMMDD_nnnnnnnnnn_SklearnOptimizer`.
+The optimization will create a directory in the current folder with a name like `YYYYMMDD_nnnnnnnnnn_SklearnOptimizer`.
 This folder contains the results of the optimization, 
 including the best estimator found and the log file `opt.log` informing with all the steps, 
 the best estimator and the result of the optimization.
@@ -123,7 +133,10 @@ The following dependencies are used in `mloptimizer`:
 * [Deap](https://github.com/DEAP/deap) - Genetic Algorithms
 * [XGBoost](https://github.com/dmlc/xgboost) - Gradient boosting classifier
 * [Scikit-Learn](https://github.com/scikit-learn/scikit-learn) - Machine learning algorithms and utilities
+
+Optional:
 * [Keras](https://keras.io) - Deep learning library
+* [mlflow](https://mlflow.org) - Tracking the optimization process
 
 ## Documentation
 

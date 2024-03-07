@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = 'mloptimizer'
 copyright = '2024, Antonio Caparrini'
 author = 'Antonio Caparrini'
-release = '0.6.1'
+release = '0.7.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -30,7 +30,8 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.graphviz',
     'sphinx.ext.intersphinx',
-    'autoapi.extension'
+    'autoapi.extension',
+    'sphinx_favicon'
 ]
 
 templates_path = ['_templates']
@@ -52,7 +53,7 @@ autoapi_ignore = ['*test*']
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'sphinx_book_theme'
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 image_scrapers = ('matplotlib', plotly_sg_scraper,)
 
@@ -77,3 +78,11 @@ html_theme_options = {
     "repository_url": "https://github.com/Caparrini/mloptimizer",
     "use_repository_button": True,
 }
+
+html_logo = 'http://raw.githubusercontent.com/Caparrini/mloptimizer-static/main/logos/mloptimizer_banner_readme.png'
+
+favicons = [
+    "https://raw.githubusercontent.com/Caparrini/mloptimizer-static/main/logos/favicon-16x16.png",
+    "https://raw.githubusercontent.com/Caparrini/mloptimizer-static/main/logos/favicon-32x32.png",
+    "https://raw.githubusercontent.com/Caparrini/mloptimizer-static/main/logos/favicon.ico",
+]
