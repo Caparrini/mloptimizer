@@ -1,3 +1,5 @@
+![mloptimizer_banner](https://github.com/Caparrini/mloptimizer-static/blob/b3bb3de14641e3993ffeed33d39f0932426ff812/logos/mloptimizer_banner_readme.png?raw=true)
+
 [![Documentation Status](https://readthedocs.org/projects/mloptimizer/badge/?version=master)](https://mloptimizer.readthedocs.io/en/master/?badge=master)
 [![PyPI version](https://badge.fury.io/py/mloptimizer.svg)](https://badge.fury.io/py/mloptimizer)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/mloptimizer.svg)](https://pypi.python.org/pypi/mloptimizer/)
