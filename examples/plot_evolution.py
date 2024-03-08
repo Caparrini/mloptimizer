@@ -46,13 +46,13 @@ plotly.io.show(g_logbook)
 
 # %%
 # At the end of the evolution the graph is saved as an html at the path:
-print(opt.graphics_path)
-print(os.listdir(opt.graphics_path))
+print(opt.tracker.graphics_path)
+print(os.listdir(opt.tracker.graphics_path))
 
 
 # %%
 # The data to generate the graph is available at the path:
-print(opt.results_path)
-print(os.listdir(opt.results_path))
+print(opt.tracker.results_path)
+print(os.listdir(opt.tracker.results_path))
 
 del opt
