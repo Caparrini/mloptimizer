@@ -1,6 +1,4 @@
 from mloptimizer.genoptimizer import BaseOptimizer
-import json
-import os
 
 
 class SklearnOptimizer(BaseOptimizer):
