@@ -290,6 +290,28 @@ class BaseOptimizer(object):
             self.tracker.optimization_logger.error("File {} does not exist".format(filename))
         return data
 
+    def _log_and_save_results(self, hof):
+        halloffame_classifiers = list(map(self.get_clf, hof))
+        halloffame_fitness = [ind.fitness.values[:] for ind in hof]
+        self.tracker.log_clfs(classifiers_list=halloffame_classifiers, generation=-1,
+                              fitness_list=halloffame_fitness)
+
+        self._write_population_file()
+        self._write_logbook_file()
+
+        hyperparam_names = list(self.hyperparam_space.evolvable_hyperparams.keys())
+        hyperparam_names.append("fitness")
+        population_df = self.population_2_df()
+        df = population_df[hyperparam_names]
+        g = plotly_search_space(df)
+        g.write_html(os.path.join(self.tracker.graphics_path, "search_space.html"))
+        plt.close()
+
+        g2 = plotly_logbook(self.logbook, population_df)
+        # g2.savefig(os.path.join(self.graphics_path, "logbook.png"))
+        g2.write_html(os.path.join(self.tracker.graphics_path, "logbook.html"))
+        plt.close()
+
     def optimize_clf(self, population: int = 10, generations: int = 3,
                      checkpoint: str = None, opt_run_folder_name: str = None) -> object:
         """
@@ -349,19 +371,12 @@ class BaseOptimizer(object):
 
             # Load checkpoint
             cp = self.tracker.load_checkpoint(checkpoint)
-
-            # self.tracker.optimization_logger, _ = utils.init_logger(os.path.join(checkpoint, "opt.log"))
-            # cp = joblib.load(checkpoint)
-            # self.tracker.optimization_logger.info("Initiating from checkpoint {}...".format(checkpoint))
             pop = cp['population']
             start_gen = cp['generation'] + 1
             hof = cp['halloffame']
             self.logbook = cp['logbook']
             random.setstate(cp['rndstate'])
-            # Extract checkpoint_path from checkpoint file
-            # self.tracker.opt_run_checkpoint_path = os.path.dirname(checkpoint)
-            # self.tracker.results_path = os.path.join(self.tracker.opt_run_checkpoint_path, "results")
-            # self.tracker.graphics_path = os.path.join(self.tracker.opt_run_checkpoint_path, "graphics")
+
         else:
 
             self.logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
@@ -389,31 +404,11 @@ class BaseOptimizer(object):
                                                         start_gen=start_gen, ngen=generations, stats=stats,
                                                         halloffame=hof)
 
-        self.tracker.optimization_logger.info("LOGBOOK: \n{}".format(self.logbook))
-        self.tracker.optimization_logger.info("HALL OF FAME: {} individuals".format(len(hof)))
+        # self.tracker.optimization_logger.info("LOGBOOK: \n{}".format(self.logbook))
+        # self.tracker.optimization_logger.info("HALL OF FAME: {} individuals".format(len(hof)))
 
-        halloffame_classifiers = list(map(self.get_clf, hof))
-        halloffame_fitness = [ind.fitness.values[:] for ind in hof]
-        self.tracker.log_clfs(classifiers_list=halloffame_classifiers, generation=-1,
-                              fitness_list=halloffame_fitness)
-
-        self._write_population_file()
-        self._write_logbook_file()
-        # self.plot_logbook(logbook=logbook)
-        hyperparam_names = list(self.hyperparam_space.evolvable_hyperparams.keys())
-        hyperparam_names.append("fitness")
-        population_df = self.population_2_df()
-        df = population_df[hyperparam_names]
-        g = plotly_search_space(df)
-        g.write_html(os.path.join(self.tracker.graphics_path, "search_space.html"))
-        plt.close()
-
-        g2 = plotly_logbook(self.logbook, population_df)
-        # g2.savefig(os.path.join(self.graphics_path, "logbook.png"))
-        g2.write_html(os.path.join(self.tracker.graphics_path, "logbook.html"))
-        plt.close()
-
-        # TODO: Log the best model (or top n)
+        # Log and save results
+        self._log_and_save_results(hof)
 
         return self.get_clf(hof[0])
 
