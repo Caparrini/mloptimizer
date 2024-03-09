@@ -1,5 +1,5 @@
 import pytest
-from mloptimizer.plots import logbook_to_pandas, plot_logbook, plot_search_space
+from mloptimizer.aux.plots import logbook_to_pandas, plot_logbook, plot_search_space
 from mloptimizer.genoptimizer import SklearnOptimizer
 from mloptimizer.hyperparams import HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier

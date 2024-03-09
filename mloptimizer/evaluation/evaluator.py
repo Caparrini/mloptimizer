@@ -22,7 +22,7 @@ class Evaluator:
         The metrics to use to evaluate the performance of the classifier
         Dictionary of the form {"metric_name": metric_function}
     """
-    def __init__(self, eval_function, fitness_score="balanced_accuracy", metrics=None):
+    def __init__(self, eval_function, fitness_score="accuracy", metrics=None):
         if metrics is None:
             self.metrics = _default_metrics()
         else:

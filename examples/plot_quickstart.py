@@ -8,8 +8,6 @@ Firstly, we import the necessary libraries to get data and plot the results.
 from mloptimizer.genoptimizer import SklearnOptimizer
 from mloptimizer.hyperparams import HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
-from mloptimizer.plots import plotly_logbook, plotly_search_space
-import plotly
 from sklearn.datasets import load_iris
 
 # %%

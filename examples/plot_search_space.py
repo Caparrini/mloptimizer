@@ -7,7 +7,7 @@ mloptimizer provides a function to plot the search space of the optimization.
 from mloptimizer.genoptimizer import SklearnOptimizer
 from mloptimizer.hyperparams import HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
-from mloptimizer.plots import plotly_search_space
+from mloptimizer.aux.plots import plotly_search_space
 import plotly
 import os
 from sklearn.datasets import load_iris

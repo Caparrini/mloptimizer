@@ -12,7 +12,7 @@ from deap.algorithms import varAnd
 from sklearn.metrics import accuracy_score
 
 from mloptimizer.evaluation import train_score
-from mloptimizer.plots import plotly_logbook, plotly_search_space
+from mloptimizer.aux.plots import plotly_logbook, plotly_search_space
 from mloptimizer.hyperparams import HyperparameterSpace
 from mloptimizer.aux import Tracker, utils
 from mloptimizer.evaluation import Evaluator
@@ -50,7 +50,7 @@ class BaseOptimizer(object):
     def __init__(self, features: np.array, labels: np.array, folder=os.curdir, log_file="mloptimizer.log",
                  hyperparam_space: HyperparameterSpace = None,
                  eval_function=train_score,
-                 fitness_score="accuracy", seed=random.randint(0, 1000000),
+                 fitness_score="accuracy", metrics=None, seed=random.randint(0, 1000000),
                  use_parallel=False, use_mlflow=False):
         """
         Creates object BaseOptimizer.
@@ -85,7 +85,11 @@ class BaseOptimizer(object):
         self.hyperparam_space = hyperparam_space
 
         # ML Evaluator
-        self.evaluator = Evaluator(eval_function=eval_function, fitness_score=fitness_score)
+        if metrics is None:
+            metrics = {"accuracy": accuracy_score}
+
+        self.evaluator = Evaluator(eval_function=eval_function, fitness_score=fitness_score,
+                                   metrics=metrics)
 
         # State vars
         self.eval_dict = {}

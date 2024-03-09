@@ -1,5 +1,5 @@
 from abc import ABC
-from mloptimizer.alg_wrapper import generate_model
+from mloptimizer.aux.alg_wrapper import generate_model
 from mloptimizer.genoptimizer import BaseOptimizer
 from mloptimizer.hyperparams import Hyperparam
 

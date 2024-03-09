@@ -7,7 +7,7 @@ mloptimizer provides a function to plot the evolution of the fitness function.
 from mloptimizer.genoptimizer import SklearnOptimizer
 from mloptimizer.hyperparams import HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
-from mloptimizer.plots import plotly_logbook
+from mloptimizer.aux.plots import plotly_logbook
 import plotly
 import os
 from sklearn.datasets import load_iris
