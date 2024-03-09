@@ -3,6 +3,7 @@ import os
 import shutil
 from datetime import datetime
 import importlib
+import joblib
 
 
 class Tracker:
@@ -109,3 +110,18 @@ class Tracker:
                 # We use the generation as the step
                 # self.mlflow.log_metric(key="fitness", value=metric, step=self.gen)
                 self.mlflow.log_metrics(metrics, step=self.gen)
+
+    def load_checkpoint(self, checkpoint):
+
+        # Extract checkpoint_path from checkpoint file
+        self.opt_run_checkpoint_path = os.path.dirname(checkpoint)
+        self.opt_run_folder = os.path.dirname(self.opt_run_checkpoint_path)
+        self.optimization_logger, _ = init_logger(os.path.join(self.opt_run_folder,
+                                                               f"opt_{os.path.basename(checkpoint)}.log"))
+        self.optimization_logger.info("Initiating from checkpoint {}...".format(checkpoint))
+
+        self.results_path = os.path.join(self.opt_run_folder, "results")
+        self.graphics_path = os.path.join(self.opt_run_folder, "graphics")
+        self.progress_path = os.path.join(self.opt_run_folder, "progress")
+        cp = joblib.load(checkpoint)
+        return cp

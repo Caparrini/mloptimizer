@@ -346,18 +346,22 @@ class BaseOptimizer(object):
         self.logbook = tools.Logbook()
 
         if checkpoint:
-            self.tracker.optimization_logger, _ = utils.init_logger(os.path.join(checkpoint, "opt.log"))
-            cp = joblib.load(checkpoint)
-            self.tracker.optimization_logger.info("Initiating from checkpoint {}...".format(checkpoint))
+
+            # Load checkpoint
+            cp = self.tracker.load_checkpoint(checkpoint)
+
+            # self.tracker.optimization_logger, _ = utils.init_logger(os.path.join(checkpoint, "opt.log"))
+            # cp = joblib.load(checkpoint)
+            # self.tracker.optimization_logger.info("Initiating from checkpoint {}...".format(checkpoint))
             pop = cp['population']
             start_gen = cp['generation'] + 1
             hof = cp['halloffame']
             self.logbook = cp['logbook']
             random.setstate(cp['rndstate'])
             # Extract checkpoint_path from checkpoint file
-            self.tracker.opt_run_checkpoint_path = os.path.dirname(checkpoint)
-            self.tracker.results_path = os.path.join(self.tracker.opt_run_checkpoint_path, "results")
-            self.tracker.graphics_path = os.path.join(self.tracker.opt_run_checkpoint_path, "graphics")
+            # self.tracker.opt_run_checkpoint_path = os.path.dirname(checkpoint)
+            # self.tracker.results_path = os.path.join(self.tracker.opt_run_checkpoint_path, "results")
+            # self.tracker.graphics_path = os.path.join(self.tracker.opt_run_checkpoint_path, "graphics")
         else:
 
             self.logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])

@@ -8,6 +8,7 @@ from xgboost import XGBClassifier
 from sklearn.svm import SVC
 from mloptimizer.evaluation import kfold_score, train_score, train_test_score
 import time
+import os
 from sklearn.metrics import accuracy_score
 
 custom_evolvable_hyperparams = {
@@ -48,6 +49,27 @@ def test_mloptimizer(use_mlflow):
                              features=X, labels=y, use_mlflow=use_mlflow)
     mlopt.optimize_clf(5, 5)
     assert mlopt is not None
+
+
+def test_checkpoints():
+    X, y = load_breast_cancer(return_X_y=True)
+    mlopt = SklearnOptimizer(clf_class=XGBClassifier,
+                             hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBClassifier),
+                             features=X, labels=y)
+    clf = mlopt.optimize_clf(5, 5)
+
+    mlopt2 = SklearnOptimizer(clf_class=XGBClassifier,
+                              hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBClassifier),
+                              features=X, labels=y,
+                              seed=mlopt.mlopt_seed)
+
+    checkpoint = os.path.join(mlopt.tracker.opt_run_checkpoint_path,
+                              os.listdir(mlopt.tracker.opt_run_checkpoint_path)[-2]
+                              )
+    clf2 = mlopt2.optimize_clf(5, 5,
+                               checkpoint=checkpoint)
+    assert mlopt is not None
+    assert str(clf) == str(clf2)
 
 
 @pytest.mark.parametrize('clf_class',
