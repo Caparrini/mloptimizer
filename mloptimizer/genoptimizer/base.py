@@ -216,8 +216,6 @@ class BaseOptimizer(object):
         mean : float
             mean of the evaluation
         """
-        # mean = self.evaluator.eval_function(self.features, self.labels, self.get_clf(individual),
-        #                                    score_function=self.evaluator.score_function)
         clf = self.get_clf(individual)
         metrics = self.evaluator.evaluate(clf=clf, features=self.features, labels=self.labels)
         self.tracker.log_evaluation(self.get_clf(individual), metrics)
