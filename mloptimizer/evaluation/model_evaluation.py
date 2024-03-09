@@ -2,12 +2,15 @@ import logging
 import time
 
 import numpy as np
-from sklearn.metrics import balanced_accuracy_score, accuracy_score
 from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit, \
     train_test_split, KFold
 
 
-def train_score(features, labels, clf, score_function=accuracy_score):
+def score_metrics(labels, predictions, metrics):
+    return dict([(k, metrics[k](labels, predictions)) for k in metrics.keys()])
+
+
+def train_score(features, labels, clf, metrics):
     """
     Trains the classifier with the features and labels.
 
@@ -19,23 +22,24 @@ def train_score(features, labels, clf, score_function=accuracy_score):
         List of labels
     clf : object
         classifier with methods fit, predict and score
-    score_function : func
-        function that receives y, y_pred and return a score
+    metrics : dict
+        dictionary with metrics to be used
+        keys are the name of the metric and values are the metric function
 
     Returns
     -------
-    accuracy : float
-        score of the classifier
+    metrics_output : dict
+        dictionary with the metrics over the train set
     """
-    logging.info("Score metric over training data\nClassifier:{}\nscore_metric:{}".format(clf, score_function))
+    # logging.info("Score metric over training data\nClassifier:{}\nscore_metric:{}".format(clf, score_function))
     clf.fit(features, labels)
     predictions = clf.predict(features)
-    accuracy = score_function(labels, predictions)
-    logging.info("Accuracy: {:.3f}".format(round(accuracy, 3)))
-    return accuracy
+    metrics_output = score_metrics(labels, predictions, metrics)
+    # logging.info("Accuracy: {:.3f}".format(round(accuracy, 3)))
+    return metrics_output
 
 
-def train_test_score(features, labels, clf, score_function=accuracy_score, test_size=0.2, random_state=None):
+def train_test_score(features, labels, clf, metrics, test_size=0.2, random_state=None):
     """
     Trains the classifier with the train set features and labels,
     then uses the test features and labels to create score.
@@ -48,8 +52,9 @@ def train_test_score(features, labels, clf, score_function=accuracy_score, test_
         List of labels
     clf : object
         Classifier with methods fit, predict, and score
-    score_function : func, optional
-        Function that receives y_true and y_pred and returns a score
+    metrics : dict
+        dictionary with metrics to be used
+        keys are the name of the metric and values are the metric function
     test_size : float, optional
         Proportion of the dataset to include in the test split
     random_state : int, optional
@@ -57,8 +62,8 @@ def train_test_score(features, labels, clf, score_function=accuracy_score, test_
 
     Returns
     -------
-    accuracy : float
-        Score of the classifier on the test set
+    metrics_output : dict
+        dictionary with the metrics over the test set
     """
     # Splitting the dataset into training and testing sets
     features_train, features_test, labels_train, labels_test = train_test_split(
@@ -72,15 +77,15 @@ def train_test_score(features, labels, clf, score_function=accuracy_score, test_
     predictions = clf.predict(features_test)
 
     # Calculating the accuracy
-    accuracy = score_function(labels_test, predictions)
+    metrics_output = score_metrics(labels_test, predictions, metrics)
 
-    logging.info("Score metric over test data\nClassifier:{}\nscore_metric:{}".format(clf, score_function))
-    logging.info("Accuracy: {:.3f}".format(round(accuracy, 3)))
+    # logging.info("Score metric over test data\nClassifier:{}\nscore_metric:{}".format(clf, score_function))
+    # logging.info("Accuracy: {:.3f}".format(round(accuracy, 3)))
 
-    return accuracy
+    return metrics_output
 
 
-def kfold_score(features, labels, clf, score_function=accuracy_score, n_splits=5, random_state=None):
+def kfold_score(features, labels, clf, metrics, n_splits=5, random_state=None):
     """
     Evaluates the classifier using K-Fold cross-validation.
 
@@ -92,8 +97,9 @@ def kfold_score(features, labels, clf, score_function=accuracy_score, n_splits=5
         Array of labels
     clf : object
         Classifier with methods fit and predict
-    score_function : func, optional
-        Function that receives y_true and y_pred and returns a score
+    metrics : dict
+        dictionary with metrics to be used
+        keys are the name of the metric and values are the metric function
     n_splits : int, optional
         Number of folds. Must be at least 2
     random_state : int, optional
@@ -101,11 +107,11 @@ def kfold_score(features, labels, clf, score_function=accuracy_score, n_splits=5
 
     Returns
     -------
-    average_score : float
-        Average score of the classifier across all folds
+    average_metrics : dict
+        mean score among k-folds test splits
     """
-    logging.info("K-Fold accuracy\nClassifier:{}\nn_splits:{}\nscore_metric:{}".format(
-        clf, n_splits, score_function))
+    # logging.info("K-Fold accuracy\nClassifier:{}\nn_splits:{}\nscore_metric:{}".format(
+    #    clf, n_splits, score_function))
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
     scores = []
 
@@ -115,18 +121,19 @@ def kfold_score(features, labels, clf, score_function=accuracy_score, n_splits=5
 
         clf.fit(features_train, labels_train)
         predictions = clf.predict(features_test)
-        score = score_function(labels_test, predictions)
-        scores.append(score)
+        scores.append(score_metrics(labels_test, predictions, metrics))
 
-        logging.info("Fold score: {:.3f}".format(score))
+        # logging.info("Fold score: {:.3f}".format(score))
 
-    average_score = np.mean(scores)
-    logging.info("Average K-Fold Score: {:.3f}".format(average_score))
+    average_values = list(np.average(np.stack([list(d.values()) for d in scores]), axis=0))
+    average_metrics = dict(zip(list(scores[0].keys()), average_values))
+    # average_score = np.mean(scores)
+    # logging.info("Average K-Fold Score: {:.3f}".format(average_score))
 
-    return average_score
+    return average_metrics
 
 
-def kfold_stratified_score(features, labels, clf, n_splits=4, score_function=balanced_accuracy_score,
+def kfold_stratified_score(features, labels, clf, metrics, n_splits=4,
                            random_state=None):
     """
     Computes KFold cross validation score using n_splits folds.
@@ -144,18 +151,19 @@ def kfold_stratified_score(features, labels, clf, n_splits=4, score_function=bal
         classifier with methods fit, predict and score
     n_splits : int
         number of splits
-    score_function : func
-        function that receives X, y and return a score
+    metrics : dict
+        dictionary with metrics to be used
+        keys are the name of the metric and values are the metric function
     random_state : int
         random state for the stratified kfold
 
     Returns
     -------
-    mean_accuracy : float
+    average_metrics : dict
         mean score among k-folds test splits
     """
-    logging.info("KFold Stratified accuracy\nClassifier:{}\nn_splits:{}\n"
-                 "score_metric:{}".format(clf, n_splits, score_function))
+    #logging.info("KFold Stratified accuracy\nClassifier:{}\nn_splits:{}\n"
+    #             "score_metric:{}".format(clf, n_splits, score_function))
 
     clfs = []
 
@@ -197,7 +205,7 @@ def kfold_stratified_score(features, labels, clf, n_splits=4, score_function=bal
         labels_pred_test = clf.predict(features_test).reshape(-1)
         labels_predicted[test_index] = labels_pred_test
 
-        accuracies_kfold.append(score_function(labels_test, labels_pred_test))
+        accuracies_kfold.append(score_metrics(labels_test, labels_pred_test, metrics))
 
         labels_kfold.extend(labels_test)
         labels_kfold_predicted.extend(labels_pred_test)
@@ -205,15 +213,16 @@ def kfold_stratified_score(features, labels, clf, n_splits=4, score_function=bal
         kcounter += 1
         clfs.append(clf)
 
-    mean_accuracy = np.mean(accuracies_kfold)
-    std = np.std(accuracies_kfold)
-    logging.info("Accuracy: {:.3f} +- {:.3f}".format(round(mean_accuracy, 3), round(std, 3)))
-
+    # mean_accuracy = np.mean(accuracies_kfold)
+    # std = np.std(accuracies_kfold)
+    # logging.info("Accuracy: {:.3f} +- {:.3f}".format(round(mean_accuracy, 3), round(std, 3)))
+    average_values = list(np.average(np.stack([list(d.values()) for d in accuracies_kfold]), axis=0))
+    average_metrics = dict(zip(list(accuracies_kfold[0].keys()), average_values))
     # return mean_accuracy, std, labels, labels_predicted, clfs
-    return mean_accuracy
+    return average_metrics
 
 
-def temporal_kfold_score(features, labels, clf, n_splits=4, score_function=balanced_accuracy_score):
+def temporal_kfold_score(features, labels, clf, metrics, n_splits=4):
     """
     Computes KFold cross validation score using n_splits folds.
     It uses the features and labels to train the k-folds.
@@ -230,18 +239,19 @@ def temporal_kfold_score(features, labels, clf, n_splits=4, score_function=balan
         classifier with methods fit, predict and score
     n_splits : int
         number of splits
-    score_function : func
-        function that receives X, y and return a score
+    metrics : dict
+        dictionary with metrics to be used
+        keys are the name of the metric and values are the metric function
 
     Returns
     -------
-    mean_accuracy : float
+    average_metrics : dict
         mean score among k-folds test splits
     """
-    logging.info("TemporalKFold accuracy\nClassifier:{}\nn_splits:{}\n"
-                 "score_metric:{}".format(clf, n_splits, score_function))
-    print("TemporalKFold accuracy\nClassifier:{}\nn_splits:{}\n"
-          "score_metric:{}".format(clf, n_splits, score_function))
+    # logging.info("TemporalKFold accuracy\nClassifier:{}\nn_splits:{}\n"
+    #             "score_metric:{}".format(clf, n_splits, score_function))
+    # print("TemporalKFold accuracy\nClassifier:{}\nn_splits:{}\n"
+    #       "score_metric:{}".format(clf, n_splits, score_function))
 
     clfs = []
 
@@ -287,7 +297,7 @@ def temporal_kfold_score(features, labels, clf, n_splits=4, score_function=balan
             labels_pred_test = clf.predict(features_test)
             labels_predicted[test_index] = labels_pred_test
 
-            accuracies_kfold.append(score_function(labels_test, labels_pred_test))
+            accuracies_kfold.append(score_metrics(labels_test, labels_pred_test, metrics))
 
             labels_kfold.extend(labels_test)
             labels_kfold_predicted.extend(labels_pred_test)
@@ -295,10 +305,12 @@ def temporal_kfold_score(features, labels, clf, n_splits=4, score_function=balan
             kcounter += 1
             clfs.append(clf)
 
-    mean_accuracy = np.mean(accuracies_kfold)
-    std = np.std(accuracies_kfold)
-    logging.info("Accuracy: {:.2f} +- {:.2f}".format(round(mean_accuracy, 3), round(std, 3)))
-    print("Accuracy: {:.2f} +- {:.2f}".format(round(mean_accuracy, 3), round(std, 3)))
+    # mean_accuracy = np.mean(accuracies_kfold)
+    # std = np.std(accuracies_kfold)
+    average_values = list(np.average(np.stack([list(d.values()) for d in accuracies_kfold]), axis=0))
+    average_metrics = dict(zip(list(accuracies_kfold[0].keys()), average_values))
+    # logging.info("Accuracy: {:.2f} +- {:.2f}".format(round(mean_accuracy, 3), round(std, 3)))
+    # print("Accuracy: {:.2f} +- {:.2f}".format(round(mean_accuracy, 3), round(std, 3)))
 
     # return mean_accuracy, std, labels, labels_predicted, clfs
-    return mean_accuracy
+    return average_metrics

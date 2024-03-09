@@ -15,6 +15,7 @@ from mloptimizer.evaluation import train_score
 from mloptimizer.plots import plotly_logbook, plotly_search_space
 from mloptimizer.hyperparams import HyperparameterSpace
 from mloptimizer.aux import Tracker, utils
+from mloptimizer.evaluation import Evaluator
 
 
 class BaseOptimizer(object):
@@ -29,10 +30,8 @@ class BaseOptimizer(object):
         np.array with the labels
     hyperparam_space : HyperparameterSpace
         object with the hyperparameter space: fixed and evolvable hyperparams
-    eval_function : func
-        function to evaluate the model from X, y, clf
-    score_function : func
-        function to score from y, y_pred
+    evaluator : Evaluator
+        object to evaluate the classifier
     eval_dict : dict
         dictionary with the evaluation of the individuals
     populations : list
@@ -51,7 +50,7 @@ class BaseOptimizer(object):
     def __init__(self, features: np.array, labels: np.array, folder=os.curdir, log_file="mloptimizer.log",
                  hyperparam_space: HyperparameterSpace = None,
                  eval_function=train_score,
-                 score_function=accuracy_score, seed=random.randint(0, 1000000),
+                 fitness_score="accuracy", seed=random.randint(0, 1000000),
                  use_parallel=False, use_mlflow=False):
         """
         Creates object BaseOptimizer.
@@ -68,10 +67,10 @@ class BaseOptimizer(object):
             log file name
         hyperparam_space : HyperparameterSpace, optional (default=None)
             object with the hyperparameter space: fixed and evolvable hyperparams
-        eval_function : func, optional (default=kfold_stratified_score)
+        eval_function : func, optional (default=train_score)
             function to evaluate the model from X, y, clf
-        score_function : func, optional (default=balanced_accuracy_score)
-            function to score from y, y_pred
+        fitness_score : str, optional (default="accuracy")
+            fitness score to use to evaluate the performance of the classifier
         use_parallel : bool, optional (default=False)
             flag to use parallel processing
         use_mlflow : bool, optional (default=False)
@@ -85,8 +84,8 @@ class BaseOptimizer(object):
         # Input search space hyperparameters
         self.hyperparam_space = hyperparam_space
 
-        self.eval_function = eval_function
-        self.score_function = score_function
+        # ML Evaluator
+        self.evaluator = Evaluator(eval_function=eval_function, fitness_score=fitness_score)
 
         # State vars
         self.eval_dict = {}
@@ -199,7 +198,7 @@ class BaseOptimizer(object):
         """
         pass
 
-    def evaluate_clf(self, individual):
+    def evaluate_individual(self, individual):
         """
         Method to evaluate the classifier from an individual. It uses the eval_function to evaluate the classifier.
 
@@ -213,10 +212,12 @@ class BaseOptimizer(object):
         mean : float
             mean of the evaluation
         """
-        mean = self.eval_function(self.features, self.labels, self.get_clf(individual),
-                                  score_function=self.score_function)
-        self.tracker.log_evaluation(self.get_clf(individual), mean)
-        return (mean,)
+        # mean = self.evaluator.eval_function(self.features, self.labels, self.get_clf(individual),
+        #                                    score_function=self.evaluator.score_function)
+        clf = self.get_clf(individual)
+        metrics = self.evaluator.evaluate(clf=clf, features=self.features, labels=self.labels)
+        self.tracker.log_evaluation(self.get_clf(individual), metrics)
+        return (metrics[self.evaluator.fitness_score],)
 
     def population_2_df(self):
         """
@@ -367,7 +368,7 @@ class BaseOptimizer(object):
                          up=[x.max_value for x in self.hyperparam_space.evolvable_hyperparams.values()],
                          indpb=0.5)
         toolbox.register("select", tools.selTournament, tournsize=4)
-        toolbox.register("evaluate", self.evaluate_clf)
+        toolbox.register("evaluate", self.evaluate_individual)
 
         # History
         hist = tools.History()
@@ -404,7 +405,7 @@ class BaseOptimizer(object):
         g2.write_html(os.path.join(self.tracker.graphics_path, "logbook.html"))
         plt.close()
 
-        #TODO: Log the best model (or top n)
+        # TODO: Log the best model (or top n)
 
         return self.get_clf(hof[0])
 

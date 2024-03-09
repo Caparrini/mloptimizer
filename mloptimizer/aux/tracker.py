@@ -100,11 +100,12 @@ class Tracker:
             self.optimization_logger.info("Hyperparams: {}".format(str(classifiers_list[i].get_params())))
         self.gen = generation + 1
 
-    def log_evaluation(self, classifier, metric):
-        self.optimization_logger.info(f"Adding to mlflow...\nClassifier: {classifier}\nFitness: {metric}")
+    def log_evaluation(self, classifier, metrics):
+        self.optimization_logger.info(f"Adding to mlflow...\nClassifier: {classifier}\nMetrics: {metrics}")
 
         if self.use_mlflow:
             with self.mlflow.start_run():
                 self.mlflow.log_params(classifier.get_params())
                 # We use the generation as the step
-                self.mlflow.log_metric(key="fitness", value=metric, step=self.gen)
+                # self.mlflow.log_metric(key="fitness", value=metric, step=self.gen)
+                self.mlflow.log_metrics(metrics, step=self.gen)

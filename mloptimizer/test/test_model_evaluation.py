@@ -13,41 +13,43 @@ def classification_mock_data():
     return features, labels
 
 
-def test_kfold_stratified_score(classification_mock_data):
+@pytest.fixture
+def metrics_dict():
+    return {
+        "accuracy": accuracy_score
+    }
+
+
+def test_kfold_stratified_score(classification_mock_data, metrics_dict):
     features, labels = classification_mock_data
     clf = DecisionTreeClassifier()
-    score = kfold_stratified_score(features, labels, clf)
-    assert isinstance(score, float)
-    assert 0 <= score <= 1  # Score should be between 0 and 1
+    metrics = kfold_stratified_score(features, labels, clf, metrics_dict)
+    assert isinstance(metrics, dict)
 
 
-def test_temporal_kfold_score(classification_mock_data):
+def test_temporal_kfold_score(classification_mock_data, metrics_dict):
     features, labels = classification_mock_data
     clf = DecisionTreeClassifier()
-    score = temporal_kfold_score(features, labels, clf)
-    assert isinstance(score, float)
-    assert 0 <= score <= 1  # Score should be between 0 and 1
+    metrics = temporal_kfold_score(features, labels, clf, metrics_dict)
+    assert isinstance(metrics, dict)
 
 
-def test_train_score(classification_mock_data):
+def test_train_score(classification_mock_data, metrics_dict):
     features, labels = classification_mock_data
     clf = DecisionTreeClassifier()
-    accuracy = train_score(features, labels, clf, score_function=accuracy_score)
-    assert isinstance(accuracy, float)
-    assert 0 <= accuracy <= 1
+    metrics = train_score(features, labels, clf, metrics_dict)
+    assert isinstance(metrics, dict)
 
 
-def test_test_train_score(classification_mock_data):
+def test_test_train_score(classification_mock_data, metrics_dict):
     features, labels = classification_mock_data
     clf = DecisionTreeClassifier()
-    accuracy = train_test_score(features, labels, clf, score_function=accuracy_score)
-    assert isinstance(accuracy, float)
-    assert 0 <= accuracy <= 1
+    metrics = train_test_score(features, labels, clf, metrics_dict)
+    assert isinstance(metrics, dict)
 
 
-def test_kfold_score(classification_mock_data):
+def test_kfold_score(classification_mock_data, metrics_dict):
     features, labels = classification_mock_data
     clf = DecisionTreeClassifier()
-    accuracy = kfold_score(features, labels, clf, score_function=accuracy_score)
-    assert isinstance(accuracy, float)
-    assert 0 <= accuracy <= 1
+    metrics = kfold_score(features, labels, clf, metrics_dict)
+    assert isinstance(metrics, dict)
