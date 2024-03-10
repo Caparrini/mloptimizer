@@ -1,4 +1,4 @@
-from mloptimizer.genoptimizer import BaseOptimizer
+from mloptimizer.core import BaseOptimizer
 
 
 class SklearnOptimizer(BaseOptimizer):
@@ -11,10 +11,10 @@ class SklearnOptimizer(BaseOptimizer):
     """
 
     def __init__(self, clf_class, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.clf_class = clf_class
+        super().__init__(*args, **kwargs)
 
     def get_clf(self, individual):
-        individual_dict = self.individual2dict(individual)
+        individual_dict = self.deap_optimizer.individual2dict(individual)
         clf = self.clf_class(random_state=self.mlopt_seed, **individual_dict)
         return clf

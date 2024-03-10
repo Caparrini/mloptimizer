@@ -1,5 +1,5 @@
 import pytest
-from mloptimizer.genoptimizer import SklearnOptimizer
+from mloptimizer.core import SklearnOptimizer
 from mloptimizer.hyperparams import Hyperparam, HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
@@ -141,14 +141,14 @@ def test_reproducibility(clf_class, target_score, default_metrics_dict):
     optimizer1 = SklearnOptimizer(features=X, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
                                   eval_function=target_score, seed=seed, clf_class=clf_class,
                                   hyperparam_space=evolvable_hyperparams)
-    result1 = optimizer1.optimize_clf(population=population, generations=generations)
+    result1 = optimizer1.optimize_clf(population_size=population, generations=generations)
     optimizer2 = SklearnOptimizer(features=X, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
                                   eval_function=target_score, seed=seed, clf_class=clf_class,
                                   hyperparam_space=evolvable_hyperparams)
-    result2 = optimizer2.optimize_clf(population=population, generations=generations)
+    result2 = optimizer2.optimize_clf(population_size=population, generations=generations)
     optimizer3 = SklearnOptimizer(features=X, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
                                   eval_function=target_score, seed=distinct_seed, clf_class=clf_class,
                                   hyperparam_space=evolvable_hyperparams)
-    result3 = optimizer3.optimize_clf(population=population, generations=generations)
+    result3 = optimizer3.optimize_clf(population_size=population, generations=generations)
     assert str(result1) == str(result2)
     assert str(result1) != str(result3)

@@ -1,6 +1,6 @@
 import pytest
 from mloptimizer.aux.plots import logbook_to_pandas, plot_logbook, plot_search_space
-from mloptimizer.genoptimizer import SklearnOptimizer
+from mloptimizer.core import SklearnOptimizer
 from mloptimizer.hyperparams import HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.datasets import load_iris
@@ -29,6 +29,6 @@ def test_plot_logbook(default_tree_optimizer):
 
 
 def test_plot_search_space(default_tree_optimizer):
-    populations_df = default_tree_optimizer.population_2_df()
+    populations_df = default_tree_optimizer.runs[-1].population_2_df()
     fig = plot_search_space(populations_df)
     assert fig is not None
