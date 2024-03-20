@@ -31,7 +31,8 @@ extensions = [
     'sphinx.ext.graphviz',
     'sphinx.ext.intersphinx',
     'autoapi.extension',
-    'sphinx_favicon'
+    'sphinx_favicon',
+    'sphinxcontrib.mermaid'
 ]
 
 templates_path = ['_templates']
