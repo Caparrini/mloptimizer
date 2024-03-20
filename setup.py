@@ -63,10 +63,10 @@ setup(
     url="https://github.com/Caparrini/mloptimizer",  # Optional
     # This should be your name or the name of the organization which owns the
     # project.
-    author="Antonio Caparrini",  # Optional
+    author="Antonio Caparrini López, Javier Arroyo Gallardo",  # Optional
     # This should be a valid email address corresponding to the author listed
     # above.
-    author_email="acaparri@ucm.es",  # Optional
+    author_email="acaparri@ucm.es, ",  # Optional
     # Classifiers help users find your project by categorizing it.
     #
     # For a list of valid classifiers, see https://pypi.org/classifiers/

@@ -146,7 +146,8 @@ with examples, classes and methods reference.
 
 ## Authors
 
-* **Antonio Caparrini** - *Owner* - [caparrini](https://github.com/caparrini)
+* **Antonio Caparrini** - *Author* - [caparrini](https://github.com/caparrini)
+* **Javier Arroyo Gallardo** - *Author* - [javiag](https://github.com/javiag)
 
 ## License
 
