@@ -4,7 +4,7 @@ Search space graph
 mloptimizer provides a function to plot the search space of the optimization.
 """
 
-from mloptimizer.core import SklearnOptimizer
+from mloptimizer.core import Optimizer
 from mloptimizer.hyperparams import HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
 from mloptimizer.aux.plots import plotly_search_space
@@ -25,8 +25,8 @@ hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(Decision
 
 # %%
 # We use the default TreeOptimizer class to optimize a decision tree classifier.
-opt = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y,
-                       hyperparam_space=hyperparam_space, folder="Search_space_example")
+opt = Optimizer(model_class=DecisionTreeClassifier, features=X, labels=y,
+                hyperparam_space=hyperparam_space, folder="Search_space_example")
 
 # %%
 # To optimizer the classifier we need to call the optimize_clf method.

@@ -1,5 +1,5 @@
 import pytest
-from mloptimizer.core import SklearnOptimizer
+from mloptimizer.core import Optimizer
 from mloptimizer.hyperparams import Hyperparam, HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
@@ -28,15 +28,15 @@ def default_metrics_dict():
     }
 
 
-@pytest.mark.parametrize('clf_class',
+@pytest.mark.parametrize('estimator_class',
                          (DecisionTreeClassifier, RandomForestClassifier, ExtraTreesClassifier,
                           GradientBoostingClassifier, XGBClassifier, SVC))
-def test_sklearn_optimizer(clf_class):
+def test_sklearn_optimizer(estimator_class):
     X, y = load_iris(return_X_y=True)
-    evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(clf_class)
-    mlopt = SklearnOptimizer(clf_class=clf_class,
-                             hyperparam_space=evolvable_hyperparams,
-                             features=X, labels=y)
+    evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
+    mlopt = Optimizer(estimator_class=estimator_class,
+                      hyperparam_space=evolvable_hyperparams,
+                      features=X, labels=y)
     mlopt.optimize_clf(5, 5)
     assert mlopt is not None
 
@@ -44,24 +44,24 @@ def test_sklearn_optimizer(clf_class):
 @pytest.mark.parametrize('use_mlflow', [True, False])
 def test_mloptimizer(use_mlflow):
     X, y = load_breast_cancer(return_X_y=True)
-    mlopt = SklearnOptimizer(clf_class=XGBClassifier,
-                             hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBClassifier),
-                             features=X, labels=y, use_mlflow=use_mlflow)
+    mlopt = Optimizer(estimator_class=XGBClassifier,
+                      hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBClassifier),
+                      features=X, labels=y, use_mlflow=use_mlflow)
     mlopt.optimize_clf(5, 5)
     assert mlopt is not None
 
 
 def test_checkpoints():
     X, y = load_breast_cancer(return_X_y=True)
-    mlopt = SklearnOptimizer(clf_class=XGBClassifier,
-                             hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBClassifier),
-                             features=X, labels=y)
+    mlopt = Optimizer(estimator_class=XGBClassifier,
+                      hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBClassifier),
+                      features=X, labels=y)
     clf = mlopt.optimize_clf(5, 5)
 
-    mlopt2 = SklearnOptimizer(clf_class=XGBClassifier,
-                              hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBClassifier),
-                              features=X, labels=y,
-                              seed=mlopt.mlopt_seed)
+    mlopt2 = Optimizer(estimator_class=XGBClassifier,
+                       hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBClassifier),
+                       features=X, labels=y,
+                       seed=mlopt.mlopt_seed)
 
     checkpoint = os.path.join(mlopt.tracker.opt_run_checkpoint_path,
                               os.listdir(mlopt.tracker.opt_run_checkpoint_path)[-2]
@@ -72,45 +72,45 @@ def test_checkpoints():
     assert str(clf) == str(clf2)
 
 
-@pytest.mark.parametrize('clf_class',
+@pytest.mark.parametrize('estimator_class',
                          (DecisionTreeClassifier, RandomForestClassifier, ExtraTreesClassifier,
                           GradientBoostingClassifier, XGBClassifier, SVC))
 @pytest.mark.parametrize('dataset',
                          (load_breast_cancer, load_iris))
-def test_optimizer(clf_class, dataset, default_metrics_dict):
+def test_optimizer(estimator_class, dataset, default_metrics_dict):
     X, y = dataset(return_X_y=True)
-    evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(clf_class)
-    opt = SklearnOptimizer(features=X, labels=y, fitness_score="accuracy",
-                           metrics=default_metrics_dict, clf_class=clf_class,
-                           hyperparam_space=evolvable_hyperparams)
+    evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
+    opt = Optimizer(features=X, labels=y, fitness_score="accuracy",
+                    metrics=default_metrics_dict, estimator_class=estimator_class,
+                    hyperparam_space=evolvable_hyperparams)
     clf = opt.optimize_clf(2, 2)
     assert clf is not None
 
 
-@pytest.mark.parametrize('clf_class',
+@pytest.mark.parametrize('estimator_class',
                          (DecisionTreeClassifier, RandomForestClassifier, ExtraTreesClassifier,
                           GradientBoostingClassifier, SVC))
 @pytest.mark.parametrize('dataset',
                          (load_breast_cancer, load_iris))
-def test_optimizer_use_parallel(clf_class, dataset, default_metrics_dict):
+def test_optimizer_use_parallel(estimator_class, dataset, default_metrics_dict):
     X, y = dataset(return_X_y=True)
-    evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(clf_class)
+    evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
     my_seed = 25
     population = 50
     generations = 4
 
-    opt_with_parallel = SklearnOptimizer(features=X, labels=y, fitness_score="accuracy",
-                                         metrics=default_metrics_dict,
-                                         seed=my_seed, use_parallel=True,
-                                         hyperparam_space=evolvable_hyperparams, clf_class=clf_class)
+    opt_with_parallel = Optimizer(features=X, labels=y, fitness_score="accuracy",
+                                  metrics=default_metrics_dict,
+                                  seed=my_seed, use_parallel=True,
+                                  hyperparam_space=evolvable_hyperparams, estimator_class=estimator_class)
 
     start_time_parallel = time.time()
     clf_with_parallel = opt_with_parallel.optimize_clf(population, generations)
     end_time_parallel = time.time()
 
-    opt = SklearnOptimizer(features=X, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
-                           seed=my_seed, use_parallel=False,
-                           hyperparam_space=evolvable_hyperparams, clf_class=clf_class)
+    opt = Optimizer(features=X, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
+                    seed=my_seed, use_parallel=False,
+                    hyperparam_space=evolvable_hyperparams, estimator_class=estimator_class)
 
     start_time = time.time()
     clf = opt.optimize_clf(population, generations)
@@ -127,28 +127,28 @@ def test_optimizer_use_parallel(clf_class, dataset, default_metrics_dict):
     assert elapsed_time_parallel < elapsed_time
 
 
-@pytest.mark.parametrize('clf_class',
+@pytest.mark.parametrize('estimator_class',
                          (DecisionTreeClassifier, RandomForestClassifier, ExtraTreesClassifier,
                           GradientBoostingClassifier, XGBClassifier, SVC))
 @pytest.mark.parametrize('target_score', (kfold_score, train_score, train_test_score))
-def test_reproducibility(clf_class, target_score, default_metrics_dict):
+def test_reproducibility(estimator_class, target_score, default_metrics_dict):
     X, y = load_iris(return_X_y=True)
-    evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(clf_class)
+    evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
     population = 2
     generations = 2
     seed = 25
     distinct_seed = 2
-    optimizer1 = SklearnOptimizer(features=X, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
-                                  eval_function=target_score, seed=seed, clf_class=clf_class,
-                                  hyperparam_space=evolvable_hyperparams)
+    optimizer1 = Optimizer(features=X, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
+                           eval_function=target_score, seed=seed, estimator_class=estimator_class,
+                           hyperparam_space=evolvable_hyperparams)
     result1 = optimizer1.optimize_clf(population_size=population, generations=generations)
-    optimizer2 = SklearnOptimizer(features=X, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
-                                  eval_function=target_score, seed=seed, clf_class=clf_class,
-                                  hyperparam_space=evolvable_hyperparams)
+    optimizer2 = Optimizer(features=X, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
+                           eval_function=target_score, seed=seed, estimator_class=estimator_class,
+                           hyperparam_space=evolvable_hyperparams)
     result2 = optimizer2.optimize_clf(population_size=population, generations=generations)
-    optimizer3 = SklearnOptimizer(features=X, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
-                                  eval_function=target_score, seed=distinct_seed, clf_class=clf_class,
-                                  hyperparam_space=evolvable_hyperparams)
+    optimizer3 = Optimizer(features=X, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
+                           eval_function=target_score, seed=distinct_seed, estimator_class=estimator_class,
+                           hyperparam_space=evolvable_hyperparams)
     result3 = optimizer3.optimize_clf(population_size=population, generations=generations)
     assert str(result1) == str(result2)
     assert str(result1) != str(result3)

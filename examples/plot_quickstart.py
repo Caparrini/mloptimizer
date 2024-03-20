@@ -5,7 +5,7 @@ Quick example of use of the library to optimize a decision tree classifier.
 Firstly, we import the necessary libraries to get data and plot the results.
 """
 
-from mloptimizer.core import SklearnOptimizer
+from mloptimizer.core import Optimizer
 from mloptimizer.hyperparams import HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.datasets import load_iris
@@ -27,8 +27,8 @@ hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(Decision
 # the second is the vector of labels and
 # the third (if provided) is the name of the folder where the results of mloptimizer Optimizers are saved.
 # The default value for this folder is "Optimizer"
-opt = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y,
-                       hyperparam_space=hyperparam_space, folder="Optimizer")
+opt = Optimizer(model_class=DecisionTreeClassifier, features=X, labels=y,
+                hyperparam_space=hyperparam_space, folder="Optimizer")
 
 # %%
 # To optimizer the classifier we need to call the optimize_clf method.
