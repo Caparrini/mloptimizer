@@ -1,3 +1,2 @@
-from .base import BaseOptimizer
+from .base import Optimizer
 from .keras import KerasClassifierOptimizer
-from .meta import SklearnOptimizer

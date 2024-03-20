@@ -18,7 +18,7 @@ An example of the speedup that can be achieved using parallel processing is show
 
 .. code-block:: python
 
-    from mloptimizer.genoptimizer import SklearnOptimizer
+    from mloptimizer.core import Optimizer
     from mloptimizer.hyperparams import HyperparameterSpace
     from sklearn.tree import DecisionTreeClassifier
     from sklearn.datasets import load_iris
@@ -35,14 +35,14 @@ An example of the speedup that can be achieved using parallel processing is show
     population = 50
     generations = 4
 
-    opt_with_parallel = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y,
+    opt_with_parallel = Optimizer(estimator_class=DecisionTreeClassifier, features=X, labels=y,
                                   hyperparam_space=hyperparameter_space, seed=my_seed, use_parallel=True)
 
     start_time_parallel = time.time()
     clf_with_parallel = opt_with_parallel.optimize_clf(population, generations)
     end_time_parallel = time.time()
 
-    opt = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y,
+    opt = Optimizer(estimator_class=DecisionTreeClassifier, features=X, labels=y,
                     hyperparam_space=hyperparameter_space, seed=my_seed, use_parallel=False)
     start_time = time.time()
     clf = opt.optimize_clf(population, generations)

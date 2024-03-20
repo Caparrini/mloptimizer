@@ -2,14 +2,14 @@ from mloptimizer.hyperparams import HyperparameterSpace
 
 
 class IndividualUtils:
-    def __init__(self, hyperparam_space: HyperparameterSpace = None, clf_class=None, mlopt_seed=None):
+    def __init__(self, hyperparam_space: HyperparameterSpace = None, estimator_class=None, mlopt_seed=None):
         self.hyperparam_space = hyperparam_space
-        self.clf_class = clf_class
+        self.estimator_class = estimator_class
         self.mlopt_seed = mlopt_seed
 
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
-        clf = self.clf_class(random_state=self.mlopt_seed, **individual_dict)
+        clf = self.estimator_class(random_state=self.mlopt_seed, **individual_dict)
         return clf
 
     def individual2dict(self, individual):

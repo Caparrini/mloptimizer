@@ -1,10 +1,10 @@
 from abc import ABC
 from mloptimizer.aux.alg_wrapper import generate_model
-from mloptimizer.core import BaseOptimizer
+from mloptimizer.core import Optimizer
 from mloptimizer.hyperparams import Hyperparam
 
 
-class KerasClassifierOptimizer(BaseOptimizer, ABC):
+class KerasClassifierOptimizer(Optimizer):
     """
     Class for the optimization of a gradient boosting classifier from keras.wrappers.scikit_learn.KerasClassifier.
     It inherits from BaseOptimizer.

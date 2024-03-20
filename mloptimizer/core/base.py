@@ -1,6 +1,5 @@
 import os
 import random
-from abc import ABCMeta, abstractmethod
 import numpy as np
 from sklearn.metrics import accuracy_score
 
@@ -13,12 +12,14 @@ from mloptimizer.evaluation import Evaluator
 from mloptimizer.genetic import DeapOptimizer, GeneticAlgorithmRunner
 
 
-class BaseOptimizer(object):
+class Optimizer:
     """
     Base class for the optimization of a classifier
 
     Attributes
     ----------
+    estimator_class : class
+        class of the classifier
     features : np.array
         np.array with the features
     labels : np.array
@@ -40,9 +41,8 @@ class BaseOptimizer(object):
     use_mlflow : bool
         flag to use mlflow
     """
-    __metaclass__ = ABCMeta
 
-    def __init__(self, features: np.array, labels: np.array, folder=os.curdir, log_file="mloptimizer.log",
+    def __init__(self, estimator_class, features: np.array, labels: np.array, folder=os.curdir, log_file="mloptimizer.log",
                  hyperparam_space: HyperparameterSpace = None,
                  eval_function=train_score,
                  fitness_score="accuracy", metrics=None, seed=random.randint(0, 1000000),
@@ -52,6 +52,8 @@ class BaseOptimizer(object):
 
         Parameters
         ----------
+        estimator_class : class
+            class of the classifier
         features : np.array
             np.array with the features
         labels : np.array
@@ -73,6 +75,8 @@ class BaseOptimizer(object):
         seed : int, optional (default=0)
             seed for the random functions (deap, models, and splits on evaluations)
         """
+        # Model class
+        self.estimator_class = estimator_class
         # Input mandatory variables
         self.features = features
         self.labels = labels
@@ -101,7 +105,7 @@ class BaseOptimizer(object):
 
         # Evaluator
         self.individual_utils = IndividualUtils(hyperparam_space=self.hyperparam_space,
-                                                clf_class=self.clf_class, mlopt_seed=self.mlopt_seed)
+                                                estimator_class=self.estimator_class, mlopt_seed=self.mlopt_seed)
         self.evaluator = Evaluator(features=features, labels=labels,
                                    eval_function=eval_function, fitness_score=fitness_score,
                                    metrics=metrics, tracker=self.tracker,
@@ -144,25 +148,13 @@ class BaseOptimizer(object):
         if len(subclasses) == 0:
             return []
         next_subclasses = []
-        [next_subclasses.extend(BaseOptimizer.get_subclasses(x)) for x in subclasses]
+        [next_subclasses.extend(Optimizer.get_subclasses(x)) for x in subclasses]
         return [*subclasses, *next_subclasses]
 
-    @abstractmethod
     def get_clf(self, individual):
-        """
-        Method to get the classifier from an individual. Abstract method implemented in each specific optimizer.
-
-        Parameters
-        ----------
-        individual : individual
-            individual to convert
-
-        Returns
-        -------
-        clf : classifier
-            classifier specific for the optimizer
-        """
-        pass
+        individual_dict = self.deap_optimizer.individual2dict(individual)
+        clf = self.estimator_class(random_state=self.mlopt_seed, **individual_dict)
+        return clf
 
     def optimize_clf(self, population_size: int = 10, generations: int = 3,
                      cxpb=0.5, mutpb=0.5, tournsize=4, indpb=0.5, n_elites=10,

@@ -112,14 +112,14 @@ class HyperparameterSpace:
             json.dump(hyperparams_dict, file, indent=4)
 
     @staticmethod
-    def get_default_hyperparameter_space(clf_class):
+    def get_default_hyperparameter_space(estimator_class):
         """
         This method returns a dictionary with the default hyperparameters for the scikit-learn classifier.
         It reads the default_hyperparameter_spaces.json file and returns the hyperparameters for the classifier
 
         Parameters
         ----------
-        clf_class : class
+        estimator_class : class
             The scikit-learn classifier class
 
         Returns
@@ -129,15 +129,15 @@ class HyperparameterSpace:
         """
         with open(HyperparameterSpace.default_hyperparameter_spaces_json, 'r') as file:
             default_hyperparams = json.load(file)
-        if clf_class.__name__ in default_hyperparams.keys():
+        if estimator_class.__name__ in default_hyperparams.keys():
             return HyperparameterSpace.from_json(
                 str(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                 "..", "conf", default_hyperparams[clf_class.__name__]
+                                 "..", "conf", default_hyperparams[estimator_class.__name__]
                                  )
                     )
             )
         else:
-            raise ValueError(f"Default hyperparameter space for {clf_class.__name__} not found")
+            raise ValueError(f"Default hyperparameter space for {estimator_class.__name__} not found")
 
     def __str__(self):
         return (f"HyperparameterSpace(fixed_hyperparams={self.fixed_hyperparams}, "

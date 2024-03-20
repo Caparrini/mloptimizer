@@ -7,8 +7,8 @@ framework. They are used to define the search space and the score function.
 .. mermaid::
 
    classDiagram
-       class SklearnOptimizer{
-         +String model
+       class Optimizer{
+         +estimator_class estimator_class
        }
 
 
