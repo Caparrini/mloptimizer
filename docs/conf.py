@@ -12,9 +12,9 @@ from plotly.io._sg_scraper import plotly_sg_scraper
 sys.path.insert(0, os.path.abspath('..'))
 
 project = 'mloptimizer'
-copyright = '2024, Antonio Caparrini'
-author = 'Antonio Caparrini'
-release = '0.7.1'
+copyright = '2024, Antonio Caparrini, Javier Arroyo'
+author = 'Antonio Caparrini, Javier Arroyo'
+release = '0.8.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
