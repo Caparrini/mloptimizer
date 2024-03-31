@@ -25,7 +25,7 @@ hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(Decision
 
 # %%
 # We use the default TreeOptimizer class to optimize a decision tree classifier.
-opt = Optimizer(model_class=DecisionTreeClassifier, features=X, labels=y,
+opt = Optimizer(estimator_class=DecisionTreeClassifier, features=X, labels=y,
                 hyperparam_space=hyperparam_space, folder="Search_space_example")
 
 # %%
