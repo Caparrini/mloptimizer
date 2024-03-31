@@ -1,10 +1,10 @@
 from abc import ABC
-from mloptimizer.alg_wrapper import generate_model
-from mloptimizer.genoptimizer import BaseOptimizer
+from mloptimizer.aux.alg_wrapper import generate_model
+from mloptimizer.core import Optimizer
 from mloptimizer.hyperparams import Hyperparam
 
 
-class KerasClassifierOptimizer(BaseOptimizer, ABC):
+class KerasClassifierOptimizer(Optimizer):
     """
     Class for the optimization of a gradient boosting classifier from keras.wrappers.scikit_learn.KerasClassifier.
     It inherits from BaseOptimizer.
@@ -29,7 +29,7 @@ class KerasClassifierOptimizer(BaseOptimizer, ABC):
         except ImportError as e:
             print(f"{e}: Keras is not installed. Please install it to use this function.")
             return None
-        individual_dict = self.individual2dict(individual)
+        individual_dict = self.deap_optimizer.individual2dict(individual)
         print(individual_dict)
         clf = KerasClassifier(build_fn=generate_model,
                               **individual_dict)

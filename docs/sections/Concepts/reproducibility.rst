@@ -17,7 +17,7 @@ An example of usage is:
 
     from sklearn.datasets import load_breast_cancer as dataset
     from sklearn.tree import DecisionTreeClassifier
-    from mloptimizer.genoptimizer import SklearnOptimizer
+    from mloptimizer.core import Optimizer
     from mloptimizer.hyperparams import HyperparameterSpace
 
     X, y = load_iris(return_X_y=True)
@@ -28,19 +28,19 @@ An example of usage is:
     distinct_seed = 2
     # It is important to run the optimization
     # right after the creation of the optimizer
-    optimizer1 = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y,
-                                  hyperparam_space=default_hyperparam_space, seed=seed)
+    optimizer1 = Optimizer(estimator_class=DecisionTreeClassifier, features=X, labels=y,
+                           hyperparam_space=default_hyperparam_space, seed=seed)
     result1 = optimizer1.optimize_clf(population=population,
                                       generations=generations)
     # WARNING: In case the optimizer2 would be created after the optimizer1,
     # the results would be different
-    optimizer2 = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y,
-                                  hyperparam_space=default_hyperparam_space, seed=seed)
+    optimizer2 = Optimizer(estimator_class=DecisionTreeClassifier, features=X, labels=y,
+                           hyperparam_space=default_hyperparam_space, seed=seed)
     result2 = optimizer2.optimize_clf(population=population,
                                       generations=generations)
 
-    optimizer3 = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y,
-                                  hyperparam_space=default_hyperparam_space, seed=distinct_seed)
+    optimizer3 = Optimizer(estimator_class=DecisionTreeClassifier, features=X, labels=y,
+                           hyperparam_space=default_hyperparam_space, seed=distinct_seed)
     result3 = optimizer3.optimize_clf(population=population,
                                       generations=generations)
     str(result1) == str(result2)

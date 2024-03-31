@@ -54,7 +54,7 @@ You can get more information about the package installation at https://pypi.org/
 Here's a simple example of how to optimize hyperparameters in a decision tree classifier using the iris dataset:
 
 ```python
-from mloptimizer.genoptimizer import SklearnOptimizer
+from mloptimizer.core import Optimizer
 from mloptimizer.hyperparams import HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.datasets import load_iris
@@ -66,7 +66,7 @@ X, y = load_iris(return_X_y=True)
 hyperparameter_space = HyperparameterSpace.get_default_hyperparameter_space(DecisionTreeClassifier)
 
 # 3) Create the optimizer and optimize the classifier
-opt = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y, hyperparam_space=hyperparameter_space)
+opt = Optimizer(model_class=DecisionTreeClassifier, features=X, labels=y, hyperparam_space=hyperparameter_space)
 
 # 4) Optimize the classifier, the optimization returns the best estimator found in the optimization process
 # - 10 generations starting with a population of 10 individuals, other parameters are set to default
@@ -146,7 +146,8 @@ with examples, classes and methods reference.
 
 ## Authors
 
-* **Antonio Caparrini** - *Owner* - [caparrini](https://github.com/caparrini)
+* **Antonio Caparrini** - *Author* - [caparrini](https://github.com/caparrini)
+* **Javier Arroyo Gallardo** - *Author* - [javiag](https://github.com/javiag)
 
 ## License
 

@@ -30,7 +30,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/guides/single-sourcing-package-version/
-    version="0.7.1",  # Required
+    version="0.8.0",  # Required
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#summary
@@ -63,7 +63,7 @@ setup(
     url="https://github.com/Caparrini/mloptimizer",  # Optional
     # This should be your name or the name of the organization which owns the
     # project.
-    author="Antonio Caparrini",  # Optional
+    author="Antonio Caparrini López, Javier Arroyo Gallardo",  # Optional
     # This should be a valid email address corresponding to the author listed
     # above.
     author_email="acaparri@ucm.es",  # Optional

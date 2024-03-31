@@ -4,10 +4,10 @@ Evolution (logbook) graph
 mloptimizer provides a function to plot the evolution of the fitness function.
 """
 
-from mloptimizer.genoptimizer import SklearnOptimizer
+from mloptimizer.core import Optimizer
 from mloptimizer.hyperparams import HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
-from mloptimizer.plots import plotly_logbook
+from mloptimizer.aux.plots import plotly_logbook
 import plotly
 import os
 from sklearn.datasets import load_iris
@@ -25,8 +25,8 @@ hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(Decision
 
 # %%
 # We use the default TreeOptimizer class to optimize a decision tree classifier.
-opt = SklearnOptimizer(clf_class=DecisionTreeClassifier, features=X, labels=y,
-                       hyperparam_space=hyperparam_space, folder="Evolution_example")
+opt = Optimizer(estimator_class=DecisionTreeClassifier, features=X, labels=y,
+                hyperparam_space=hyperparam_space, folder="Evolution_example")
 
 # %%
 # To optimizer the classifier we need to call the optimize_clf method.
@@ -40,7 +40,7 @@ clf = opt.optimize_clf(10, 10)
 # The black lines represent the max and min fitness values across all generations.
 # The green, red and blue line are respectively the max, min and avg fitness value for each generation.
 # Each grey point in the graph represents an individual.
-population_df = opt.population_2_df()
+population_df = opt.runs[-1].population_2_df()
 g_logbook = plotly_logbook(opt.logbook, population_df)
 plotly.io.show(g_logbook)
 

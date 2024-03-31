@@ -101,15 +101,15 @@ Here's an example of how you can create a `HyperparameterSpace` instance and pas
    # Then we can use the hyperparam_space instance to optimize the hyperparameters
    from sklearn.tree import DecisionTreeClassifier
    from sklearn.datasets import load_iris
-   from mloptimizer.genoptimizer import SklearnOptimizer
+   from mloptimizer.core import Optimizer
 
    # Load the iris dataset
    X,y = load_iris(return_X_y=True)
 
-   tree_optimizer = SklearnOptimizer(clf_class=DecisionTreeClassifier,
-                                    hyperparam_space=hyperparam_space,
-                                    features=X, labels=y)
+   tree_optimizer = Optimizer(estimator_class=DecisionTreeClassifier,
+                              hyperparam_space=hyperparam_space,
+                              features=X, labels=y)
    tree_optimizer.optimize_clf(3, 3)
 
 
-In this example, we define custom hyperparameters and create a `HyperparameterSpace` instance. We then use the `HyperparameterSpace` instance to optimize the hyperparameters of a `DecisionTreeClassifier` using the `SklearnOptimizer` class.
+In this example, we define custom hyperparameters and create a `HyperparameterSpace` instance. We then use the `HyperparameterSpace` instance to optimize the hyperparameters of a `DecisionTreeClassifier` using the `Optimizer` class.

@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from sklearn.datasets import make_classification
-from mloptimizer.alg_wrapper import CustomXGBClassifier
+from mloptimizer.aux.alg_wrapper import CustomXGBClassifier
 
 
 @pytest.fixture

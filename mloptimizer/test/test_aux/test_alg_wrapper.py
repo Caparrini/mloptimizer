@@ -1,5 +1,4 @@
-import pytest
-from mloptimizer.alg_wrapper import generate_model
+from mloptimizer.aux.alg_wrapper import generate_model
 from sklearn.datasets import load_breast_cancer
 import numpy as np
 import sys, subprocess
