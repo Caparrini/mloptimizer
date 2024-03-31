@@ -5,6 +5,7 @@ Score Functions (NEED UPDATE)
 The `model_evaluation.py` module in our library provides several score functions that are used to evaluate the performance of machine learning algorithms. These score functions are crucial in the context of genetic optimization, where they serve as fitness values. In genetic optimization, a fitness value determines how well an individual (in this case, a machine learning algorithm defined by its hyperparameters) performs in a given generation. The better the fitness value, the more likely the individual is to survive and reproduce in the next generation.
 
 A score function takes as input:
+
 - The true labels of the data
 - The predicted labels of the data
 - A machine learning algorithm complying with the scikit-learn API
