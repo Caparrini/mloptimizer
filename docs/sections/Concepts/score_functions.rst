@@ -43,12 +43,12 @@ Here's an example of how to use the `train_score` function:
    from sklearn.metrics import accuracy_score
 
    # Define features, labels, and classifier
-   features = [...]
-   labels = [...]
+   from sklearn.datasets import load_iris
+   features, labels = load_iris(return_X_y=True)
    clf = RandomForestClassifier()
 
    # Use the train_score function
-   score = model_evaluation.train_score(features, labels, clf, score_function=accuracy_score)
+   score = model_evaluation.train_score(features, labels, clf, metrics={"accuracy": accuracy_score})
 
 
 In this example, we first define the features, labels, and classifier. We then use the `train_score` function to train the classifier and calculate the score. The `accuracy_score` function from `sklearn.metrics` is used as the score function.
