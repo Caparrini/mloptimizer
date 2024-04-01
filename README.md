@@ -66,11 +66,11 @@ X, y = load_iris(return_X_y=True)
 hyperparameter_space = HyperparameterSpace.get_default_hyperparameter_space(DecisionTreeClassifier)
 
 # 3) Create the optimizer and optimize the classifier
-opt = Optimizer(model_class=DecisionTreeClassifier, features=X, labels=y, hyperparam_space=hyperparameter_space)
+opt = Optimizer(estimator_class=DecisionTreeClassifier, features=X, labels=y, hyperparam_space=hyperparameter_space)
 
 # 4) Optimize the classifier, the optimization returns the best estimator found in the optimization process
 # - 10 generations starting with a population of 10 individuals, other parameters are set to default
-clf = opt.optimize_clf(population=10, generations=10)
+clf = opt.optimize_clf(population_size=10, generations=10)
 ```
 Other algorithms can be used, such as `RandomForestClassifier` or `XGBClassifier` which have a 
 default hyperparameter space defined in the library.
