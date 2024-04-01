@@ -89,6 +89,7 @@ An example of using custom hyperparameters is:
 
 .. code-block:: python
 
+    from mloptimizer.hyperparams import Hyperparam, HyperparameterSpace
     # Define your custom hyperparameters
     fixed_hyperparams = {
         'max_depth': 5

@@ -30,18 +30,18 @@ An example of usage is:
     # right after the creation of the optimizer
     optimizer1 = Optimizer(estimator_class=DecisionTreeClassifier, features=X, labels=y,
                            hyperparam_space=default_hyperparam_space, seed=seed)
-    result1 = optimizer1.optimize_clf(population=population,
+    result1 = optimizer1.optimize_clf(population_size=population,
                                       generations=generations)
     # WARNING: In case the optimizer2 would be created after the optimizer1,
     # the results would be different
     optimizer2 = Optimizer(estimator_class=DecisionTreeClassifier, features=X, labels=y,
                            hyperparam_space=default_hyperparam_space, seed=seed)
-    result2 = optimizer2.optimize_clf(population=population,
+    result2 = optimizer2.optimize_clf(population_size=population,
                                       generations=generations)
 
     optimizer3 = Optimizer(estimator_class=DecisionTreeClassifier, features=X, labels=y,
                            hyperparam_space=default_hyperparam_space, seed=distinct_seed)
-    result3 = optimizer3.optimize_clf(population=population,
+    result3 = optimizer3.optimize_clf(population_size=population,
                                       generations=generations)
     str(result1) == str(result2)
     str(result1) != str(result3)
