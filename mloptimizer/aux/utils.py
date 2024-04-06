@@ -73,7 +73,7 @@ def create_optimization_folder(folder):
     if os.path.exists(folder):
         logging.warning("The folder {} already exists and it will be used".format(folder))
     elif os.makedirs(folder, exist_ok=True):
-        logging.info("The folder {} has been created.".format(folder))
+        logging.warning("The folder {} has been created.".format(folder))
     else:
         logging.error("The folder {} could not be created.".format(folder))
     return folder
