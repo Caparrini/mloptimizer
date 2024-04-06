@@ -42,7 +42,8 @@ class Optimizer:
         flag to use mlflow
     """
 
-    def __init__(self, estimator_class, features: np.array, labels: np.array, folder=os.curdir, log_file="mloptimizer.log",
+    def __init__(self, estimator_class, features: np.array, labels: np.array,
+                 folder=os.curdir, log_file="mloptimizer.log",
                  hyperparam_space: HyperparameterSpace = None,
                  eval_function=train_score,
                  fitness_score="accuracy", metrics=None, seed=random.randint(0, 1000000),
