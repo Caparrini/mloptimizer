@@ -272,7 +272,7 @@ class GeneticAlgorithmRunner:
             for ind, fit in zip(invalid_ind, fitnesses):
                 ind.fitness.values = fit
                 ind_formatted = self.deap_optimizer.individual2dict(ind)
-                self.tracker.append_progress_file(gen, c, evaluations_pending, ind_formatted, fit)
+                self.tracker.append_progress_file(gen, ngen, c, evaluations_pending, ind_formatted, fit)
 
                 c = c + 1
 
@@ -281,8 +281,8 @@ class GeneticAlgorithmRunner:
             record = stats.compile(population) if stats else {}
 
             logbook.record(gen=gen, nevals=len(invalid_ind), **record)
-            if verbose:
-                self.tracker.optimization_logger.info(logbook.stream)
+            # if verbose:
+            #    self.tracker.optimization_logger.info(logbook.stream)
 
             # Select the next generation individuals
             population = toolbox.select(population, len(population))
