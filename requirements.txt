@@ -11,3 +11,4 @@ six>=1.15.0
 xgboost>=1.7.3
 plotly>=5.15.0
 kaleido
+tqdm

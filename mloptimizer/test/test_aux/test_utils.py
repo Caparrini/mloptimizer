@@ -6,13 +6,13 @@ def test_init_logger(tmp_path):
     # Create a temporary path for testing
     log_file = 'test.log'
     log_path = str(tmp_path)
-    logger, filename = init_logger(log_file, log_path)
+    logger, logfile_path = init_logger(log_file, log_path)
 
     # Check if the logger file is created
-    assert os.path.isfile(filename), "Log file should be created"
+    assert os.path.isfile(logfile_path), "Log file should be created"
 
     # Check if the filename is correct
-    assert filename == os.path.join(log_path, log_file), "Logger filename should match"
+    assert logfile_path == os.path.join(log_path, log_file), "Logger filename should match"
 
 
 def test_create_optimization_folder(tmp_path):

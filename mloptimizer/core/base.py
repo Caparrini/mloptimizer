@@ -101,7 +101,8 @@ class Optimizer:
         self.use_mlflow = use_mlflow
 
         # Tracker
-        self.tracker = Tracker(name="mloptimizer", folder=folder, log_file=log_file, use_mlflow=self.use_mlflow)
+        self.tracker = Tracker(name="mloptimizer", folder=folder, log_file=log_file, use_mlflow=self.use_mlflow,
+                               use_parallel=self.use_parallel)
 
         # Evaluator
         self.individual_utils = IndividualUtils(hyperparam_space=self.hyperparam_space,
@@ -189,7 +190,7 @@ class Optimizer:
             classifier with the best hyperparams
         """
         # Log initialization
-        self.tracker.start_optimization(type(self).__name__)
+        self.tracker.start_optimization(type(self).__name__, generations=generations)
 
         # Creation of folders and checkpoint
         self.tracker.start_checkpoint(opt_run_folder_name)

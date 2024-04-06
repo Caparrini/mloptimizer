@@ -5,6 +5,7 @@ from datetime import datetime
 import importlib
 import joblib
 import pandas as pd
+import tqdm
 
 
 class Tracker:
@@ -23,7 +24,8 @@ class Tracker:
         If True, the optimization process will be tracked using MLFlow.
     """
 
-    def __init__(self, name, folder=os.curdir, log_file="mloptimizer.log", use_mlflow=False):
+    def __init__(self, name, folder=os.curdir, log_file="mloptimizer.log", use_mlflow=False,
+                 use_parallel=False):
 
         self.name = name
         self.gen = 0
@@ -41,13 +43,19 @@ class Tracker:
         self.results_path = None
         self.graphics_path = None
 
+        # tqdm is not compatible with parallel execution
+        self.use_parallel = use_parallel
+
+        if not self.use_parallel:
+            self.gen_pbar = None
+
         # MLFlow
         self.use_mlflow = use_mlflow
 
         if self.use_mlflow:
             self.mlflow = importlib.import_module("mlflow")
 
-    def start_optimization(self, opt_class):
+    def start_optimization(self, opt_class, generations: int):
         """
         Start the optimization process.
 
@@ -55,11 +63,17 @@ class Tracker:
         ----------
         opt_class : str
             Name of the optimization class.
+        generations : int
+            Number of generations for the optimization process.
         """
         # Inform the user that the optimization is starting
         self.mloptimizer_logger.info(f"Initiating genetic optimization...")
         # self.mloptimizer_logger.info("Algorithm: {}".format(type(self).__name__))
         self.mloptimizer_logger.info(f"Algorithm: {opt_class}")
+
+        # tqdm is not compatible with parallel execution
+        if not self.use_parallel:
+            self._init_progress_bar(generations)
 
     def start_checkpoint(self, opt_run_folder_name):
         """
@@ -106,7 +120,7 @@ class Tracker:
         self.gen = generation + 1
 
     def log_evaluation(self, classifier, metrics):
-        self.optimization_logger.info(f"Adding to mlflow...\nClassifier: {classifier}\nMetrics: {metrics}")
+        self.optimization_logger.debug(f"Adding to mlflow...\nClassifier: {classifier}\nMetrics: {metrics}")
 
         if self.use_mlflow:
             with self.mlflow.start_run():
@@ -122,7 +136,7 @@ class Tracker:
         self.opt_run_folder = os.path.dirname(self.opt_run_checkpoint_path)
         self.optimization_logger, _ = init_logger(os.path.join(self.opt_run_folder,
                                                                f"opt_{os.path.basename(checkpoint)}.log"))
-        self.optimization_logger.info("Initiating from checkpoint {}...".format(checkpoint))
+        self.optimization_logger.debug("Initiating from checkpoint {}...".format(checkpoint))
 
         self.results_path = os.path.join(self.opt_run_folder, "results")
         self.graphics_path = os.path.join(self.opt_run_folder, "graphics")
@@ -145,12 +159,14 @@ class Tracker:
             filename = os.path.join(self.results_path, 'logbook.csv')
         pd.DataFrame(logbook).to_csv(filename, index=False)
 
-    def write_population_file(self, populations, filename=None):
+    def write_population_file(self, populations: pd.DataFrame, filename=None):
         """
         Method to write the population to a csv file
 
         Parameters
         ----------
+        populations: pd.DataFrame
+            population of the optimization process
         filename : str, optional (default=None)
             filename to save the population
         """
@@ -160,15 +176,20 @@ class Tracker:
                                 ).to_csv(filename, index=False)
 
     def start_progress_file(self, gen: int):
+        # tqdm is not compatible with parallel execution
+        if not self.use_parallel:
+            self.gen_pbar.update()
         progress_gen_path = os.path.join(self.progress_path, "Generation_{}.csv".format(gen))
         header_progress_gen_file = "i;total;Individual;fitness\n"
         with open(progress_gen_path, "w") as progress_gen_file:
             progress_gen_file.write(header_progress_gen_file)
             progress_gen_file.close()
-        self.optimization_logger.info("Generation: {}".format(gen))
+        self.optimization_logger.debug("Generation: {}".format(gen))
 
-    def append_progress_file(self, gen, c, evaluations_pending, ind_formatted, fit):
-        self.optimization_logger.info(
+        # self.pbar.refresh()
+
+    def append_progress_file(self, gen: int, ngen: int, c: int, evaluations_pending: int, ind_formatted, fit):
+        self.optimization_logger.debug(
             "Fitting individual (informational purpose): gen {} - ind {} of {}".format(
                 gen, c, evaluations_pending
             )
@@ -180,3 +201,9 @@ class Tracker:
                                        evaluations_pending,
                                        ind_formatted, fit)
             )
+        if not self.use_parallel and gen == ngen and c == evaluations_pending:
+            self.gen_pbar.close()
+
+    def _init_progress_bar(self, n_generations, msg="Genetic execution"):
+        self.gen_pbar = tqdm.tqdm(desc=msg, total=n_generations+1)
+        # self.pbar.refresh()
