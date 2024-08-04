@@ -124,7 +124,7 @@ More details in the [documentation](http://mloptimizer.readthedocs.io/).
 
 ## Examples
 
-Examples can be found in [examples](https://mloptimizer.readthedocs.io/en/latest/auto_examples/index.html) on readthedocs.io.
+Examples can be found in [examples](https://mloptimizer.readthedocs.io/en/master/auto_examples/index.html) on readthedocs.io.
 
 ## Dependencies
 
