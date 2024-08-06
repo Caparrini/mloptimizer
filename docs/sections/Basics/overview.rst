@@ -16,8 +16,8 @@ To use the `Optimizer` class:
 
 1. Define your features and labels.
 2. Choose a model to optimize that complies with the `sklearn` API. (e.g. `XGBClassifier`).
-2. Create an instance of `HyperparameterSpace` with the hyperparameters that you want to optimize.
-3. Call the `optimize_clf()` method to start the optimization process.
+3. Create an instance of `HyperparameterSpace` with the hyperparameters that you want to optimize.
+4. Call the `optimize_clf()` method to start the optimization process.
 
 .. note::
     There are default HyperparameterSpaces defined in the ``conf`` folder for the most common models.

@@ -85,8 +85,8 @@ class Optimizer:
         self.hyperparam_space = hyperparam_space
 
         # ML Evaluator
-        if metrics is None:
-            metrics = {"accuracy": accuracy_score}
+        # if metrics is None:
+        #     metrics = {"accuracy": accuracy_score}
 
         # State vars
         self.eval_dict = {}
