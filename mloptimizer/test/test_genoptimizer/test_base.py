@@ -10,6 +10,7 @@ from mloptimizer.evaluation import kfold_score, train_score, train_test_score
 import time
 import os
 from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import StandardScaler
 
 custom_evolvable_hyperparams = {
     "min_samples_split": Hyperparam("min_samples_split", 2, 50, 'int'),
@@ -79,6 +80,9 @@ def test_checkpoints():
                          (load_breast_cancer, load_iris))
 def test_optimizer(estimator_class, dataset, default_metrics_dict, tmp_path):
     X, y = dataset(return_X_y=True)
+    if estimator_class == SVC:
+        scaler = StandardScaler()
+        X = scaler.fit_transform(X)
     evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
     opt = Optimizer(features=X, labels=y, fitness_score="accuracy",
                     metrics=default_metrics_dict, estimator_class=estimator_class,
@@ -94,6 +98,9 @@ def test_optimizer(estimator_class, dataset, default_metrics_dict, tmp_path):
                          (load_breast_cancer, load_iris))
 def test_optimizer_use_parallel(estimator_class, dataset, default_metrics_dict, tmp_path):
     X, y = dataset(return_X_y=True)
+    if estimator_class == SVC:
+        scaler = StandardScaler()
+        X = scaler.fit_transform(X)
     evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
     my_seed = 25
     population = 60
@@ -135,6 +142,9 @@ def test_optimizer_use_parallel(estimator_class, dataset, default_metrics_dict, 
 @pytest.mark.parametrize('target_score', (kfold_score, train_score, train_test_score))
 def test_reproducibility(estimator_class, target_score, default_metrics_dict, tmp_path):
     X, y = load_iris(return_X_y=True)
+    if estimator_class == SVC:
+        scaler = StandardScaler()
+        X = scaler.fit_transform(X)
     evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
     population = 2
     generations = 2
@@ -154,3 +164,27 @@ def test_reproducibility(estimator_class, target_score, default_metrics_dict, tm
     result3 = optimizer3.optimize_clf(population_size=population, generations=generations)
     assert str(result1) == str(result2)
     assert str(result1) != str(result3)
+
+
+def test_custom_svc():
+    X, y = load_breast_cancer(return_X_y=True)
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+    custom_svc_evolvable_hyperparams = {
+        "C": Hyperparam("C", -2, 2, 'nexp'),
+        "kernel": Hyperparam("kernel", 0, 3, 'list',
+                             values_str=['linear', 'poly', 'rbf', 'sigmoid']),
+        "degree": Hyperparam("degree", 0, 6, 'int'),
+        "gamma": Hyperparam("gamma", -3, 3, 'nexp'),
+        "max_iter": Hyperparam("max_iter", 1000, 10000, 'int')
+    }
+    evolvable_hyperparams = HyperparameterSpace(evolvable_hyperparams=custom_svc_evolvable_hyperparams,
+                                                fixed_hyperparams={}
+                                                )
+    opt = Optimizer(features=X, labels=y, fitness_score="balanced_accuracy",
+                    metrics={"balanced_accuracy": accuracy_score},
+                    estimator_class=SVC,
+                    hyperparam_space=evolvable_hyperparams,
+                    use_parallel=False)
+    clf = opt.optimize_clf(60, 4)
+    assert clf is not None

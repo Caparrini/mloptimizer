@@ -14,6 +14,8 @@ How It Is Used
 
 The Hyperparam class is used to define a hyperparameter to optimize. It includes the name, minimum value, maximum value, and type of the hyperparameter. This class also controls the precision of the hyperparameter to avoid multiple evaluations with close values due to decimal positions.
 
+Depending on the type of hyperparameter, the Hyperparam class can apply a transformation to the value. For example, the 'nexp' type computes the negative power of the value, while the 'x10' type multiplies the value by 10.
+
 The Hyperparam class has several methods, including:
 
 - `__init__`: Initializes a new instance of the Hyperparam class.
@@ -56,7 +58,17 @@ The `Hyperparam` class supports several types of hyperparameters. Here are examp
     hyperparam_x10 = Hyperparam(name='x10_param', min_value=1,
                                 max_value=100, hyperparam_type='x10')
 
+- 'list' hyperparameter:
+
+.. code-block:: python
+
+    hyperparam_list = Hyperparam(name='list_param', min_value=0,
+                                max_value=3, hyperparam_type='list', values_str=["a", "b", "c"])
+
+    hyperparam_list_using_method = Hyperparam.from_list(name='list_param', values_str=["a", "b", "c"])
+
 In these examples, we define hyperparameters of different types. The 'nexp' and 'x10' types are special types that apply a transformation to the hyperparameter value.
+The 'list' type is used to define a hyperparameter that can take a value from a list of values (usually strings).
 
 Examples
 --------

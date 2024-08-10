@@ -72,8 +72,11 @@ class HyperparameterSpace:
         # Extract evolvable hyperparams
         evolvable_hyperparams_dict = json_data['evolvable_hyperparams']
         evolvable_hyperparams = {}
-        for k in evolvable_hyperparams_dict.keys():
-            evolvable_hyperparams[k] = Hyperparam(**evolvable_hyperparams_dict[k])
+        # for k in evolvable_hyperparams_dict.keys():
+        #    evolvable_hyperparams[k] = Hyperparam(**evolvable_hyperparams_dict[k])
+        for key, param_data in evolvable_hyperparams_dict.items():
+            # Support a potential 'str_values' or 'values_str' key in the JSON
+            evolvable_hyperparams[key] = Hyperparam(**param_data)
 
         return cls(fixed_hyperparams=fixed_hyperparams, evolvable_hyperparams=evolvable_hyperparams)
 
