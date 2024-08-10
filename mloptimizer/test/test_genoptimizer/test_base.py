@@ -72,7 +72,6 @@ def test_checkpoints():
     assert str(clf) == str(clf2)
 
 
-
 @pytest.mark.parametrize('estimator_class',
                          (DecisionTreeClassifier, RandomForestClassifier, ExtraTreesClassifier,
                           GradientBoostingClassifier, XGBClassifier, SVC))
