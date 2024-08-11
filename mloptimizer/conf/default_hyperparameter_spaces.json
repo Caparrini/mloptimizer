@@ -1,9 +1,15 @@
 {
     "DecisionTreeClassifier": "DecisionTreeClassifier_default_HyperparamSpace.json",
+    "DecisionTreeRegressor": "DecisionTreeRegressor_default_HyperparamSpace.json",
     "RandomForestClassifier": "RandomForestClassifier_default_HyperparamSpace.json",
+    "RandomForestRegressor": "RandomForestRegressor_default_HyperparamSpace.json",
     "ExtraTreesClassifier": "ExtraTreesClassifier_default_HyperparamSpace.json",
+    "ExtraTreesRegressor": "ExtraTreesRegressor_default_HyperparamSpace.json",
     "GradientBoostingClassifier": "GradientBoostingClassifier_default_HyperparamSpace.json",
+    "GradientBoostingRegressor": "GradientBoostingClassifier_default_HyperparamSpace.json",
     "XGBClassifier": "XGBClassifier_default_HyperparamSpace.json",
+    "XGBRegressor": "XGBClassifier_default_HyperparamSpace.json",
     "CustomXGBClassifier": "CustomXGBClassifier_default_HyperparamSpace.json",
-    "SVC": "SVC_default_HyperparamSpace.json"
+    "SVC": "SVC_default_HyperparamSpace.json",
+    "SVR": "SVC_default_HyperparamSpace.json"
 }

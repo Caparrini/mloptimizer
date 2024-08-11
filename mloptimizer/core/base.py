@@ -1,7 +1,7 @@
 import os
 import random
 import numpy as np
-from sklearn.metrics import accuracy_score
+from sklearn.base import is_regressor, is_classifier
 
 from mloptimizer.evaluation import train_score
 from mloptimizer.genetic import IndividualUtils
@@ -46,7 +46,7 @@ class Optimizer:
                  folder=os.curdir, log_file="mloptimizer.log",
                  hyperparam_space: HyperparameterSpace = None,
                  eval_function=train_score,
-                 fitness_score="accuracy", metrics=None, seed=random.randint(0, 1000000),
+                 fitness_score=None, metrics=None, seed=random.randint(0, 1000000),
                  use_parallel=False, use_mlflow=False):
         """
         Creates object BaseOptimizer.
@@ -78,6 +78,9 @@ class Optimizer:
         """
         # Model class
         self.estimator_class = estimator_class
+        if not is_classifier(self.estimator_class) and not is_regressor(self.estimator_class):
+            raise ValueError(f"The estimator class {self.estimator_class} must be a classifier or a regressor")
+
         # Input mandatory variables
         self.features = features
         self.labels = labels
@@ -108,7 +111,7 @@ class Optimizer:
         # Evaluator
         self.individual_utils = IndividualUtils(hyperparam_space=self.hyperparam_space,
                                                 estimator_class=self.estimator_class, mlopt_seed=self.mlopt_seed)
-        self.evaluator = Evaluator(features=features, labels=labels,
+        self.evaluator = Evaluator(estimator_class=self.estimator_class, features=features, labels=labels,
                                    eval_function=eval_function, fitness_score=fitness_score,
                                    metrics=metrics, tracker=self.tracker,
                                    individual_utils=self.individual_utils)
@@ -154,9 +157,9 @@ class Optimizer:
         return [*subclasses, *next_subclasses]
 
     def get_clf(self, individual):
-        individual_dict = self.deap_optimizer.individual2dict(individual)
-        clf = self.estimator_class(random_state=self.mlopt_seed, **individual_dict)
-        return clf
+        # individual_dict = self.deap_optimizer.individual2dict(individual)
+        # clf = self.estimator_class(random_state=self.mlopt_seed, **individual_dict)
+        return self.individual_utils.get_clf(individual)
 
     def optimize_clf(self, population_size: int = 10, generations: int = 3,
                      cxpb=0.5, mutpb=0.5, tournsize=4, indpb=0.5, n_elites=10,
@@ -198,7 +201,8 @@ class Optimizer:
 
         # Creation of deap optimizer
         self.deap_optimizer = DeapOptimizer(hyperparam_space=self.hyperparam_space, seed=self.mlopt_seed,
-                                            use_parallel=self.use_parallel)
+                                            use_parallel=self.use_parallel,
+                                            maximize=is_classifier(self.estimator_class))
         # Creation of genetic algorithm runner
         ga_runner = GeneticAlgorithmRunner(deap_optimizer=self.deap_optimizer,
                                            tracker=self.tracker,
@@ -219,4 +223,4 @@ class Optimizer:
         # Log and save results
         # self._log_and_save_results(hof)
 
-        return self.get_clf(hof[0])
+        return self.individual_utils.get_clf(hof[0])

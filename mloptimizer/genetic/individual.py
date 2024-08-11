@@ -1,4 +1,5 @@
 from mloptimizer.hyperparams import HyperparameterSpace
+from sklearn.svm import SVR
 
 
 class IndividualUtils:
@@ -9,7 +10,11 @@ class IndividualUtils:
 
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
-        clf = self.estimator_class(random_state=self.mlopt_seed, **individual_dict)
+        if self.estimator_class is SVR:
+            # SVR is a deterministic model, so it does not require a random seed
+            clf = self.estimator_class(**individual_dict)
+        else:
+            clf = self.estimator_class(random_state=self.mlopt_seed, **individual_dict)
         return clf
 
     def individual2dict(self, individual):

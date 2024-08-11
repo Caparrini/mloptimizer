@@ -1,12 +1,23 @@
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, root_mean_squared_error
 from mloptimizer.aux import Tracker
 import numpy as np
 
+from sklearn.base import is_regressor, is_classifier
 
-def _default_metrics():
+
+def _default_classification_metrics():
     return {
         "accuracy": accuracy_score,
-        "balanced_accuracy": balanced_accuracy_score,
+        "balanced_accuracy": balanced_accuracy_score
+    }
+
+
+def _default_regression_metrics():
+    return {
+        "mae": mean_absolute_error,
+        "mse": mean_squared_error,
+        "rmse": root_mean_squared_error
     }
 
 
@@ -33,18 +44,35 @@ class Evaluator:
         The individual utils to use to get the classifier from the individual
     """
 
-    def __init__(self, features: np.array, labels: np.array, eval_function, fitness_score="accuracy", metrics=None,
-                 tracker: Tracker = None, individual_utils=None):
-        if metrics is None:
-            self.metrics = _default_metrics()
-        else:
-            self.metrics = metrics
+    def __init__(self, estimator_class, features: np.array, labels: np.array, eval_function, fitness_score=None,
+                 metrics=None, tracker: Tracker = None, individual_utils=None):
+
+        self.estimator_class = estimator_class
+        if not is_classifier(self.estimator_class) and not is_regressor(self.estimator_class):
+            raise ValueError(f"The estimator class {self.estimator_class} must be a classifier or a regressor")
+
         self.eval_function = eval_function
         self.fitness_score = fitness_score
         self.tracker = tracker
         self.features = features
         self.labels = labels
         self.individual_utils = individual_utils
+
+        if metrics is None:
+            if is_classifier(self.estimator_class):
+                self.metrics = _default_classification_metrics()
+                if fitness_score is None:
+                    self.fitness_score = "accuracy"
+                else:
+                    self.fitness_score = fitness_score
+            elif is_regressor(self.estimator_class):
+                self.metrics = _default_regression_metrics()
+                if fitness_score is None:
+                    self.fitness_score = "rmse"
+                else:
+                    self.fitness_score = fitness_score
+        else:
+            self.metrics = metrics
 
     def evaluate(self, clf, features, labels):
         """

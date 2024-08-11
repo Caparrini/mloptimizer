@@ -5,7 +5,8 @@ from mloptimizer.hyperparams import HyperparameterSpace
 
 
 class DeapOptimizer:
-    def __init__(self, hyperparam_space: HyperparameterSpace = None, use_parallel=False,  seed=None):
+    def __init__(self, hyperparam_space: HyperparameterSpace = None, use_parallel=False,
+                 maximize=True, seed=None):
         """
         Class to start the parameters for the use of DEAP library.
 
@@ -15,8 +16,11 @@ class DeapOptimizer:
             hyperparameter space
         use_parallel : bool
             flag to use parallel processing
+        maximize : bool
+           flag to indicate whether to maximize or minimize the objective function
         seed : int
             seed for the random functions
+
 
         Attributes
         ----------
@@ -24,6 +28,8 @@ class DeapOptimizer:
             hyperparameter space
         use_parallel : bool
             flag to use parallel processing
+        maximize : bool
+            flag to indicate whether to maximize or minimize the objective function
         seed : int
             seed for the random functions
         toolbox : deap.base.Toolbox
@@ -37,6 +43,7 @@ class DeapOptimizer:
         """
         self.hyperparam_space = hyperparam_space
         self.use_parallel = use_parallel
+        self.maximize = maximize
         self.seed = seed
         random.seed(seed)
         np.random.seed(seed)
@@ -99,8 +106,12 @@ class DeapOptimizer:
         self.stats.register("max", np.max)
         start_gen = 0
         # Using deap, custom for decision tree
-        creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-        creator.create("Individual", list, fitness=creator.FitnessMax)
+        if self.maximize:
+            creator.create("FitnessMax", base.Fitness, weights=(1.0,))
+            creator.create("Individual", list, fitness=creator.FitnessMax)
+        else:
+            creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+            creator.create("Individual", list, fitness=creator.FitnessMin)
 
         # Parallel https://deap.readthedocs.io/en/master/tutorials/basic/part4.html
         if self.use_parallel:
