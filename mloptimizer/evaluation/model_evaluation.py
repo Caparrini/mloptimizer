@@ -20,7 +20,7 @@ def train_score(features, labels, clf, metrics):
         List of features
     labels : list
         List of labels
-    clf : object
+    clf : estimator
         classifier with methods fit, predict and score
     metrics : dict
         dictionary with metrics to be used
@@ -50,7 +50,7 @@ def train_test_score(features, labels, clf, metrics, test_size=0.2, random_state
         List of features
     labels : list
         List of labels
-    clf : object
+    clf : estimator
         Classifier with methods fit, predict, and score
     metrics : dict
         dictionary with metrics to be used
@@ -95,7 +95,7 @@ def kfold_score(features, labels, clf, metrics, n_splits=5, random_state=None):
         Array of features
     labels : array-like
         Array of labels
-    clf : object
+    clf : estimator
         Classifier with methods fit and predict
     metrics : dict
         dictionary with metrics to be used
@@ -147,7 +147,7 @@ def kfold_stratified_score(features, labels, clf, metrics, n_splits=4,
         List of features
     labels : list
         List of labels
-    clf : object
+    clf : estimator
         classifier with methods fit, predict and score
     n_splits : int
         number of splits
@@ -235,7 +235,7 @@ def temporal_kfold_score(features, labels, clf, metrics, n_splits=4):
         List of features
     labels : list
         List of labels
-    clf : object
+    clf : estimator
         classifier with methods fit, predict and score
     n_splits : int
         number of splits
