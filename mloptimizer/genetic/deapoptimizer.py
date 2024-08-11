@@ -106,6 +106,14 @@ class DeapOptimizer:
         self.stats.register("max", np.max)
         start_gen = 0
         # Using deap, custom for decision tree
+        # Delete existing class references
+        if hasattr(creator, "FitnessMax"):
+            del creator.FitnessMax
+        if hasattr(creator, "FitnessMin"):
+            del creator.FitnessMin
+        if hasattr(creator, "Individual"):
+            del creator.Individual
+
         if self.maximize:
             creator.create("FitnessMax", base.Fitness, weights=(1.0,))
             creator.create("Individual", list, fitness=creator.FitnessMax)
