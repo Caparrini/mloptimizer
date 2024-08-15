@@ -20,12 +20,16 @@ class Tracker:
         Folder where the optimization process will be stored.
     log_file : str
         Name of the log file.
+    use_parallel : bool
+        If True, the optimization process will be executed in parallel. Default is False.
+        The use of parallel execution is not compatible with tqdm, no progress bar will be shown.
+        Also, XGBClassifier is not compatible with parallel execution.
     use_mlflow : bool
-        If True, the optimization process will be tracked using MLFlow.
+        If True, the optimization process will be tracked using MLFlow. Default is False.
     """
 
-    def __init__(self, name, folder=os.curdir, log_file="mloptimizer.log", use_mlflow=False,
-                 use_parallel=False):
+    def __init__(self, name, folder=os.curdir, log_file="mloptimizer.log",
+                 use_parallel=False, use_mlflow=False):
 
         self.name = name
         self.gen = 0
@@ -51,6 +55,9 @@ class Tracker:
 
         # MLFlow
         self.use_mlflow = use_mlflow
+
+        # Best fitness
+        self.best_fitness = None
 
         if self.use_mlflow:
             self.mlflow = importlib.import_module("mlflow")
@@ -119,7 +126,16 @@ class Tracker:
             self.optimization_logger.info("Hyperparams: {}".format(str(classifiers_list[i].get_params())))
         self.gen = generation + 1
 
-    def log_evaluation(self, classifier, metrics):
+    def log_evaluation(self, classifier, metrics, fitness_score, greater_is_better=True):
+        # tqdm is not compatible with parallel execution
+        if not self.use_parallel:
+            # Update best fitness and progress bar postfix
+            need_update = self.best_fitness is None or ((greater_is_better and self.best_fitness < fitness_score) or
+                                                        (not greater_is_better and self.best_fitness > fitness_score))
+            if need_update:
+                self.best_fitness = fitness_score
+                self.gen_pbar.set_postfix({"best fitness": self.best_fitness})
+
         self.optimization_logger.debug(f"Adding to mlflow...\nClassifier: {classifier}\nMetrics: {metrics}")
 
         if self.use_mlflow:
@@ -205,5 +221,5 @@ class Tracker:
             self.gen_pbar.close()
 
     def _init_progress_bar(self, n_generations, msg="Genetic execution"):
-        self.gen_pbar = tqdm.tqdm(desc=msg, total=n_generations+1)
+        self.gen_pbar = tqdm.tqdm(desc=msg, total=n_generations+1, postfix={"best fitness": "?"})
         # self.pbar.refresh()

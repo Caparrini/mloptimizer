@@ -98,5 +98,7 @@ class Evaluator:
     def evaluate_individual(self, individual):
         clf = self.individual_utils.get_clf(individual)
         metrics = self.evaluate(clf=clf, features=self.features, labels=self.labels)
-        self.tracker.log_evaluation(clf, metrics)
+        self.tracker.log_evaluation(clf, metrics,
+                                    fitness_score=metrics[self.fitness_score],
+                                    greater_is_better=is_classifier(clf))
         return (metrics[self.fitness_score],)
