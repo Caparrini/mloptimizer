@@ -1,8 +1,12 @@
 """
-XGBoost - Genetic vs Grid Search vs Random Search
-====================================
-MLOptimizer example optimization of iris dataset using genetic optimization comparing
-with Grid Search and Random Search.
+XGBoost - Genetic vs Grid Search vs Random Search vs Bayesian Optimization
+==========================================================================
+mloptimizer example optimization of iris dataset comparing hyperparameter tuning techniques:
+
+1) Genetic optimization - mloptimizer
+2) Grid Search - scikit-learn
+3) Random Search - scikit-learn
+4) Bayesian Optimization - hyperopt
 """
 
 # %%
@@ -21,10 +25,13 @@ from mloptimizer.hyperparams import HyperparameterSpace, Hyperparam
 from mloptimizer.evaluation import kfold_stratified_score
 from mloptimizer.aux.plots import plotly_search_space
 
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_val_score
 from sklearn.datasets import load_iris
 
 from xgboost import XGBClassifier
+
+from hyperopt import STATUS_OK, hp, tpe
+from hyperopt import Trials, fmin
 
 # %%
 # 1) Dataset Description
@@ -61,7 +68,7 @@ print(f"Dataset: {name}, X shape: {X.shape}, y shape: {y.shape}")
 # %%
 # 2) Genetic Optimization of XGBoost Algorithm
 # --------------------------------------------
-# Genetic optimization is performed using the MLOptimizer library to fine-tune the hyperparameters of the XGBoost
+# Genetic optimization is performed using the mloptimizer library to fine-tune the hyperparameters of the XGBoost
 # algorithm.
 #
 # Hyperparameters to Optimize:
@@ -121,7 +128,12 @@ print(f"Time of the genetic optimization {execution_time_gen} s")
 population_df = opt.runs[0].population_2_df()
 print(f"Genetic optimization {population_df.shape[0]} algorithm executions")
 df = population_df[list(hyperparameter_space.evolvable_hyperparams.keys()) + ['fitness']]
-fig_gen = plotly_search_space(df)
+fig_gen = plotly_search_space(df).update_layout(
+    autosize=True,
+    width=800,  # Adjust width as needed
+    height=800,  # Adjust height as needed
+    margin=dict(l=20, r=20, t=50, b=20)  # Adjust margins as needed
+)
 plotly.io.show(fig_gen)
 
 # %%
@@ -180,7 +192,12 @@ print(f"Time of the grid search {execution_time_gs} s")
 
 synth_population_gs = pd.DataFrame(clf_gs.cv_results_['params'])
 synth_population_gs['fitness'] = clf_gs.cv_results_['mean_test_score']
-fig_gs = plotly_search_space(synth_population_gs)
+fig_gs = plotly_search_space(synth_population_gs).update_layout(
+    autosize=True,
+    width=800,  # Adjust width as needed
+    height=800,  # Adjust height as needed
+    margin=dict(l=20, r=20, t=50, b=20)  # Adjust margins as needed
+)
 plotly.io.show(fig_gs)
 
 print(f"Grid Search optimization has run {synth_population_gs.shape[0]} algorithm executions")
@@ -239,9 +256,89 @@ print(f"Time of the grid search {execution_time_rs} s")
 
 synth_population_rs = pd.DataFrame(clf_rs.cv_results_['params'])
 synth_population_rs['fitness'] = clf_rs.cv_results_['mean_test_score']
-fig_rs = plotly_search_space(synth_population_rs)
+fig_rs = plotly_search_space(synth_population_rs).update_layout(
+    autosize=True,
+    width=800,  # Adjust width as needed
+    height=800,  # Adjust height as needed
+    margin=dict(l=20, r=20, t=50, b=20)  # Adjust margins as needed
+)
 print(f"Random Search optimization has run {synth_population_rs.shape[0]} algorithm executions")
 plotly.io.show(fig_rs)
+
+# %% 5) Bayesian Optimization for XGBoost
+# ---------------------------------------
+# Bayesian Optimization is performed using the hyperopt library to optimize the hyperparameters of the XGBoost algorithm.
+#
+# Optimization Process:
+#
+# - The hyperparameters to optimize are the same as those used in genetic optimization, grid search, and random search:
+#
+#   - `colsample_bytree`
+#   - `gamma`
+#   - `learning_rate`
+#   - `max_depth`
+#   - `n_estimators`
+#   - `subsample`
+#
+# - Search Strategy:
+#
+#   - Bayesian Optimization uses a probabilistic model to predict the performance of different hyperparameter combinations.
+#   - It iteratively evaluates the objective function (in this case, cross-validated balanced accuracy) to find the optimal hyperparameters.
+#
+# Considerations:
+#
+# - Bayesian Optimization is more efficient than random search and grid search for large search spaces.
+# - It can provide better results with fewer evaluations compared to random search and grid search.
+# - The number of evaluations is a parameter that can be adjusted to balance the trade-off between performance and computational cost.
+
+print(f"5) Bayesian Optimization of the algorithm")
+bayesian_space = {
+    'colsample_bytree': hp.uniform('colsample_by_tree', 0.3, 1.0),
+    'gamma': hp.choice('gamma', np.arange(5, 50+1, dtype=int)),
+    'learning_rate': hp.loguniform('learning_rate', np.log(0.01), np.log(1)),
+    'max_depth': hp.choice('max_depth', np.arange(2, 10+1, dtype=int)),
+    'n_estimators': hp.choice('n_estimators', np.arange(50, 500, dtype=int)),
+    'subsample': hp.uniform('subsample', 0.6, 1.0)
+}
+
+def objective_function(params):
+    clf = XGBClassifier(**params)
+    score = cross_val_score(clf, X, y, cv=5, scoring="balanced_accuracy").mean()
+    return {'loss': -score, 'status': STATUS_OK}
+
+trials = Trials()
+num_eval = 110
+
+print(f"Bayesian Search optimization will run {num_eval} algorithm executions")
+
+t0_bay = time()
+best_param = fmin(objective_function, bayesian_space, algo=tpe.suggest, max_evals=num_eval, trials=trials)
+t1_bay = time()
+execution_time_bay = round(t1_bay - t0_bay, 2)
+print(f"Time of the bayesian search {execution_time_bay} s")
+
+
+# Extract parameters and scores from trials
+trials_dict = trials.trials
+params_list = [{k: v[0] for k, v in trial['misc']['vals'].items()} for trial in trials_dict]
+scores_list = [-trial['result']['loss'] for trial in trials_dict]
+# Convert parameters to DataFrame
+synth_population_bay = pd.DataFrame(params_list)
+# Add scores to DataFrame
+synth_population_bay['fitness'] = scores_list
+# Rename columns to match the parameter names
+synth_population_bay.columns = [col.replace('vals_', '') for col in synth_population_bay.columns]
+
+fig_bay = plotly_search_space(synth_population_bay).update_layout(
+    autosize=True,
+    width=800,  # Adjust width as needed
+    height=800,  # Adjust height as needed
+    margin=dict(l=20, r=20, t=50, b=20)  # Adjust margins as needed
+)
+print(f"Bayesian Search optimization has run {num_eval} algorithm executions")
+plotly.io.show(fig_bay)
+
+
 
 # %%
 # Summary Table
@@ -286,6 +383,9 @@ row_gs = {'Method': "Grid Search", 'Best Metric': clf_gs.best_score_,
           'Time': execution_time_gs, 'Evaluated': synth_population_gs.shape[0]}
 row_rs = {'Method': "Random Search", 'Best Metric': clf_rs.best_score_,
           'Time': execution_time_rs, 'Evaluated': synth_population_rs.shape[0]}
+row_bay = {'Method': "Bayesian Search",
+           'Best Metric': max(scores_list),
+           'Time': execution_time_bay, 'Evaluated': num_eval}
 
-df = pd.DataFrame([row_gen, row_gs, row_rs])
+df = pd.DataFrame([row_gen, row_gs, row_rs, row_bay])
 df
