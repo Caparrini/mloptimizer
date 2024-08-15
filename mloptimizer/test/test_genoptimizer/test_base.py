@@ -188,3 +188,32 @@ def test_custom_svc():
                     use_parallel=False)
     clf = opt.optimize_clf(60, 4)
     assert clf is not None
+
+def test_validate_hyperparam_space_none():
+    X, y = load_iris(return_X_y=True)
+    with pytest.raises(ValueError, match="hyperparam_space is None"):
+        Optimizer(estimator_class=DecisionTreeClassifier, hyperparam_space=None, features=X, labels=y)
+
+def test_validate_hyperparam_space_invalid_params():
+    X, y = load_iris(return_X_y=True)
+    invalid_hyperparams = {
+        "invalid_param": Hyperparam("invalid_param", 0, 10, 'int')
+    }
+    invalid_fixed_hyperparams = {
+        "max_depth": 10
+    }
+    hyperparam_space = HyperparameterSpace(evolvable_hyperparams=invalid_hyperparams,
+                                           fixed_hyperparams=invalid_fixed_hyperparams)
+    with pytest.raises(ValueError,
+                       match="Parameters {'invalid_param'} are not parameters of DecisionTreeClassifier"):
+        Optimizer(estimator_class=DecisionTreeClassifier, hyperparam_space=hyperparam_space, features=X, labels=y)
+
+def test_validate_hyperparam_space_valid_params():
+    X, y = load_iris(return_X_y=True)
+    valid_hyperparams = {
+        "max_depth": Hyperparam("max_depth", 1, 10, 'int')
+    }
+    hyperparam_space = HyperparameterSpace(evolvable_hyperparams=valid_hyperparams,
+                                           fixed_hyperparams={})
+    optimizer = Optimizer(estimator_class=DecisionTreeClassifier, hyperparam_space=hyperparam_space, features=X, labels=y)
+    assert optimizer is not None

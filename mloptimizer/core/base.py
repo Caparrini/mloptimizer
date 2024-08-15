@@ -86,6 +86,7 @@ class Optimizer:
         self.labels = labels
         # Input search space hyperparameters
         self.hyperparam_space = hyperparam_space
+        self._validate_hyperparam_space()
 
         # ML Evaluator
         # if metrics is None:
@@ -119,6 +120,22 @@ class Optimizer:
         # DeapOptimizer
         self.deap_optimizer = None
         self.runs = []
+
+    def _validate_hyperparam_space(self):
+        """
+        Method to validate the hyperparam_space
+        """
+        if self.hyperparam_space is None:
+            raise ValueError("hyperparam_space is None")
+        # Default params of the estimator_class
+        default_estimator_params = set(self.estimator_class().get_params().keys())
+        hyperparam_space_params = set(self.hyperparam_space.get_all_params().keys())
+        illegal_params = hyperparam_space_params - default_estimator_params
+
+        if len(illegal_params) > 0:
+            raise ValueError(f"Parameters {illegal_params} are not parameters of {self.estimator_class.__name__}")
+
+        # Check values of the parameters
 
     def set_mlopt_seed(self, seed):
         """

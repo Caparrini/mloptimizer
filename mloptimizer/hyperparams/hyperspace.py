@@ -142,6 +142,19 @@ class HyperparameterSpace:
         else:
             raise ValueError(f"Default hyperparameter space for {estimator_class.__name__} not found")
 
+    def get_all_params(self):
+        """
+        This method returns a dictionary with all the hyperparameters, fixed and evolvable.
+
+        Returns
+        -------
+        dict
+            Dictionary with all the hyperparameters
+        """
+        all_params = self.fixed_hyperparams.copy()
+        all_params.update(self.evolvable_hyperparams)
+        return all_params
+
     def __str__(self):
         return (f"HyperparameterSpace(fixed_hyperparams={self.fixed_hyperparams}, "
                 f"evolvable_hyperparams={self.evolvable_hyperparams})")
