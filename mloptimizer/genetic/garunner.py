@@ -291,11 +291,11 @@ class GeneticAlgorithmRunner:
             # Select the next generation individuals
             population = toolbox.select(population, len(population))
 
-            # Log the best individuals
-            halloffame_classifiers = list(map(self.evaluator.individual_utils.get_clf, halloffame[:2]))
-            halloffame_fitness = [ind.fitness.values[:] for ind in halloffame[:2]]
-            self.tracker.log_clfs(classifiers_list=halloffame_classifiers, generation=gen,
-                                  fitness_list=halloffame_fitness)
+            # Log the best individuals TODO: If logged, only to file, not to console
+            # halloffame_classifiers = list(map(self.evaluator.individual_utils.get_clf, halloffame[:2]))
+            # halloffame_fitness = [ind.fitness.values[:] for ind in halloffame[:2]]
+            # self.tracker.log_clfs(classifiers_list=halloffame_classifiers, generation=gen,
+            #                      fitness_list=halloffame_fitness)
             # Store the space hyperparams and fitness for each individual
             self.populations.append([[ind, ind.fitness] for ind in population])
 
