@@ -25,7 +25,7 @@ def initialized_tracker_instance(tmp_path):
     tracker_instance = Tracker(name, str(folder), log_file, use_mlflow)
     tracker_instance.start_optimization("TestOptClass", 5)
     opt_run_folder_name = "checkpoint_test"
-    tracker_instance.start_checkpoint(opt_run_folder_name)
+    tracker_instance.start_checkpoint(opt_run_folder_name, DecisionTreeClassifier)
     return tracker_instance
 
 
@@ -44,7 +44,7 @@ def test_start_optimization(tracker_instance, caplog):
 
 def test_start_checkpoint_creates_directories(tracker_instance, tmp_path):
     opt_run_folder_name = "checkpoint_test"
-    tracker_instance.start_checkpoint(opt_run_folder_name)
+    tracker_instance.start_checkpoint(opt_run_folder_name, DecisionTreeClassifier)
     expected_dirs = ["checkpoints", "results", "graphics", "progress"]
     for dir_name in expected_dirs:
         assert (tmp_path / opt_run_folder_name / dir_name).exists()
@@ -56,7 +56,7 @@ def test_log_clfs(tracker_instance, caplog):
     fitness_list = [0.9, 0.8]
     tracker_instance.start_optimization("TestOptClass", 5)
     opt_run_folder_name = "checkpoint_test"
-    tracker_instance.start_checkpoint(opt_run_folder_name)
+    tracker_instance.start_checkpoint(opt_run_folder_name, DecisionTreeClassifier)
     tracker_instance.log_clfs(classifiers_list, generation, fitness_list)
     assert "Generation 1 - Classifier TOP 0" in caplog.text
     assert f"Classifier: {str(classifiers_list[0])}" in caplog.text

@@ -82,7 +82,7 @@ class Tracker:
         if not self.use_parallel:
             self._init_progress_bar(generations)
 
-    def start_checkpoint(self, opt_run_folder_name):
+    def start_checkpoint(self, opt_run_folder_name, estimator_class):
         """
         Start a checkpoint for the optimization process.
 
@@ -90,12 +90,14 @@ class Tracker:
         ----------
         opt_run_folder_name : str
             Name of the folder where the checkpoint will be stored. (not the full path)
+        estimator_class : class
+            Class of the estimator being optimized used to create the checkpoint path.
         """
         # Create checkpoint_path from date and algorithm
         if not opt_run_folder_name:
             opt_run_folder_name = "{}_{}".format(
                 datetime.now().strftime("%Y%m%d_%H%M%S"),
-                type(self).__name__)
+                estimator_class.__name__)
 
         if self.use_mlflow:
             self.mlflow.set_experiment(opt_run_folder_name)

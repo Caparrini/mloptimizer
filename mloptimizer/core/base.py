@@ -214,7 +214,7 @@ class Optimizer:
         self.tracker.start_optimization(type(self).__name__, generations=generations)
 
         # Creation of folders and checkpoint
-        self.tracker.start_checkpoint(opt_run_folder_name)
+        self.tracker.start_checkpoint(opt_run_folder_name, estimator_class=self.estimator_class)
 
         # Creation of deap optimizer
         self.deap_optimizer = DeapOptimizer(hyperparam_space=self.hyperparam_space, seed=self.mlopt_seed,
