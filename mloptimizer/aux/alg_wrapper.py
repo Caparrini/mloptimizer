@@ -120,13 +120,13 @@ class CustomXGBClassifier(BaseEstimator):
         #self.tree_method = "gpu_hist"
         self.num_boost_round= num_boost_round
 
-    def fit(self, X, y):
+    def fit(self, x, y):
         """
         Fit the model according to the given training data.
 
         Parameters
         ----------
-        X : array-like of shape (n_samples, n_features)
+        x : array-like of shape (n_samples, n_features)
             The training input samples.
         y : array-like of shape (n_samples,)
             The target values (class labels in classification, real numbers in regression).
@@ -136,9 +136,9 @@ class CustomXGBClassifier(BaseEstimator):
         self : object
             Returns self.
         """
-        check_array(X)
+        check_array(x)
         check_array(y, ensure_2d=False)
-        dtrain = xgb.DMatrix(X, y)
+        dtrain = xgb.DMatrix(x, y)
         params = self.get_params()
         # Workaround: lambda is a reserved word in Python
         params['lambda'] = params.pop("reg_lambda")
@@ -154,13 +154,13 @@ class CustomXGBClassifier(BaseEstimator):
 
         return self
 
-    def predict(self, X):
+    def predict(self, x):
         """
         Predict class labels for samples in X.
 
         Parameters
         ----------
-        X : array-like of shape (n_samples, n_features)
+        x : array-like of shape (n_samples, n_features)
             The input samples.
 
         Returns
@@ -171,18 +171,18 @@ class CustomXGBClassifier(BaseEstimator):
         #check_array(X)
         #dtest = xgb.DMatrix(X)
         #preds = np.array(self._xclf.predict(dtest, ntree_limit=self._xclf.best_iteration))
-        p = self.predict_proba(X)
+        p = self.predict_proba(x)
         preds = p > 0.5
         preds = preds.astype(int)
         return preds
 
-    def predict_proba(self, X):
+    def predict_proba(self, x):
         """
         Predict class probabilities for samples in X.
 
         Parameters
         ----------
-        X : array-like of shape (n_samples, n_features)
+        x : array-like of shape (n_samples, n_features)
             The input samples.
 
         Returns
@@ -191,19 +191,19 @@ class CustomXGBClassifier(BaseEstimator):
             The predicted probabilities.
         """
         if self.obj is None:
-            p = self.predict_z(X)
+            p = self.predict_z(x)
         else:
-            zs = self.predict_z(X)
+            zs = self.predict_z(x)
             p = 1.0 / (1.0 + np.exp(-zs))
         return p
 
-    def predict_z(self, X):
+    def predict_z(self, x):
         """
         Predict z values for samples in X.
 
         Parameters
         ----------
-        X : array-like of shape (n_samples, n_features)
+        x : array-like of shape (n_samples, n_features)
             The input samples.
 
         Returns
@@ -211,8 +211,8 @@ class CustomXGBClassifier(BaseEstimator):
         zs : array-like of shape (n_samples,)
             The predicted z values.
         """
-        check_array(X)
-        dtest = xgb.DMatrix(X)
+        check_array(x)
+        dtest = xgb.DMatrix(x)
         preds = np.array(self._xclf.predict(dtest))
         preds = preds > 0.5
         preds = preds.astype(int)

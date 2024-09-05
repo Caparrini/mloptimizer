@@ -33,35 +33,35 @@ def default_metrics_dict():
                          (DecisionTreeClassifier, RandomForestClassifier, ExtraTreesClassifier,
                           GradientBoostingClassifier, XGBClassifier, SVC))
 def test_sklearn_optimizer(estimator_class, tmp_path):
-    X, y = load_iris(return_X_y=True)
+    x, y = load_iris(return_X_y=True)
     evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
     mlopt = Optimizer(estimator_class=estimator_class,
                       hyperparam_space=evolvable_hyperparams,
-                      features=X, labels=y, folder=tmp_path)
+                      features=x, labels=y, folder=tmp_path)
     mlopt.optimize_clf(5, 5)
     assert mlopt is not None
 
 
 @pytest.mark.parametrize('use_mlflow', [True, False])
 def test_mloptimizer(use_mlflow, tmp_path):
-    X, y = load_breast_cancer(return_X_y=True)
+    x, y = load_breast_cancer(return_X_y=True)
     mlopt = Optimizer(estimator_class=XGBClassifier,
                       hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBClassifier),
-                      features=X, labels=y, use_mlflow=use_mlflow, folder=tmp_path)
+                      features=x, labels=y, use_mlflow=use_mlflow, folder=tmp_path)
     mlopt.optimize_clf(5, 5)
     assert mlopt is not None
 
 
 def test_checkpoints():
-    X, y = load_breast_cancer(return_X_y=True)
+    x, y = load_breast_cancer(return_X_y=True)
     mlopt = Optimizer(estimator_class=XGBClassifier,
                       hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBClassifier),
-                      features=X, labels=y)
+                      features=x, labels=y)
     clf = mlopt.optimize_clf(5, 5)
 
     mlopt2 = Optimizer(estimator_class=XGBClassifier,
                        hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBClassifier),
-                       features=X, labels=y,
+                       features=x, labels=y,
                        seed=mlopt.mlopt_seed)
 
     checkpoint = os.path.join(mlopt.tracker.opt_run_checkpoint_path,
@@ -79,12 +79,12 @@ def test_checkpoints():
 @pytest.mark.parametrize('dataset',
                          (load_breast_cancer, load_iris))
 def test_optimizer(estimator_class, dataset, default_metrics_dict, tmp_path):
-    X, y = dataset(return_X_y=True)
+    x, y = dataset(return_X_y=True)
     if estimator_class == SVC:
         scaler = StandardScaler()
-        X = scaler.fit_transform(X)
+        x = scaler.fit_transform(x)
     evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
-    opt = Optimizer(features=X, labels=y, fitness_score="accuracy",
+    opt = Optimizer(features=x, labels=y, fitness_score="accuracy",
                     metrics=default_metrics_dict, estimator_class=estimator_class,
                     hyperparam_space=evolvable_hyperparams, folder=tmp_path)
     clf = opt.optimize_clf(2, 2)
@@ -97,16 +97,16 @@ def test_optimizer(estimator_class, dataset, default_metrics_dict, tmp_path):
 @pytest.mark.parametrize('dataset',
                          (load_breast_cancer, load_iris))
 def test_optimizer_use_parallel(estimator_class, dataset, default_metrics_dict, tmp_path):
-    X, y = dataset(return_X_y=True)
+    x, y = dataset(return_X_y=True)
     if estimator_class == SVC:
         scaler = StandardScaler()
-        X = scaler.fit_transform(X)
+        x = scaler.fit_transform(x)
     evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
     my_seed = 25
     population = 60
     generations = 4
 
-    opt_with_parallel = Optimizer(features=X, labels=y, fitness_score="accuracy",
+    opt_with_parallel = Optimizer(features=x, labels=y, fitness_score="accuracy",
                                   metrics=default_metrics_dict,
                                   seed=my_seed, use_parallel=True,
                                   hyperparam_space=evolvable_hyperparams, estimator_class=estimator_class,
@@ -116,7 +116,7 @@ def test_optimizer_use_parallel(estimator_class, dataset, default_metrics_dict, 
     clf_with_parallel = opt_with_parallel.optimize_clf(population, generations)
     end_time_parallel = time.time()
 
-    opt = Optimizer(features=X, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
+    opt = Optimizer(features=x, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
                     seed=my_seed, use_parallel=False,
                     hyperparam_space=evolvable_hyperparams, estimator_class=estimator_class,
                     folder=tmp_path)
@@ -141,24 +141,24 @@ def test_optimizer_use_parallel(estimator_class, dataset, default_metrics_dict, 
                           GradientBoostingClassifier, XGBClassifier, SVC))
 @pytest.mark.parametrize('target_score', (kfold_score, train_score, train_test_score))
 def test_reproducibility(estimator_class, target_score, default_metrics_dict, tmp_path):
-    X, y = load_iris(return_X_y=True)
+    x, y = load_iris(return_X_y=True)
     if estimator_class == SVC:
         scaler = StandardScaler()
-        X = scaler.fit_transform(X)
+        x = scaler.fit_transform(x)
     evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
     population = 2
     generations = 2
     seed = 25
     distinct_seed = 2
-    optimizer1 = Optimizer(features=X, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
+    optimizer1 = Optimizer(features=x, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
                            eval_function=target_score, seed=seed, estimator_class=estimator_class,
                            hyperparam_space=evolvable_hyperparams, folder=tmp_path)
     result1 = optimizer1.optimize_clf(population_size=population, generations=generations)
-    optimizer2 = Optimizer(features=X, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
+    optimizer2 = Optimizer(features=x, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
                            eval_function=target_score, seed=seed, estimator_class=estimator_class,
                            hyperparam_space=evolvable_hyperparams, folder=tmp_path)
     result2 = optimizer2.optimize_clf(population_size=population, generations=generations)
-    optimizer3 = Optimizer(features=X, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
+    optimizer3 = Optimizer(features=x, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
                            eval_function=target_score, seed=distinct_seed, estimator_class=estimator_class,
                            hyperparam_space=evolvable_hyperparams, folder=tmp_path)
     result3 = optimizer3.optimize_clf(population_size=population, generations=generations)
@@ -167,9 +167,9 @@ def test_reproducibility(estimator_class, target_score, default_metrics_dict, tm
 
 
 def test_custom_svc():
-    X, y = load_breast_cancer(return_X_y=True)
+    x, y = load_breast_cancer(return_X_y=True)
     scaler = StandardScaler()
-    X = scaler.fit_transform(X)
+    x = scaler.fit_transform(x)
     custom_svc_evolvable_hyperparams = {
         "C": Hyperparam("C", -2, 2, 'nexp'),
         "kernel": Hyperparam("kernel", 0, 3, 'list',
@@ -181,7 +181,7 @@ def test_custom_svc():
     evolvable_hyperparams = HyperparameterSpace(evolvable_hyperparams=custom_svc_evolvable_hyperparams,
                                                 fixed_hyperparams={}
                                                 )
-    opt = Optimizer(features=X, labels=y, fitness_score="balanced_accuracy",
+    opt = Optimizer(features=x, labels=y, fitness_score="balanced_accuracy",
                     metrics={"balanced_accuracy": accuracy_score},
                     estimator_class=SVC,
                     hyperparam_space=evolvable_hyperparams,
@@ -190,12 +190,12 @@ def test_custom_svc():
     assert clf is not None
 
 def test_validate_hyperparam_space_none():
-    X, y = load_iris(return_X_y=True)
+    x, y = load_iris(return_X_y=True)
     with pytest.raises(ValueError, match="hyperparam_space is None"):
-        Optimizer(estimator_class=DecisionTreeClassifier, hyperparam_space=None, features=X, labels=y)
+        Optimizer(estimator_class=DecisionTreeClassifier, hyperparam_space=None, features=x, labels=y)
 
 def test_validate_hyperparam_space_invalid_params():
-    X, y = load_iris(return_X_y=True)
+    x, y = load_iris(return_X_y=True)
     invalid_hyperparams = {
         "invalid_param": Hyperparam("invalid_param", 0, 10, 'int')
     }
@@ -206,14 +206,14 @@ def test_validate_hyperparam_space_invalid_params():
                                            fixed_hyperparams=invalid_fixed_hyperparams)
     with pytest.raises(ValueError,
                        match="Parameters {'invalid_param'} are not parameters of DecisionTreeClassifier"):
-        Optimizer(estimator_class=DecisionTreeClassifier, hyperparam_space=hyperparam_space, features=X, labels=y)
+        Optimizer(estimator_class=DecisionTreeClassifier, hyperparam_space=hyperparam_space, features=x, labels=y)
 
 def test_validate_hyperparam_space_valid_params():
-    X, y = load_iris(return_X_y=True)
+    x, y = load_iris(return_X_y=True)
     valid_hyperparams = {
         "max_depth": Hyperparam("max_depth", 1, 10, 'int')
     }
     hyperparam_space = HyperparameterSpace(evolvable_hyperparams=valid_hyperparams,
                                            fixed_hyperparams={})
-    optimizer = Optimizer(estimator_class=DecisionTreeClassifier, hyperparam_space=hyperparam_space, features=X, labels=y)
+    optimizer = Optimizer(estimator_class=DecisionTreeClassifier, hyperparam_space=hyperparam_space, features=x, labels=y)
     assert optimizer is not None

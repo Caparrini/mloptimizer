@@ -8,9 +8,9 @@ from sklearn.datasets import load_iris
 
 @pytest.fixture
 def default_tree_optimizer():
-    X, y = load_iris(return_X_y=True)
+    x, y = load_iris(return_X_y=True)
     default_hyperparameter_space = HyperparameterSpace.get_default_hyperparameter_space(DecisionTreeClassifier)
-    opt = Optimizer(features=X, labels=y, estimator_class=DecisionTreeClassifier,
+    opt = Optimizer(features=x, labels=y, estimator_class=DecisionTreeClassifier,
                     hyperparam_space=default_hyperparameter_space)
     opt.optimize_clf(10, 10)
     return opt

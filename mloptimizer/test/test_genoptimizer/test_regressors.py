@@ -11,7 +11,7 @@ from sklearn.metrics import mean_squared_error, root_mean_squared_error
 
 
 def test_regression_optimizer(tmp_path):
-    X, y = load_diabetes(return_X_y=True)
+    x, y = load_diabetes(return_X_y=True)
     regression_metrics = {
         "mse": mean_squared_error,
         "rmse": root_mean_squared_error
@@ -21,7 +21,7 @@ def test_regression_optimizer(tmp_path):
     mlopt = Optimizer(estimator_class=RandomForestRegressor,
                       hyperparam_space=evolvable_hyperparams,
                       fitness_score='rmse', metrics=regression_metrics,
-                      features=X, labels=y, folder=tmp_path)
+                      features=x, labels=y, folder=tmp_path)
     mlopt.optimize_clf(5, 5)
     assert mlopt is not None
 
@@ -30,20 +30,20 @@ def test_regression_optimizer(tmp_path):
                          (DecisionTreeRegressor, RandomForestRegressor, ExtraTreesRegressor,
                           GradientBoostingRegressor, XGBRegressor, SVR))
 def test_sklearn_optimizer(estimator_class, tmp_path):
-    X, y = load_diabetes(return_X_y=True)
+    x, y = load_diabetes(return_X_y=True)
     evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
     mlopt = Optimizer(estimator_class=estimator_class,
                       hyperparam_space=evolvable_hyperparams,
-                      features=X, labels=y, folder=tmp_path)
+                      features=x, labels=y, folder=tmp_path)
     mlopt.optimize_clf(5, 5)
     assert mlopt is not None
 
 
 @pytest.mark.parametrize('use_mlflow', [True, False])
 def test_mloptimizer(use_mlflow, tmp_path):
-    X, y = load_diabetes(return_X_y=True)
+    x, y = load_diabetes(return_X_y=True)
     mlopt = Optimizer(estimator_class=XGBRegressor,
                       hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBRegressor),
-                      features=X, labels=y, use_mlflow=use_mlflow, folder=tmp_path)
+                      features=x, labels=y, use_mlflow=use_mlflow, folder=tmp_path)
     mlopt.optimize_clf(5, 5)
     assert mlopt is not None

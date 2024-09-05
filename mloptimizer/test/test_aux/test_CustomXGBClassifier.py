@@ -6,8 +6,8 @@ from mloptimizer.aux.alg_wrapper import CustomXGBClassifier
 
 @pytest.fixture
 def sample_data():
-    X, y = make_classification(n_samples=100, n_features=20, n_classes=2, random_state=42)
-    return X, y
+    x, y = make_classification(n_samples=100, n_features=20, n_classes=2, random_state=42)
+    return x, y
 
 
 def test_custom_xgb_classifier_init():
@@ -18,25 +18,25 @@ def test_custom_xgb_classifier_init():
 
 
 def test_custom_xgb_classifier_fit(sample_data):
-    X, y = sample_data
+    x, y = sample_data
     classifier = CustomXGBClassifier()
-    classifier.fit(X, y)
+    classifier.fit(x, y)
     assert hasattr(classifier, "_xclf")
 
 
 def test_custom_xgb_classifier_predict(sample_data):
-    X, y = sample_data
+    x, y = sample_data
     classifier = CustomXGBClassifier()
-    classifier.fit(X, y)
-    preds = classifier.predict(X)
+    classifier.fit(x, y)
+    preds = classifier.predict(x)
     assert len(preds) == len(y)
     assert np.array_equal(preds, preds.astype(bool))
 
 
 def test_custom_xgb_classifier_predict_proba(sample_data):
-    X, y = sample_data
+    x, y = sample_data
     classifier = CustomXGBClassifier()
-    classifier.fit(X, y)
-    proba = classifier.predict_proba(X)
+    classifier.fit(x, y)
+    proba = classifier.predict_proba(x)
     assert len(proba) == len(y)
     assert np.all(proba >= 0) and np.all(proba <= 1)  # Probabilities between 0 and 1
