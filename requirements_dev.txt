@@ -4,6 +4,7 @@ joblib>=1.2.0
 kaleido
 keras>=2.13.1rc0
 mlflow
+numpy
 pandas>=1.5.3
 plotly>=5.15.0
 pytest-cov
