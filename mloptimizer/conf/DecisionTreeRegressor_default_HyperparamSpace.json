@@ -2,13 +2,6 @@
     "fixed_hyperparams": {
     },
     "evolvable_hyperparams": {
-        "criterion": {
-            "name": "criterion",
-            "min_value": 0,
-            "max_value": 3,
-            "hyperparam_type": "list",
-            "values_str": ["friedman_mse", "poisson", "squared_error", "absolute_error"]
-        },
         "min_samples_split": {
             "name": "min_samples_split",
             "min_value": 2,
