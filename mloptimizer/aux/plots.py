@@ -96,7 +96,13 @@ def plotly_logbook(logbook, population):
     ))
 
     fig.update_layout(
-        title="Fitness evolution",
+        title=dict(
+            text='Fitness evolution',
+            x=0.5,  # Center the title horizontally
+            xanchor='center',  # Ensure the title is exactly centered
+            yanchor='top',
+            font=dict(size=24),  # Increase the font size
+        ),
         xaxis_title="Generation",
         yaxis_title="Fitness",
         # yaxis_range=[df['min'].min(), 1],
@@ -130,7 +136,7 @@ def plot_logbook(logbook):
     return g.get_figure()
 
 
-def plotly_search_space(populations_df: pd.DataFrame, features: list = None):
+def plotly_search_space(populations_df: pd.DataFrame, features: list = None, colorscale='viridis'):
     """
     Generate plotly figure from populations dataframe and features. Search space.
 
@@ -140,7 +146,8 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None):
         The dataframe with the population
     features : list
         The features to plot
-
+    colorscale : str
+        The colorscale to use, default viridis, see plotly documentation
     Returns
     -------
     fig : plotly.graph_objects.Figure
@@ -152,11 +159,17 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None):
         dimensions=[dict(label=feat, values=populations_df[feat]) for feat in features],
         text=populations_df['fitness'],
         marker=dict(color=populations_df['fitness'],
-                    colorscale='Blues', showscale=True, opacity=0.5)
+                    colorscale=colorscale, showscale=True, opacity=0.5)
     ))
 
     fig.update_layout(
-        title='Search space',
+        title=dict(
+            text='Search Space Visualization',
+            x=0.5,  # Center the title horizontally
+            xanchor='center',  # Ensure the title is exactly centered
+            yanchor='top',
+            font=dict(size=24),  # Increase the font size
+        ),
         dragmode='select',
         width=1000,
         height=1000,
