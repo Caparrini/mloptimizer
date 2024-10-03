@@ -7,6 +7,7 @@ mloptimizer provides a function to plot the search space of the optimization.
 from mloptimizer.core import Optimizer
 from mloptimizer.hyperparams import HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
+from mloptimizer.evaluation.model_evaluation import kfold_stratified_score
 from mloptimizer.aux.plots import plotly_search_space
 import plotly
 import os
@@ -26,13 +27,14 @@ hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(Decision
 # %%
 # We use the default TreeOptimizer class to optimize a decision tree classifier.
 opt = Optimizer(estimator_class=DecisionTreeClassifier, features=X, labels=y,
-                hyperparam_space=hyperparam_space, folder="Search_space_example")
+                hyperparam_space=hyperparam_space, eval_function=kfold_stratified_score,
+                folder="Search_space_example")
 
 # %%
 # To optimizer the classifier we need to call the optimize_clf method.
 # The first argument is the number of generations and
 # the second is the number of individuals in each generation.
-clf = opt.optimize_clf(10, 10)
+clf = opt.optimize_clf(100, 30)
 
 
 # %%
