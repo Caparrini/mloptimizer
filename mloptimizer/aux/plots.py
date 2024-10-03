@@ -1,6 +1,5 @@
 import seaborn as sns
 import pandas as pd
-import numpy as np
 import plotly.graph_objects as go
 
 
@@ -23,9 +22,11 @@ def logbook_to_pandas(logbook):
     return df
 
 
+
 def plotly_logbook(logbook, population):
     """
-    Generate plotly figure from logbook. Evolution of fitness and population.
+    Generate a plot from the logbook with no additional points for "Max per Gen" and "Min per Gen".
+    The population points grow based on the number of overlapping individuals.
 
     Parameters
     ----------
@@ -40,78 +41,107 @@ def plotly_logbook(logbook, population):
         The figure
     """
     df = pd.DataFrame(logbook)
+
+    # Count the number of individuals that share the same (generation, fitness) coordinates
+    population['count'] = population.groupby(['population', 'fitness'])['fitness'].transform('count')
+
     fig = go.Figure()
+
+    # Avg line: Dashed, NO POINTS
     fig.add_trace(go.Scatter(x=df['gen'], y=df['avg'],
-                             line_color='rgb(0,0,255)',
-                             mode='lines+markers',
+                             line=dict(color='rgb(50,130,250)', dash='dash', width=3),  # Soft blue, thicker line
+                             mode='lines',  # No markers, just the line
                              name='Avg'))
-    fig.add_trace(go.Scatter(x=df['gen'], y=df['min'],
-                             line_color='rgb(255,0,0)',
-                             mode='lines+markers',
-                             name='Min'))
-    fig.add_trace(go.Scatter(x=df['gen'], y=df['max'],
-                             line_color='rgb(0,100,80)',
-                             mode='lines+markers',
-                             name='Max'))
+
+    # Orange dashed line for the max value of each generation, NO POINTS
     fig.add_trace(go.Scatter(
-        x=df['gen'],
-        y=df['avg'],
-        fill='tonexty',
-        fillcolor='rgba(0,100,80,0.2)',
-        line_color='rgba(255,255,255,0)',
-        showlegend=False,
-        name='Avg',
-    ))
-    fig.add_trace(go.Scatter(
-        x=df['gen'],
-        y=df['min'],
-        fill='tonexty',
-        fillcolor='rgba(255,0,00,0.2)',
-        line_color='rgba(255,255,255,0)',
-        showlegend=False,
-        name='Min',
-    ))
-    fig.add_trace(go.Scatter(
-        x=df['gen'],
-        y=df['max'].max() * np.ones(len(df['gen'])),
-        line=dict(color='rgba(0,0,0,1)'),
-        mode='lines',
-        showlegend=False,
-        name='Max value',
-    ))
-    fig.add_trace(go.Scatter(
-        x=df['gen'],
-        y=df['min'].min() * np.ones(len(df['gen'])),
-        line=dict(color='rgba(0,0,0,1)'),
-        mode='lines',
-        showlegend=False,
-        name='Min value',
+        x=df['gen'], y=df['max'],
+        line=dict(color='rgba(255,165,0,0.8)', dash='dash', width=2),  # Orange dashed line for gen-specific max
+        mode='lines',  # No markers, just the line
+        name='Max per Gen',
     ))
 
+    # Red dashed line for the min value of each generation, NO POINTS
+    fig.add_trace(go.Scatter(
+        x=df['gen'], y=df['min'],
+        line=dict(color='rgba(255,0,0,0.8)', dash='dash', width=2),  # Red dashed line for gen-specific min
+        mode='lines',  # No markers, just the line
+        name='Min per Gen',
+    ))
+
+    # Neutral gray dashed line for the overall max value
+    fig.add_trace(go.Scatter(
+        x=df['gen'],
+        y=[df['max'].max()] * len(df['gen']),
+        line=dict(color='rgba(100,100,100,0.8)', dash='dash', width=2),  # Neutral gray dashed line for overall max
+        mode='lines',
+        name='Max Overall',
+    ))
+
+    # Neutral gray dashed line for the overall min value
+    fig.add_trace(go.Scatter(
+        x=df['gen'],
+        y=[df['min'].min()] * len(df['gen']),
+        line=dict(color='rgba(100,100,100,0.8)', dash='dash', width=2),  # Neutral gray dashed line for overall min
+        mode='lines',
+        name='Min Overall',
+    ))
+
+    # Size of the points based on how many individuals share the same (generation, fitness) point
+    max_point_size = 15  # Maximum size for the points
+    population['scaled_size'] = (population['count'] / population['count'].max()) * max_point_size
+
+    # Plot individuals with varying sizes (the only visible points)
     fig.add_trace(go.Scatter(
         x=population['population'], y=population['fitness'],
-        name='Populations',
+        name='Individuals',
         mode='markers',
-        marker_color='rgba(0, 0, 0, .1)'
+        marker=dict(color='rgba(30,30,30,0.5)',
+                    size=population['scaled_size'],  # Size proportional to the number of overlaps
+                    sizemode='diameter',
+                    line=dict(color='white', width=1)),  # Semi-transparent markers with white border
     ))
 
+    # Layout improvements: clearer fonts, cleaner grid, and better spacing
     fig.update_layout(
         title=dict(
-            text='Fitness evolution',
-            x=0.5,  # Center the title horizontally
-            xanchor='center',  # Ensure the title is exactly centered
+            text='Fitness Evolution',
+            x=0.5,  # Center the title
+            xanchor='center',
             yanchor='top',
-            font=dict(size=24),  # Increase the font size
+            font=dict(size=24, family='Arial, sans-serif'),  # Professional font
         ),
-        xaxis_title="Generation",
-        yaxis_title="Fitness",
-        # yaxis_range=[df['min'].min(), 1],
-        legend_title="Fitness agg",
+        xaxis=dict(
+            title="Generation",
+            tickmode='linear',
+            tick0=0,
+            dtick=1,
+            linecolor='rgba(100,100,100,0.6)',  # Subtle axis line
+            tickfont=dict(size=16, color='rgb(50,50,50)'),  # Larger, clearer ticks
+            tickangle=-45,  # Rotate the x-axis labels for readability
+            gridcolor='rgba(200,200,200,0.3)',  # Subtle grid lines for x-axis
+        ),
+        yaxis=dict(
+            title="Fitness",
+            linecolor='rgba(100,100,100,0.6)',  # Subtle axis line
+            tickfont=dict(size=16, color='rgb(50,50,50)'),  # Larger, clearer ticks
+            gridcolor='rgba(200,200,200,0.3)',  # Subtle grid lines for y-axis
+        ),
+        legend=dict(
+            title="Fitness Metrics",
+            font=dict(size=16, color='rgb(50,50,50)'),  # Clear legend title and items
+            bordercolor='rgba(0,0,0,0.2)',
+            borderwidth=1,
+        ),
         font=dict(
-            family="Arial",
+            family="Arial, sans-serif",
             size=18,
-            color="Black"
-        )
+            color="rgb(50,50,50)"
+        ),
+        plot_bgcolor='rgba(245,245,245,1)',  # Light gray background for better contrast
+        margin=dict(l=50, r=50, t=50, b=100),  # Extra bottom margin for rotated labels
+        width=900,  # Increased width for a better viewing experience
+        height=600,  # Adjusted height for better aspect ratio
     )
 
     return fig
