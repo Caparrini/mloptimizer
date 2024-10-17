@@ -27,7 +27,7 @@ jobs:
         run: pip install mlflow
 
       - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=$(pwd)/mloptimizer" >> $GITHUB_ENV  # Set PYTHONPATH to detect the mloptimizer package
+        run: echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV  # Set PYTHONPATH to the root of the project
 
       - name: List directory structure
         run: |
@@ -42,7 +42,9 @@ jobs:
           python -c "import sys; print(sys.path)"  # Print Python's path to see if mloptimizer is included
 
       - name: Run tests and collect coverage
-        run: pytest --cov mloptimizer
+        run: |
+          echo "Running tests..."
+          pytest --cov=mloptimizer -v  # Use verbose mode for more output
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
