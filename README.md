@@ -54,8 +54,8 @@ You can get more information about the package installation at https://pypi.org/
 Here's a simple example of how to optimize hyperparameters in a decision tree classifier using the iris dataset:
 
 ```python
-from mloptimizer.core import Optimizer
-from mloptimizer.hyperparams import HyperparameterSpace
+from mloptimizer.application import Optimizer
+from mloptimizer.domain.hyperspace import HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.datasets import load_iris
 

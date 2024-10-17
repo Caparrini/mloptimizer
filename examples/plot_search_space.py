@@ -4,11 +4,11 @@ Search space graph
 mloptimizer provides a function to plot the search space of the optimization.
 """
 
-from mloptimizer.core import Optimizer
-from mloptimizer.hyperparams import HyperparameterSpace
+from mloptimizer.application import Optimizer
+from mloptimizer.domain.hyperspace import HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
-from mloptimizer.evaluation.model_evaluation import kfold_stratified_score
-from mloptimizer.aux.plots import plotly_search_space
+from mloptimizer.domain.evaluation import kfold_stratified_score
+from mloptimizer.application.reporting.plots import plotly_search_space
 import plotly
 import os
 from sklearn.datasets import load_iris

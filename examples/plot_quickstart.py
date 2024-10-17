@@ -5,8 +5,8 @@ Quick example of use of the library to optimize a decision tree classifier.
 Firstly, we import the necessary libraries to get data and plot the results.
 """
 
-from mloptimizer.core import Optimizer
-from mloptimizer.hyperparams import HyperparameterSpace
+from mloptimizer.application import Optimizer
+from mloptimizer.domain.hyperspace import HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.datasets import load_iris
 

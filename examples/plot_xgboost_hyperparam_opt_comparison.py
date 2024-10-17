@@ -20,10 +20,10 @@ from time import time
 from functools import reduce
 import plotly
 
-from mloptimizer.core import Optimizer
-from mloptimizer.hyperparams import HyperparameterSpace, Hyperparam
-from mloptimizer.evaluation import kfold_stratified_score
-from mloptimizer.aux.plots import plotly_search_space
+from mloptimizer.application import Optimizer
+from mloptimizer.domain.hyperspace import HyperparameterSpace, Hyperparam
+from mloptimizer.domain.evaluation import kfold_stratified_score
+from mloptimizer.application.reporting.plots import plotly_search_space
 
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_val_score
 from sklearn.datasets import load_iris

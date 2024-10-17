@@ -21,25 +21,24 @@ plt.ylabel("Disease Progression")
 plt.title("Diabetes Dataset")
 plt.show()
 
-
 # %%
 # Default hyperparameter space
 # ----------------------------
 # Define the HyperparameterSpace, you can use the default hyperparameters for the machine learning model
 # that you want to optimize. In this case we use the default hyperparameters for a RandomForestRegressor.
-from mloptimizer.hyperparams import HyperparameterSpace
+from mloptimizer.domain.hyperspace import HyperparameterSpace
 from sklearn.ensemble import RandomForestRegressor
 
 hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(RandomForestRegressor)
 
 # %%
 # We use the Optimizer class to optimize a regression model.
-from mloptimizer.core import Optimizer
+from mloptimizer.application import Optimizer
 mlopt = Optimizer(estimator_class=RandomForestRegressor,
                       hyperparam_space=hyperparam_space,
                       features=X, labels=y, folder="regression_example")
 
-clf = mlopt.optimize_clf(5, 5)
+clf = mlopt.optimize_clf(8, 5)
 
 # %%
 # The best individual is returned by the optimize_clf method.
@@ -53,7 +52,7 @@ print(clf)
 # ---------------------------
 # The hyperparameter space can be defined by the user.
 # In this example, we define a new hyperparameter space for the RandomForestRegressor model.
-from mloptimizer.hyperparams import Hyperparam
+from mloptimizer.domain.hyperspace import Hyperparam
 fixed_hyperparams = {'n_estimators': 100}
 evolvable_hyperparams = {'max_depth': Hyperparam(name='max_depth', min_value=1,
                                                  max_value=10, hyperparam_type='int'),

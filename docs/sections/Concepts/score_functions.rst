@@ -37,8 +37,8 @@ Here's an example of how to use the `Optimizer` class with custom metrics:
 .. code-block:: python
 
     from sklearn.metrics import balanced_accuracy_score, mean_squared_error
-    from mloptimizer.core import Optimizer
-    from mloptimizer.hyperparams import HyperparameterSpace
+    from mloptimizer.application import Optimizer
+    from mloptimizer.domain.hyperspace import HyperparameterSpace
     from sklearn.ensemble import RandomForestRegressor
 
     regression_metrics = {
@@ -80,7 +80,7 @@ Here's an example of how to use the `train_score` function:
 
 .. code-block:: python
 
-   from mloptimizer.evaluation import model_evaluation
+   from mloptimizer.domain.evaluation import model_evaluation
    from sklearn.ensemble import RandomForestClassifier
    from sklearn.metrics import accuracy_score
 
