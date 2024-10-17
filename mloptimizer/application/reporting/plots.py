@@ -105,13 +105,13 @@ def plotly_logbook(logbook, population):
 
     # Layout improvements: clearer fonts, cleaner grid, and better spacing
     fig.update_layout(
-        title=dict(
-            text='Fitness Evolution',
-            x=0.5,  # Center the title
-            xanchor='center',
-            yanchor='top',
-            font=dict(size=24, family='Arial, sans-serif'),  # Professional font
-        ),
+        #title=dict(
+        #    text='Fitness Evolution',
+        #    x=0.5,  # Center the title
+        #    xanchor='center',
+        #    yanchor='top',
+        #    font=dict(size=24, family='Arial, sans-serif'),  # Professional font
+        #),
         xaxis=dict(
             title="Generation",
             tickmode='linear',
@@ -185,19 +185,22 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None, col
     fig : plotly.graph_objects.Figure
         The figure
     """
-
     if features is None:
         features = populations_df.columns.tolist()
 
-    # Compute the correlation matrix for the features
-    corr_matrix = populations_df[features].corr()
+    # Separate numeric and categorical features
+    numeric_features = populations_df[features].select_dtypes(include='number').columns.tolist()
+    categorical_features = [feat for feat in features if feat not in numeric_features]
+
+    # Compute the correlation matrix only for numeric features
+    corr_matrix = populations_df[numeric_features].corr()
 
     # Initialize subplots: lower triangle for scatter plots, upper triangle for correlations, diagonal for histograms
     fig = make_subplots(
         rows=len(features), cols=len(features),
-        shared_xaxes=False, shared_yaxes=False,  # Allow different axis ranges for better fitting
+        shared_xaxes=False, shared_yaxes=False,
         vertical_spacing=0.05, horizontal_spacing=0.05,
-        subplot_titles=features  # Add feature names as subplot titles
+        subplot_titles=features
     )
 
     # Fill the subplots
@@ -207,99 +210,127 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None, col
                 fig.add_trace(
                     go.Histogram(x=populations_df[feat_x], marker=dict(color='skyblue'),
                                  opacity=1, nbinsx=30),
-                    # Adjust number of bins for readability
                     row=i + 1, col=j + 1
                 )
 
-            elif i > j:  # Lower triangle: Scatter plots with semi-transparent points
-                fig.add_trace(
-                    go.Scatter(
-                        x=populations_df[feat_y], y=populations_df[feat_x],
-                        mode='markers',
-                        marker=dict(
-                            color=populations_df['fitness'],  # Use Viridis for scatterplots
-                            colorscale=colorscale,  # Switch to Viridis color scale
-                            opacity=0.5,  # Make points semi-transparent
-                            size=6,
-                            coloraxis='coloraxis1'  # Link to the color axis for consistent coloring
-                            #line=dict(width=0.5, color='black')
+            elif i > j:  # Lower triangle: Scatter plots
+                if feat_x in numeric_features and feat_y in numeric_features:
+                    # Numeric scatter plot
+                    fig.add_trace(
+                        go.Scatter(
+                            x=populations_df[feat_y], y=populations_df[feat_x],
+                            mode='markers',
+                            marker=dict(
+                                color=populations_df['fitness'],
+                                colorscale=colorscale,
+                                opacity=0.5,
+                                size=6,
+                                coloraxis='coloraxis1'
+                            ),
+                            showlegend=False
                         ),
-                        #text=populations_df.apply(lambda row: f"Fitness: {row['fitness']:.4f}", axis=1),
-                        showlegend=False
-                    ),
-                    row=i + 1, col=j + 1
-                )
+                        row=i + 1, col=j + 1
+                    )
+                elif feat_x in categorical_features or feat_y in categorical_features:
+                    # Categorical scatter plot with fixed color and different symbols
+                    fig.add_trace(
+                        go.Scatter(
+                            x=populations_df[feat_y], y=populations_df[feat_x],
+                            mode='markers',
+                            marker=dict(
+                                color='grey',
+                                opacity=0.5,
+                                size=6,
+                                symbol='circle'
+                            ),
+                            showlegend=False
+                        ),
+                        row=i + 1, col=j + 1
+                    )
 
-            elif i < j:  # Upper triangle: Correlation values displayed in the center
+            elif i < j and feat_x in numeric_features and feat_y in numeric_features:  # Upper triangle: Correlation values
                 corr_value = corr_matrix.loc[feat_x, feat_y]
                 fig.add_trace(
                     go.Heatmap(
-                        z=[[corr_value]],  # Just a single value for correlation
-                        colorscale="RdBu",  # Red-Blue scale for correlations
-                        zmin=-1, zmax=1,  # Correlation ranges from -1 to 1
-                        showscale=False,  # No colorbar needed for individual cells
-                        xgap=1, ygap=1,  # Add small gaps between heatmap cells
-                        coloraxis='coloraxis2'  # Link to the color axis for consistent coloring
+                        z=[[corr_value]],
+                        colorscale="RdBu",
+                        zmin=-1, zmax=1,
+                        showscale=False,
+                        xgap=1, ygap=1,
+                        coloraxis='coloraxis2'
                     ),
                     row=i + 1, col=j + 1
                 )
-                # Add text (correlation value) in the center of the square
                 fig.add_trace(
                     go.Scatter(
                         x=[0], y=[0],
                         text=[f'{corr_value:.2f}'],
                         mode='text',
                         textfont=dict(size=14, color='black', family='Arial', weight='bold'),
-                        # Use weight for bold font
                         showlegend=False
                     ),
                     row=i + 1, col=j + 1
                 )
 
-    # Update layout for better presentation
+    # Update layout
     fig.update_layout(
-        height=1200,  # Increase height for better spacing
-        width=1200,  # Increase width for better visibility of labels and plots
-        title_text="Final Search Space Visualization",
-        title_x=0.5,
-        title_font=dict(size=24),
+        height=1200,
+        width=1200,
         showlegend=False,
         coloraxis1=dict(colorscale=colorscale, cmin=populations_df['fitness'].min(),
-                       cmax=populations_df['fitness'].max(),
-                       colorbar=dict(
-                           title="Fitness",
-                           thickness=15,
-                           x=1.02,
-                           y=0.5,
-                           yanchor='middle'
-                       )
-                       ),
+                        cmax=populations_df['fitness'].max(),
+                        colorbar=dict(
+                            title="Fitness",
+                            thickness=15,
+                            x=1.02,
+                            y=0.5,
+                            yanchor='middle'
+                        )
+                        ),
         coloraxis2=dict(colorscale="RdBu", cmin=-1, cmax=1,
                         colorbar=dict(
                             title="Correlation",
                             thickness=15,
-                            x=1.1,  # Slightly further out
+                            x=1.1,
                             y=0.5,
                             yanchor='middle'
                         )
                         )
     )
 
-    # Add feature names as axis labels with extra spacing
+    # Set consistent axis label fonts and tick parameters
     for i, feature in enumerate(features):
-        fig.update_xaxes(title_text=feature, row=len(features), col=i + 1, tickangle=45,
-                         title_standoff=20)  # Add extra standoff for spacing
-        fig.update_yaxes(title_text=feature, row=i + 1, col=1, title_standoff=20)  # Add extra standoff for spacing
-
+        # Subplot X-axis
+        fig.update_xaxes(
+            title_text=feature,
+            row=len(features),
+            col=i + 1,
+            title_font=dict(size=16, family='Arial', color='black'),  # Title font settings
+            title_standoff=20,
+            tickangle=45,
+            tickfont=dict(size=12, family='Arial', color='black'),  # Uniform tick font settings
+            ticklen=5
+        )
+        # Subplot Y-axis
+        fig.update_yaxes(
+            title_text=feature,
+            row=i + 1,
+            col=1,
+            title_font=dict(size=16, family='Arial', color='black'),  # Title font settings
+            title_standoff=20,
+            tickfont=dict(size=12, family='Arial', color='black'),  # Uniform tick font settings
+            ticklen=5
+        )
 
     # Remove x and y ticks from the correlation heatmaps (upper triangle)
     for i in range(len(features)):
         for j in range(len(features)):
-            if i < j:  # Only for upper triangle cells
+            if i < j:
                 fig.update_xaxes(showticklabels=False, row=i + 1, col=j + 1)
                 fig.update_yaxes(showticklabels=False, row=i + 1, col=j + 1)
 
     return fig
+
 
 
 def plot_search_space(populations_df: pd.DataFrame, height=2, s=25):

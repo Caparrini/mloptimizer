@@ -33,6 +33,9 @@ from xgboost import XGBClassifier
 from hyperopt import STATUS_OK, hp, tpe
 from hyperopt import Trials, fmin
 
+width = 1000
+height = 1000
+
 # %%
 # 1) Dataset Description
 # ----------------------
@@ -130,8 +133,8 @@ print(f"Genetic optimization {population_df.shape[0]} algorithm executions")
 df = population_df[list(hyperparameter_space.evolvable_hyperparams.keys()) + ['fitness']]
 fig_gen = plotly_search_space(df).update_layout(
     autosize=True,
-    width=800,  # Adjust width as needed
-    height=800,  # Adjust height as needed
+    width=width,  # Adjust width as needed
+    height=height,  # Adjust height as needed
     margin=dict(l=20, r=20, t=50, b=20)  # Adjust margins as needed
 )
 plotly.io.show(fig_gen)
@@ -194,8 +197,8 @@ synth_population_gs = pd.DataFrame(clf_gs.cv_results_['params'])
 synth_population_gs['fitness'] = clf_gs.cv_results_['mean_test_score']
 fig_gs = plotly_search_space(synth_population_gs).update_layout(
     autosize=True,
-    width=800,  # Adjust width as needed
-    height=800,  # Adjust height as needed
+    width=width,  # Adjust width as needed
+    height=height,  # Adjust height as needed
     margin=dict(l=20, r=20, t=50, b=20)  # Adjust margins as needed
 )
 plotly.io.show(fig_gs)
@@ -258,8 +261,8 @@ synth_population_rs = pd.DataFrame(clf_rs.cv_results_['params'])
 synth_population_rs['fitness'] = clf_rs.cv_results_['mean_test_score']
 fig_rs = plotly_search_space(synth_population_rs).update_layout(
     autosize=True,
-    width=800,  # Adjust width as needed
-    height=800,  # Adjust height as needed
+    width=width,  # Adjust width as needed
+    height=height,  # Adjust height as needed
     margin=dict(l=20, r=20, t=50, b=20)  # Adjust margins as needed
 )
 print(f"Random Search optimization has run {synth_population_rs.shape[0]} algorithm executions")
@@ -331,8 +334,8 @@ synth_population_bay.columns = [col.replace('vals_', '') for col in synth_popula
 
 fig_bay = plotly_search_space(synth_population_bay).update_layout(
     autosize=True,
-    width=800,  # Adjust width as needed
-    height=800,  # Adjust height as needed
+    width=width,  # Adjust width as needed
+    height=height,  # Adjust height as needed
     margin=dict(l=20, r=20, t=50, b=20)  # Adjust margins as needed
 )
 print(f"Bayesian Search optimization has run {num_eval} algorithm executions")
