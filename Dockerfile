@@ -24,7 +24,7 @@ COPY requirements_dev.txt .
 RUN /venv/bin/pip install --no-cache-dir -r requirements_dev.txt
 
 # Copy the rest of the project files into the container
-COPY . .
+# COPY . .
 
 # Set environment variables to use the virtual environment's Python
 ENV VIRTUAL_ENV=/venv
