@@ -4,12 +4,10 @@ import numpy as np
 from sklearn.base import is_regressor, is_classifier
 
 from mloptimizer.domain.evaluation import train_score
-from mloptimizer.domain.optimization import IndividualUtils
 from mloptimizer.domain.hyperspace import HyperparameterSpace
 from mloptimizer.infrastructure.tracking import Tracker
 from mloptimizer.domain.evaluation import Evaluator
 
-from mloptimizer.domain.optimization import DeapOptimizer, GeneticAlgorithmRunner
 
 
 class Optimizer:
@@ -76,6 +74,7 @@ class Optimizer:
         seed : int, optional (default=0)
             seed for the random functions (deap, models, and splits on evaluations)
         """
+        from mloptimizer.domain.optimization import IndividualUtils
         # Model class
         self.estimator_class = estimator_class
         if not is_classifier(self.estimator_class) and not is_regressor(self.estimator_class):
@@ -210,6 +209,7 @@ class Optimizer:
         clf : classifier
             classifier with the best hyperparams
         """
+        from mloptimizer.domain.optimization import DeapOptimizer, GeneticAlgorithmRunner
         # Log initialization
         self.tracker.start_optimization(type(self).__name__, generations=generations)
 

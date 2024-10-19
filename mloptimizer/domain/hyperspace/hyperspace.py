@@ -39,6 +39,32 @@ class HyperparameterSpace:
         self.evolvable_hyperparams = evolvable_hyperparams
 
     @classmethod
+    def from_json_data(cls, json_data):
+        """
+        Create a HyperparameterSpace object from a dictionary (JSON data).
+
+        Parameters
+        ----------
+        json_data : dict
+            Dictionary containing the hyperparameter space data.
+
+        Returns
+        -------
+        HyperparameterSpace
+            An instance of HyperparameterSpace.
+        """
+        # Extract fixed hyperparameters
+        fixed_hyperparams = json_data['fixed_hyperparams']
+
+        # Extract evolvable hyperparameters
+        evolvable_hyperparams_dict = json_data['evolvable_hyperparams']
+        evolvable_hyperparams = {}
+        for key, param_data in evolvable_hyperparams_dict.items():
+            evolvable_hyperparams[key] = Hyperparam(**param_data)
+
+        return cls(fixed_hyperparams=fixed_hyperparams, evolvable_hyperparams=evolvable_hyperparams)
+
+    @classmethod
     def from_json(cls, file_path):
         """
         This method creates a :class:`~mloptimizer.hyperparams.HyperparameterSpace` object from a JSON file.
