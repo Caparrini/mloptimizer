@@ -29,6 +29,6 @@ def test_plot_logbook(default_tree_optimizer):
 
 
 def test_plot_search_space(default_tree_optimizer):
-    populations_df = default_tree_optimizer.runs[-1].population_2_df()
+    populations_df = default_tree_optimizer.genetic_algorithm.population_2_df()
     fig = plot_search_space(populations_df)
     assert fig is not None

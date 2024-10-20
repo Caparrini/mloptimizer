@@ -117,8 +117,9 @@ class Optimizer:
                                    individual_utils=self.individual_utils)
 
         # DeapOptimizer
-        self.deap_optimizer = None
-        self.runs = []
+        # self.deap_optimizer = None
+        self.genetic_algorithm = None
+        #self.runs = []
 
     def _validate_hyperparam_space(self):
         """
@@ -209,7 +210,8 @@ class Optimizer:
         clf : classifier
             classifier with the best hyperparams
         """
-        from mloptimizer.domain.optimization import DeapOptimizer, GeneticAlgorithmRunner
+        #from mloptimizer.domain.optimization import DeapOptimizer, GeneticAlgorithmRunner
+        from mloptimizer.domain.optimization import GeneticAlgorithm
         # Log initialization
         self.tracker.start_optimization(type(self).__name__, generations=generations)
 
@@ -217,21 +219,32 @@ class Optimizer:
         self.tracker.start_checkpoint(opt_run_folder_name, estimator_class=self.estimator_class)
 
         # Creation of deap optimizer
-        self.deap_optimizer = DeapOptimizer(hyperparam_space=self.hyperparam_space, seed=self.mlopt_seed,
-                                            use_parallel=self.use_parallel,
-                                            maximize=is_classifier(self.estimator_class))
+        #self.deap_optimizer = DeapOptimizer(hyperparam_space=self.hyperparam_space, seed=self.mlopt_seed,
+        #                                    use_parallel=self.use_parallel,
+        #                                    maximize=is_classifier(self.estimator_class))
         # Creation of genetic algorithm runner
-        ga_runner = GeneticAlgorithmRunner(deap_optimizer=self.deap_optimizer,
-                                           tracker=self.tracker,
-                                           seed=self.mlopt_seed,
-                                           evaluator=self.evaluator)
+        #ga_runner = GeneticAlgorithmRunner(deap_optimizer=self.deap_optimizer,
+        #                                   tracker=self.tracker,
+        #                                   seed=self.mlopt_seed,
+        #                                   evaluator=self.evaluator)
+        self.genetic_algorithm = GeneticAlgorithm(hyperparam_space=self.hyperparam_space,
+                                                  tracker=self.tracker,
+                                                  seed=self.mlopt_seed,
+                                                  evaluator=self.evaluator,
+                                                  use_parallel=self.use_parallel,
+                                                  maximize=is_classifier(self.estimator_class))
+
 
         # Run genetic algorithm
-        population, logbook, hof = ga_runner.run(population_size=population_size, n_generations=generations,
-                                                 cxpb=cxpb, mutation_prob=mutpb, n_elites=n_elites,
-                                                 tournsize=tournsize, indpb=indpb, checkpoint=checkpoint)
+        population, logbook, hof = self.genetic_algorithm.custom_run(population_size=population_size,
+                                                                     n_generations=generations,
+                                                                     cxpb=cxpb, mutation_prob=mutpb,
+                                                                     n_elites=n_elites,
+                                                                     tournsize=tournsize,
+                                                                     indpb=indpb,
+                                                                     checkpoint=checkpoint)
 
-        self.runs.append(ga_runner)
+        #self.runs.append(ga_runner)
         self.logbook = logbook
 
         # self.populations = population

@@ -128,7 +128,7 @@ t1_gen = time()
 print(f"Genetic optimization around {population_size * (generations + 1)} algorithm executions")
 execution_time_gen = round(t1_gen - t0_gen, 2)
 print(f"Time of the genetic optimization {execution_time_gen} s")
-population_df = opt.runs[0].population_2_df()
+population_df = opt.genetic_algorithm.population_2_df()
 print(f"Genetic optimization {population_df.shape[0]} algorithm executions")
 df = population_df[list(hyperparameter_space.evolvable_hyperparams.keys()) + ['fitness']]
 fig_gen = plotly_search_space(df).update_layout(

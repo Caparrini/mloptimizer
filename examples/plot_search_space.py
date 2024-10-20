@@ -39,7 +39,7 @@ clf = opt.optimize_clf(100, 30)
 
 # %%
 # Following we can generate the plot of the search space
-population_df = opt.runs[-1].population_2_df()
+population_df = opt.genetic_algorithm.population_2_df()
 param_names = list(opt.hyperparam_space.evolvable_hyperparams.keys())
 param_names.append("fitness")
 df = population_df[param_names]

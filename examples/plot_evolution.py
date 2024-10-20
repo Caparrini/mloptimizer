@@ -42,7 +42,7 @@ clf = opt.optimize_clf(100, 30)
 # The black lines represent the max and min fitness values across all generations.
 # The green, red and blue line are respectively the max, min and avg fitness value for each generation.
 # Each grey point in the graph represents an individual.
-population_df = opt.runs[-1].population_2_df()
+population_df = opt.genetic_algorithm.population_2_df()
 g_logbook = plotly_logbook(opt.logbook, population_df)
 plotly.io.show(g_logbook)
 
