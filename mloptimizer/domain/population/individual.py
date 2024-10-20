@@ -1,5 +1,6 @@
 from mloptimizer.domain.hyperspace import HyperparameterSpace
 from sklearn.svm import SVR
+import random
 
 
 class IndividualUtils:
@@ -7,6 +8,8 @@ class IndividualUtils:
         self.hyperparam_space = hyperparam_space
         self.estimator_class = estimator_class
         self.mlopt_seed = mlopt_seed
+        if self.mlopt_seed is not None:
+            random.seed(self.mlopt_seed)
 
     def get_clf(self, individual):
         individual_dict = self.individual2dict(individual)
@@ -36,6 +39,15 @@ class IndividualUtils:
         for i in range(len(keys)):
             individual_dict[keys[i]] = self.hyperparam_space.evolvable_hyperparams[keys[i]].correct(individual[i])
         return {**individual_dict, **self.hyperparam_space.fixed_hyperparams}
+
+    def init_individual(self, pcls):
+        """
+        Method to create an individual (from DeapOptimizer)
+        """
+        ps = [random.randint(self.hyperparam_space.evolvable_hyperparams[k].min_value,
+                             self.hyperparam_space.evolvable_hyperparams[k].max_value)
+              for k in self.hyperparam_space.evolvable_hyperparams.keys()]
+        return pcls(ps)
 
 class Individual:
     def __init__(self, genome, fitness=None):

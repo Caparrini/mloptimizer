@@ -1,6 +1,7 @@
 from mloptimizer.domain.model.alg_wrapper import generate_model
 from mloptimizer.application import Optimizer
 from mloptimizer.domain.hyperspace import Hyperparam
+from mloptimizer.domain.population import IndividualUtils
 
 
 class KerasClassifierOptimizer(Optimizer):
@@ -28,7 +29,7 @@ class KerasClassifierOptimizer(Optimizer):
         except ImportError as e:
             print(f"{e}: Keras is not installed. Please install it to use this function.")
             return None
-        individual_dict = self.deap_optimizer.individual2dict(individual)
+        individual_dict = IndividualUtils(hyperparam_space=self.hyperparam_space).individual2dict(individual)
         print(individual_dict)
         clf = KerasClassifier(build_fn=generate_model,
                               **individual_dict)

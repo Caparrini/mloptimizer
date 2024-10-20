@@ -5,11 +5,13 @@ import numpy as np
 import pandas as pd
 from deap import creator, base, tools, algorithms
 from deap.algorithms import eaSimple, varAnd
+
 from mloptimizer.domain.hyperspace import HyperparameterSpace
 from matplotlib import pyplot as plt
 from mloptimizer.application.reporting.plots import plotly_search_space, plotly_logbook
 from mloptimizer.infrastructure.tracking import Tracker
 from mloptimizer.domain.evaluation import Evaluator
+from mloptimizer.domain.population import IndividualUtils
 
 
 class GeneticAlgorithm:
@@ -81,28 +83,11 @@ class GeneticAlgorithm:
             except ImportError:
                 print("Multiprocessing not available.")
 
-        self.toolbox.register("individual", self.init_individual, creator.Individual)
+        self.toolbox.register("individual",
+                              IndividualUtils(hyperparam_space=self.hyperparam_space,
+                                              mlopt_seed=self.seed).init_individual,creator.Individual)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.individual)
         self.toolbox.register("evaluate", self.evaluator.evaluate_individual)
-
-    def init_individual(self, pcls):
-        """
-        Method to create an individual (from DeapOptimizer)
-        """
-        ps = [random.randint(self.hyperparam_space.evolvable_hyperparams[k].min_value,
-                             self.hyperparam_space.evolvable_hyperparams[k].max_value)
-              for k in self.hyperparam_space.evolvable_hyperparams.keys()]
-        return pcls(ps)
-
-    def individual2dict(self, individual):
-        """
-        Convert an individual to a dictionary of hyperparams (from DeapOptimizer)
-        """
-        individual_dict = {}
-        keys = list(self.hyperparam_space.evolvable_hyperparams.keys())
-        for i in range(len(keys)):
-            individual_dict[keys[i]] = self.hyperparam_space.evolvable_hyperparams[keys[i]].correct(individual[i])
-        return {**individual_dict, **self.hyperparam_space.fixed_hyperparams}
 
     def simple_run(self, population_size: int, n_generations: int, cxpb: float = 0.5, mutation_prob: float = 0.5,
                    n_elites: int = 10, tournsize: int = 3, indpb: float = 0.05):
@@ -132,16 +117,10 @@ class GeneticAlgorithm:
         hist.update(pop)
         return hof, pop
 
-    def custom_run(self, population_size: int, n_generations: int, cxpb: float = 0.5, mutation_prob: float = 0.5,
-                   n_elites: int = 10, tournsize: int = 3, indpb: float = 0.05, checkpoint: str = None):
+    def _log_and_visualize_results(self, logbook):
         """
-        Run the genetic algorithm with tracking of each generation (from GeneticAlgorithmRunner)
+        Log and visualize the results of the genetic algorithm.
         """
-        hof, pop = self._pre_run(indpb=indpb, n_elites=n_elites, population_size=population_size, tournsize=tournsize)
-        population, logbook, hof = self.custom_ea_simple(population=pop, toolbox=self.toolbox, cxpb=cxpb,
-                                                         mutpb=mutation_prob, ngen=n_generations, halloffame=hof,
-                                                         checkpoint_path=self.tracker.opt_run_checkpoint_path,
-                                                         stats=self.stats)
         hyperparam_names = list(self.hyperparam_space.evolvable_hyperparams.keys())
         hyperparam_names.append("fitness")
         population_df = self.population_2_df()
@@ -153,6 +132,19 @@ class GeneticAlgorithm:
         g2 = plotly_logbook(logbook, population_df)
         g2.write_html(os.path.join(self.tracker.graphics_path, "logbook.html"))
         plt.close()
+
+    def custom_run(self, population_size: int, n_generations: int, cxpb: float = 0.5, mutation_prob: float = 0.5,
+                   n_elites: int = 10, tournsize: int = 3, indpb: float = 0.05, checkpoint: str = None):
+        """
+        Run the genetic algorithm with tracking of each generation (from GeneticAlgorithmRunner)
+        """
+        hof, pop = self._pre_run(indpb=indpb, n_elites=n_elites, population_size=population_size, tournsize=tournsize)
+        population, logbook, hof = self.custom_ea_simple(population=pop, toolbox=self.toolbox, cxpb=cxpb,
+                                                         mutpb=mutation_prob, ngen=n_generations, halloffame=hof,
+                                                         checkpoint_path=self.tracker.opt_run_checkpoint_path,
+                                                         stats=self.stats)
+
+        self._log_and_visualize_results(logbook)
 
         return population, logbook, hof
 
@@ -174,7 +166,8 @@ class GeneticAlgorithm:
             c = 1
             for ind, fit in zip(invalid_ind, fitnesses):
                 ind.fitness.values = fit
-                ind_formatted = self.individual2dict(ind)
+                ind_formatted = IndividualUtils(hyperparam_space=self.hyperparam_space,
+                                                mlopt_seed=self.seed).individual2dict(ind)
                 self.tracker.append_progress_file(gen, ngen, c, len(invalid_ind), ind_formatted, fit)
                 c += 1
 
@@ -203,7 +196,8 @@ class GeneticAlgorithm:
         n = 0
         for p in self.populations:
             for i in p:
-                i_hyperparams = self.individual2dict(i[0])
+                i_hyperparams = IndividualUtils(hyperparam_space=self.hyperparam_space,
+                                                mlopt_seed=self.seed).individual2dict(i[0])
                 i_hyperparams['fitness'] = i[1].values[0]
                 i_hyperparams['population'] = n
                 data.append(i_hyperparams)
