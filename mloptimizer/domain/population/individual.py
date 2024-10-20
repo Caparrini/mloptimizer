@@ -36,3 +36,14 @@ class IndividualUtils:
         for i in range(len(keys)):
             individual_dict[keys[i]] = self.hyperparam_space.evolvable_hyperparams[keys[i]].correct(individual[i])
         return {**individual_dict, **self.hyperparam_space.fixed_hyperparams}
+
+class Individual:
+    def __init__(self, genome, fitness=None):
+        self.genome = genome
+        self.fitness = fitness
+
+    def set_fitness(self, fitness):
+        self.fitness = fitness
+
+    def __repr__(self):
+        return f"Individual(genome={self.genome}, fitness={self.fitness})"

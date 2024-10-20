@@ -74,7 +74,7 @@ class Optimizer:
         seed : int, optional (default=0)
             seed for the random functions (deap, models, and splits on evaluations)
         """
-        from mloptimizer.domain.optimization import IndividualUtils
+        from mloptimizer.domain.population import IndividualUtils
         # Model class
         self.estimator_class = estimator_class
         if not is_classifier(self.estimator_class) and not is_regressor(self.estimator_class):
