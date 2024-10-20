@@ -228,14 +228,14 @@ def generate_model(learning_rate=0.01, layer_1=100, layer_2=50,
     except ImportError as e:
         print(f"{e}: Keras is not installed. Please install it to use this function.")
         return None
+
     model = Sequential()
-    model.add(Dense(layer_1, activation="relu"))
+    model.add(Dense(layer_1, activation="relu", input_shape=(30,)))  # Specify input shape for the first layer
     model.add(Dropout(dropout_rate_1))
     model.add(Dense(layer_2, activation="relu"))
     model.add(Dropout(dropout_rate_2))
     model.add(Dense(1, activation="sigmoid"))
 
     opt = Adam(learning_rate=learning_rate)
-    model.compile(loss='binary_crossentropy', optimizer=opt,
-                  metrics=['accuracy'])
+    model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
     return model
