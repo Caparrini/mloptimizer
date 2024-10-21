@@ -1,2 +1,1 @@
-from .base import Optimizer
 from .hyperparameter_space_service import HyperparameterSpaceService

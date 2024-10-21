@@ -1,6 +1,6 @@
 import pytest
 from mloptimizer.application.reporting.plots import logbook_to_pandas, plot_logbook, plot_search_space
-from mloptimizer.application import Optimizer
+from mloptimizer.domain.optimization import Optimizer
 from mloptimizer.domain.hyperspace import HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.datasets import load_iris
