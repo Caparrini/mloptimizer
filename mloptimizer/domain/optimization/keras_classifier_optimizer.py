@@ -1,5 +1,5 @@
 from mloptimizer.domain.model.alg_wrapper import generate_model
-from mloptimizer.application import Optimizer
+from mloptimizer.domain.optimization import Optimizer
 from mloptimizer.domain.hyperspace import Hyperparam
 from mloptimizer.domain.population import IndividualUtils
 
