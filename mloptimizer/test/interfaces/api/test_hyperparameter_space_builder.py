@@ -1,8 +1,9 @@
 # mloptimizer/test/interfaces/api/test_hyperparameter_space_builder.py
-
+import os.path
 import pytest
-from mloptimizer.domain.hyperspace import HyperparameterSpace, Hyperparam
-from mloptimizer.application import HyperparameterSpaceService
+from sklearn.tree import DecisionTreeClassifier
+
+from mloptimizer.domain.hyperspace import HyperparameterSpace
 from mloptimizer.interfaces.api import HyperparameterSpaceBuilder
 from mloptimizer.infrastructure.repositories import HyperparameterSpaceRepository
 
@@ -20,7 +21,7 @@ def test_add_int_param(mock_service):
 
 def test_add_float_param(mock_service):
     builder = HyperparameterSpaceBuilder()
-    builder.add_float_param("param2", 0.1, 1.0)
+    builder.add_float_param("param2", 10, 100)
     assert "param2" in builder.evolvable_hyperparams
 
 
@@ -35,6 +36,11 @@ def test_set_fixed_param(mock_service):
     builder.set_fixed_param("fixed_param1", 5)
     assert "fixed_param1" in builder.fixed_hyperparams
 
+def test_set_fixed_params(mock_service):
+    builder = HyperparameterSpaceBuilder()
+    builder.set_fixed_params({"fixed_param1": 5, "fixed_param2": 10})
+    assert "fixed_param1" in builder.fixed_hyperparams
+    assert "fixed_param2" in builder.fixed_hyperparams
 
 def test_build(mock_service):
     builder = HyperparameterSpaceBuilder()
@@ -55,16 +61,16 @@ def test_load_default_space(mock_service, mocker):
     })
 
     builder = HyperparameterSpaceBuilder()
-    result = builder.load_default_space(estimator_class=object)
+    result = builder.load_default_space(estimator_class=DecisionTreeClassifier)
 
     assert isinstance(result, HyperparameterSpace)
 
 
-def test_save_space(mock_service, mocker):
+def test_save_space(mock_service, mocker, tmp_path):
     space = HyperparameterSpace({}, {})
     mocker.patch('mloptimizer.infrastructure.repositories.HyperparameterSpaceRepository.save_json')
 
     builder = HyperparameterSpaceBuilder()
-    builder.save_space(space, estimator_class=object, overwrite=True)
+    builder.save_space(space, os.path.join(tmp_path, "hyperspace.json"), overwrite=True)
 
     HyperparameterSpaceRepository.save_json.assert_called_once()

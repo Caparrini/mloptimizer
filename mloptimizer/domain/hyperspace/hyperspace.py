@@ -192,3 +192,7 @@ class HyperparameterSpace:
     def __repr__(self):
         return (f"HyperparameterSpace(fixed_hyperparams={self.fixed_hyperparams}, "
                 f"evolvable_hyperparams={self.evolvable_hyperparams})")
+
+    def __eq__(self, other):
+        return (self.fixed_hyperparams == other.fixed_hyperparams and
+                self.evolvable_hyperparams == other.evolvable_hyperparams)
