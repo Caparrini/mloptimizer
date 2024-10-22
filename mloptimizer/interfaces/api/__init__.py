@@ -1,1 +1,2 @@
 from .hyperspace_builder import HyperparameterSpaceBuilder
+from .genetic_optimizer_api import GeneticOptimizerAPI
