@@ -98,7 +98,7 @@ class GeneticSearch:
         self.best_params_ = self.best_estimator_.get_params()
 
         # Store the detailed cross-validation or genetic algorithm results
-        self.cv_results_ = self.optimizer_service.optimizer.logbook
+        self.cv_results_ = self.optimizer_service.optimizer.genetic_algorithm.logbook
 
         return self
 
