@@ -17,13 +17,13 @@ def default_tree_optimizer():
 
 
 def test_logbook_to_pandas(default_tree_optimizer):
-    logbook = default_tree_optimizer.logbook
+    logbook = default_tree_optimizer.genetic_algorithm.logbook
     df = logbook_to_pandas(logbook)
     assert df is not None
 
 
 def test_plot_logbook(default_tree_optimizer):
-    logbook = default_tree_optimizer.logbook
+    logbook = default_tree_optimizer.genetic_algorithm.logbook
     fig = plot_logbook(logbook)
     assert fig is not None
 
