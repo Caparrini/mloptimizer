@@ -54,8 +54,7 @@ You can get more information about the package installation at https://pypi.org/
 Here's a simple example of how to optimize hyperparameters in a decision tree classifier using the iris dataset:
 
 ```python
-from mloptimizer.application import Optimizer
-from mloptimizer.domain.hyperspace import HyperparameterSpace
+from mloptimizer.interfaces import GeneticSearch, HyperparameterSpaceBuilder
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.datasets import load_iris
 
@@ -63,64 +62,25 @@ from sklearn.datasets import load_iris
 X, y = load_iris(return_X_y=True)
 
 # 2) Define the hyperparameter space (a default space is provided for some algorithms)
-hyperparameter_space = HyperparameterSpace.get_default_hyperparameter_space(DecisionTreeClassifier)
+hyperparameter_space = HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier)
 
 # 3) Create the optimizer and optimize the classifier
-opt = Optimizer(estimator_class=DecisionTreeClassifier, features=X, labels=y, hyperparam_space=hyperparameter_space)
+opt = GeneticSearch(estimator_class=DecisionTreeClassifier,
+                    hyperparam_space=hyperparameter_space)
 
 # 4) Optimize the classifier, the optimization returns the best estimator found in the optimization process
 # - 10 generations starting with a population of 10 individuals, other parameters are set to default
-clf = opt.optimize_clf(population_size=10, generations=10)
+opt.fit(X, y, population_size=10, generations=10)
+
+print(opt.best_estimator_)
 ```
 Other algorithms can be used, such as `RandomForestClassifier` or `XGBClassifier` which have a 
 default hyperparameter space defined in the library.
 Even if the algorithm is not included in the default hyperparameter space, you can define your own hyperparameter space
 following the documentation.
 
-The optimization will create a directory in the current folder with a name like `YYYYMMDD_nnnnnnnnnn_SklearnOptimizer`.
-This folder contains the results of the optimization, 
-including the best estimator found and the log file `opt.log` informing with all the steps, 
-the best estimator and the result of the optimization.
-
-A structure like this will be created:
-
-```
-├── checkpoints
-│   ├── cp_gen_0.pkl
-│   └── cp_gen_1.pkl
-├── graphics
-│   ├── logbook.html
-│   └── search_space.html
-├── opt.log
-├── progress
-│   ├── Generation_0.csv
-│   └── Generation_1.csv
-└── results
-    ├── logbook.csv
-    └── populations.csv
-```
-
-Each item in the directory is described below:
-
-- `checkpoints`: This directory contains the checkpoint files for each generation of the genetic optimization process. These files are used to save the state of the optimization process at each generation, allowing for the process to be resumed from a specific point if needed.
-    - `cp_gen_0.pkl`, `cp_gen_1.pkl`: These are the individual checkpoint files for each generation. They are named according to the generation number and are saved in Python's pickle format.
-
-- `graphics`: This directory contains HTML files for visualizing the optimization process.
-    - `logbook.html`: This file provides a graphical representation of the logbook, which records the statistics of the optimization process over generations.
-    - `search_space.html`: This file provides a graphical representation of the search space of the optimization process.
-
-- `opt.log`: This is the log file for the optimization process. It contains detailed logs of the optimization process, including the performance of the algorithm at each generation.
-
-- `progress`: This directory contains CSV files that record the progress of the optimization process for each generation.
-    - `Generation_0.csv`, `Generation_1.csv`: These are the individual progress files for each generation. They contain detailed information about each individual in the population at each generation.
-
-- `results`: This directory contains CSV files with the results of the optimization process.
-    - `logbook.csv`: This file is a CSV representation of the logbook, which records the statistics of the optimization process over generations.
-    - `populations.csv`: This file contains the final populations of the optimization process. It includes the hyperparameters and fitness values of each individual in the population.
 
 More details in the [documentation](http://mloptimizer.readthedocs.io/).
-
-
 
 ## Examples
 
@@ -152,6 +112,3 @@ with examples, classes and methods reference.
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-
-## FAQs
-- TODO
