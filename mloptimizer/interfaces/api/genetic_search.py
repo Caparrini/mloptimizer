@@ -1,12 +1,53 @@
-import matplotlib.pyplot as plt
 from mloptimizer.application import OptimizerService, HyperparameterSpaceService
 import random
 
 
-class GeneticOptimizerAPI:
+class GeneticSearch:
+    """
+    Genetic algorithm-based optimization for hyperparameter tuning.
+
+    The `GeneticOptimizer` provides an interface for optimizing an estimator's hyperparameters
+    using a genetic algorithm. It supports cross-validation and parallel computation.
+
+    Parameters
+    ----------
+    estimator_class : class
+        The class of the estimator to be optimized.
+
+    hyperparam_space : dict or HyperparameterSpace
+        The hyperparameter search space as a dictionary or a `HyperparameterSpace` object.
+
+    eval_function : callable, optional (default=None)
+        Custom evaluation function for the estimator. If None, the default estimator's score method is used.
+
+    seed : int, optional (default=None)
+        Random seed for reproducibility. If None, a random seed is generated.
+
+    scoring : str or callable, optional (default=None)
+        Scoring method to evaluate the estimator's performance. If None, the estimator’s default score method is used.
+
+    use_parallel : bool, optional (default=False)
+        Whether to run the optimization in parallel. If True, parallel processing is enabled.
+
+    cv : int, cross-validation generator or an iterable, optional (default=None)
+        Cross-validation splitting strategy. If None, the default cross-validation strategy is used.
+
+    Attributes
+    ----------
+    best_estimator_ : estimator
+        The estimator with the best found hyperparameters after fitting.
+
+    best_params_ : dict
+        The hyperparameters that produced the best performance during the optimization.
+
+    cv_results_ : list of dicts
+        A log of the optimization progress, containing details such as fitness scores and hyperparameters
+        evaluated during each generation.
+    """
+
     def __init__(self, estimator_class, hyperparam_space, eval_function=None,
                  seed=None, scoring=None, use_parallel=False, cv=None):
-        """Initialize the GeneticOptimizerAPI with the necessary components."""
+        """Initialize the GeneticOptimizer with the necessary components."""
         self.optimizer_service = OptimizerService(
             estimator_class=estimator_class,
             hyperparam_space=hyperparam_space,
@@ -27,23 +68,25 @@ class GeneticOptimizerAPI:
         """
         Run the genetic algorithm optimization to fit the best model.
 
-        Parameters:
+        Parameters
         ----------
         X : np.array
             Feature set for the optimization process.
+
         y : np.array
             Label set for the optimization process.
+
         generations : int, optional (default=10)
             Number of generations for the genetic algorithm to run.
+
         population_size : int, optional (default=50)
             Size of the population for the genetic algorithm.
 
-        Returns:
-        --------
-        self: object
-            Fitted GeneticOptimizerAPI object.
+        Returns
+        -------
+        self : object
+            Fitted `GeneticOptimizer` object.
         """
-        # Basic input validation
         if X is None or y is None or len(X) == 0 or len(y) == 0:
             raise ValueError("Features and labels must not be empty.")
 
@@ -54,7 +97,7 @@ class GeneticOptimizerAPI:
         # Extract best hyperparameters from the optimizer service
         self.best_params_ = self.best_estimator_.get_params()
 
-        # Optionally, store the detailed cross-validation or genetic algorithm results
+        # Store the detailed cross-validation or genetic algorithm results
         self.cv_results_ = self.optimizer_service.optimizer.logbook
 
         return self
@@ -63,13 +106,13 @@ class GeneticOptimizerAPI:
         """
         Make predictions using the best estimator found by the optimization process.
 
-        Parameters:
+        Parameters
         ----------
         X : np.array
             Input features to predict labels.
 
-        Returns:
-        --------
+        Returns
+        -------
         y_pred : np.array
             Predicted labels.
         """
@@ -81,15 +124,16 @@ class GeneticOptimizerAPI:
         """
         Return the score of the best estimator on the given test data and labels.
 
-        Parameters:
+        Parameters
         ----------
         X : np.array
             Test feature set.
+
         y : np.array
             True labels for scoring.
 
-        Returns:
-        --------
+        Returns
+        -------
         score : float
             Score of the best estimator on the test data.
         """
@@ -101,7 +145,7 @@ class GeneticOptimizerAPI:
         """
         Set or update the hyperparameter space for the optimization process.
 
-        Parameters:
+        Parameters
         ----------
         hyperparam_space : HyperparameterSpace
             The hyperparameter space object to be used for optimization.
@@ -112,7 +156,7 @@ class GeneticOptimizerAPI:
         """
         Set or update the evaluator function for the optimization process.
 
-        Parameters:
+        Parameters
         ----------
         eval_function : callable
             A new evaluation function for the optimization process.
@@ -123,95 +167,81 @@ class GeneticOptimizerAPI:
         """
         Load a default hyperparameter space for the given estimator using the HyperparameterSpaceService.
 
-        Parameters:
+        Parameters
         ----------
         estimator_class : class
             The estimator class for which to load the default hyperparameter space.
 
-        Returns:
-        --------
-        HyperparameterSpace: The loaded hyperparameter space object.
+        Returns
+        -------
+        HyperparameterSpace
+            The loaded hyperparameter space object.
         """
-        return self.hyperparam_service.load_hyperparameter_space(estimator_class)
+        return self.hyperparam_service.load_default_hyperparameter_space(estimator_class)
 
     def load_hyperparameter_space(self, file_path):
         """
         Load a hyperparameter space from a file using the HyperparameterSpaceService.
 
-        Parameters:
+        Parameters
         ----------
         file_path : str
             The path to the file containing the hyperparameter space.
 
-        Returns:
-        --------
-        HyperparameterSpace: The loaded hyperparameter space object.
+        Returns
+        -------
+        HyperparameterSpace
+            The loaded hyperparameter space object.
         """
         return self.hyperparam_service.load_hyperparameter_space(file_path)
 
-    def save_hyperparameter_space(self, hyperparam_space, estimator_class, overwrite=False):
+    def save_hyperparameter_space(self, file_path, overwrite=False):
         """
         Save the current hyperparameter space to a file using the HyperparameterSpaceService.
 
-        Parameters:
+        Parameters
         ----------
-        hyperparam_space : HyperparameterSpace
-            The hyperparameter space to save.
-        estimator_class : class
-            The estimator class for which the hyperparameter space is saved.
+        file_path : str
+            The path to the file where the hyperparameter space will be saved.
         overwrite : bool, optional (default=False)
             Whether to overwrite the existing file if it exists.
         """
-        self.hyperparam_service.save_hyperparameter_space(hyperparam_space, estimator_class, overwrite)
-
-    def plot_optimization_progress(self):
-        """
-        Generate and display a plot showing the progress of the genetic algorithm optimization.
-        """
-        if self.cv_results_ is None:
-            raise ValueError("No optimization results available to plot. Please run fit() first.")
-
-        # Assuming `logbook` or `cv_results_` contains a record of fitness values across generations
-        generations = list(range(len(self.cv_results_)))
-        fitness_values = [record['max'] for record in self.cv_results_]  # Example structure, adjust accordingly
-
-        plt.figure(figsize=(10, 6))
-        plt.plot(generations, fitness_values, marker='o', linestyle='-', color='b')
-        plt.title("Genetic Algorithm Optimization Progress")
-        plt.xlabel("Generations")
-        plt.ylabel("Fitness Score")
-        plt.grid(True)
-        plt.show()
+        if self.optimizer_service.hyperparam_space is None:
+            raise ValueError("No hyperparameter space is set for saving.")
+        self.hyperparam_service.save_hyperparameter_space(
+            self.optimizer_service.hyperparam_space, file_path, overwrite)
 
     def get_params(self):
         """
-        Get parameters for this estimator.
+        Get parameters for this optimizer.
 
-        Returns:
-        --------
+        Returns
+        -------
         params : dict
             Parameter names mapped to their values.
         """
-        return {"estimator_class": self.optimizer_service.estimator_class,
-                "hyperparam_space": self.optimizer_service.hyperparam_space,
-                "eval_function": self.optimizer_service.eval_function,
-                "seed": self.optimizer_service.seed,
-                "use_parallel": self.optimizer_service.use_parallel,
-                "cv": self.cv}
+        return {
+            "estimator_class": self.optimizer_service.estimator_class,
+            "hyperparam_space": self.optimizer_service.hyperparam_space,
+            "eval_function": self.optimizer_service.eval_function,
+            "seed": self.optimizer_service.seed,
+            "use_parallel": self.optimizer_service.use_parallel,
+            "cv": self.cv,
+        }
 
     def set_params(self, **params):
         """
-        Set the parameters of this estimator.
+        Set the parameters of this optimizer.
 
-        Parameters:
+        Parameters
         ----------
         **params : dict
             Estimator parameters to update.
 
-        Returns:
-        --------
+        Returns
+        -------
         self : object
-            Updated object.
+            Updated `GeneticOptimizer` object.
         """
         for param, value in params.items():
             setattr(self, param, value)

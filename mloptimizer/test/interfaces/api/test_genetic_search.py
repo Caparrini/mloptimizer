@@ -6,7 +6,7 @@ from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
 
 from mloptimizer.domain.hyperspace import HyperparameterSpace
-from mloptimizer.interfaces.api import GeneticOptimizerAPI, HyperparameterSpaceBuilder
+from mloptimizer.interfaces.api import GeneticSearch, HyperparameterSpaceBuilder
 
 
 @pytest.fixture
@@ -59,7 +59,7 @@ def hyperparam_space_dt():
 @pytest.fixture
 def genetic_optimizer_rf(hyperparam_space_rf):
     """Fixture to create a GeneticOptimizerAPI instance for RandomForestClassifier."""
-    return GeneticOptimizerAPI(
+    return GeneticSearch(
         estimator_class=RandomForestClassifier,
         hyperparam_space=hyperparam_space_rf,
         eval_function=None,
@@ -71,7 +71,7 @@ def genetic_optimizer_rf(hyperparam_space_rf):
 @pytest.fixture
 def genetic_optimizer_svc(hyperparam_space_svc):
     """Fixture to create a GeneticOptimizerAPI instance for SVC."""
-    return GeneticOptimizerAPI(
+    return GeneticSearch(
         estimator_class=SVC,
         hyperparam_space=hyperparam_space_svc,
         eval_function=None,
@@ -83,7 +83,7 @@ def genetic_optimizer_svc(hyperparam_space_svc):
 @pytest.fixture
 def genetic_optimizer_dt(hyperparam_space_dt):
     """Fixture to create a GeneticOptimizerAPI instance for DecisionTreeClassifier."""
-    return GeneticOptimizerAPI(
+    return GeneticSearch(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=hyperparam_space_dt,
         eval_function=None,
@@ -155,24 +155,12 @@ def test_set_hyperparameter_space(genetic_optimizer_rf, hyperparam_space_dt, iri
     assert genetic_optimizer_rf.best_params_ is not None
 
 
-def test_plot_optimization_progress(genetic_optimizer_rf, iris_data, monkeypatch):
-    """Test plotting optimization progress without displaying the plot."""
-    X, y = iris_data
-    genetic_optimizer_rf.fit(X, y, generations=5, population_size=10)
-
-    # Mock plt.show to avoid actually displaying the plot
-    monkeypatch.setattr("matplotlib.pyplot.show", lambda: None)
-
-    # Call the plotting method
-    genetic_optimizer_rf.plot_optimization_progress()
-
-
 def test_save_hyperparameter_space(genetic_optimizer_rf, tmp_path):
     """Test saving the hyperparameter space."""
     hyperparam_space = genetic_optimizer_rf.optimizer_service.hyperparam_space
     saved_hyperspace_path = tmp_path / f"{RandomForestClassifier.__name__.lower()}_hyperparameter_space.json"
     # Save the hyperparameter space to a temporary path
-    genetic_optimizer_rf.save_hyperparameter_space(hyperparam_space, saved_hyperspace_path,
+    genetic_optimizer_rf.save_hyperparameter_space(saved_hyperspace_path,
                                                    overwrite=True)
 
     # Validate that the hyperparameter space was saved
@@ -181,7 +169,7 @@ def test_save_hyperparameter_space(genetic_optimizer_rf, tmp_path):
 
 def test_load_default_hyperparameter_space(genetic_optimizer_rf):
     """Test loading a default hyperparameter space."""
-    hyperparam_space = genetic_optimizer_rf.load_default_hyperparameter_space(RandomForestClassifier.__name__)
+    hyperparam_space = genetic_optimizer_rf.load_default_hyperparameter_space(RandomForestClassifier)
 
     # Validate the loaded hyperparameter space
     assert hyperparam_space is not None
@@ -194,7 +182,7 @@ def test_load_hyperparameter_space(genetic_optimizer_rf, tmp_path):
     hyperparam_space = genetic_optimizer_rf.optimizer_service.hyperparam_space
     saved_hyperspace_path = tmp_path / f"{RandomForestClassifier.__name__.lower()}_hyperparameter_space.json"
     # Save the hyperparameter space to a temporary path
-    genetic_optimizer_rf.save_hyperparameter_space(hyperparam_space, saved_hyperspace_path,
+    genetic_optimizer_rf.save_hyperparameter_space(saved_hyperspace_path,
                                                    overwrite=True)
 
     # Validate that the hyperparameter space was saved
