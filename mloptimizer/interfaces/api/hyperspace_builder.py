@@ -32,11 +32,18 @@ class HyperparameterSpaceBuilder:
         return self
 
     def build(self):
-        return HyperparameterSpace(fixed_hyperparams=self.fixed_hyperparams, evolvable_hyperparams=self.evolvable_hyperparams)
+        return HyperparameterSpace(fixed_hyperparams=self.fixed_hyperparams,
+                                   evolvable_hyperparams=self.evolvable_hyperparams)
 
     def load_default_space(self, estimator_class):
         """Load a default hyperparameter space using the application service."""
         return self.service.load_default_hyperparameter_space(estimator_class)
+
+    @staticmethod
+    def get_default_space(estimator_class):
+        """Returns a default hyperparameter space using the application service."""
+        tmp_service = HyperparameterSpaceService()
+        return tmp_service.load_default_hyperparameter_space(estimator_class=estimator_class)
 
     def save_space(self, hyperparam_space, file_path, overwrite=False):
         """Save the hyperparameter space using the application service."""

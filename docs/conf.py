@@ -23,6 +23,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
+    'sphinx.ext.autosectionlabel',
     'sphinx.ext.autosummary',
     'sphinx_gallery.gen_gallery',
     'sphinx_mdinclude',
@@ -30,39 +31,60 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.graphviz',
     'sphinx.ext.intersphinx',
-    'autoapi.extension',
+    #'autoapi.extension',
     'sphinx_favicon',
     'sphinxcontrib.mermaid'
 ]
 
-templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+autosectionlabel_prefix_document = True
+autosectionlabel_maxdepth = 2
 
-autoapi_dirs = ['../mloptimizer']
-autoapi_type = "python"
-autoapi_options = [
-    "members",
-    "undoc-members",
-    "show-inheritance",
-    "show-module-summary",
-    "imported-members",
-]
-autodoc_typehints = "signature"
-autoapi_ignore = ['*test*']
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+}
+
+templates_path = ['_templates']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store',
+                    '*/test/*']
+
+# autoapi_dirs = ['../mloptimizer']
+# autoapi_type = "python"
+# autoapi_options = [
+#    "members",
+#    "undoc-members",
+#    "show-inheritance",
+#    "show-module-summary",
+#    "imported-members",
+#]
+#autodoc_typehints = "signature"
+#autoapi_ignore = ['*test*']
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_book_theme'
+html_theme = 'pydata_sphinx_theme'
 # html_static_path = ['_static']
 
 image_scrapers = ('matplotlib', plotly_sg_scraper,)
 
 autodoc_default_flags = ['members']
-autosummary_generate = True
-autoclass_content = 'both'
-html_show_sourcelink = False
+autodoc_default_options = {
+    'members': True,
+    'undoc-members': True,  # Include undocumented members
+    'show-inheritance': True,  # Display class inheritance
+    'inherited-members': True  # Document inherited members
+}
+autodoc_typehints_format = 'fully-qualified' # has to be a one of ('fully-qualified', 'short')
 autodoc_inherit_docstrings = True
+
+autosummary_generate = False
+autoclass_content = 'both'
+
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
+
+html_show_sourcelink = False
 set_type_checking_flag = True
 
 sphinx_gallery_conf = {
@@ -76,8 +98,18 @@ sphinx_gallery_conf = {
 }
 
 html_theme_options = {
-    "repository_url": "https://github.com/Caparrini/mloptimizer",
-    "use_repository_button": True,
+    "show_nav_level": 2,  # Control the navigation levels displayed
+    "show_prev_next": False,  # Hide previous/next links
+    "navigation_depth": 3,  # Set navigation depth to control sidebar depth
+    "icon_links": [
+        {
+            "name": "GitHub",  # The name that will appear on hover
+            "url": "https://github.com/Caparrini/mloptimizer",  # Your repository URL
+            "icon": "fab fa-github-square",  # FontAwesome icon for GitHub
+            "type": "fontawesome",  # Use FontAwesome icons
+        }
+    ],
+    "navbar_end": ["theme-switcher", "icon-links"],  # Add the icon to the end of the navbar
 }
 
 html_logo = 'http://raw.githubusercontent.com/Caparrini/mloptimizer-static/main/logos/mloptimizer_banner_readme.png'

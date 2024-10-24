@@ -28,7 +28,7 @@ Welcome to mloptimizer's documentation!
    :maxdepth: 3
    :caption: API reference:
 
-   autoapi/index
+   api/api_reference
 
 .. toctree::
    :maxdepth: 1
