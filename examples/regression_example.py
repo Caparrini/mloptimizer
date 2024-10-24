@@ -33,13 +33,12 @@ hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(RandomFo
 
 # %%
 # We use the Optimizer class to optimize a regression model.
-from mloptimizer.application import Optimizer
-mlopt = Optimizer(estimator_class=RandomForestRegressor,
-                      hyperparam_space=hyperparam_space,
-                      features=X, labels=y, folder="regression_example")
+from mloptimizer.interfaces import GeneticSearch
+mlopt = GeneticSearch(estimator_class=RandomForestRegressor,
+                      hyperparam_space=hyperparam_space)
 
-clf = mlopt.optimize_clf(8, 5)
-
+mlopt.fit(X, y, 8, 5)
+clf = opt.best_estimator_
 # %%
 # The best individual is returned by the optimize_clf method.
 # However, this individual is not the trained model, but the hyperparameters used to train the best model.
@@ -66,16 +65,15 @@ custom_hyperparam_space = HyperparameterSpace(fixed_hyperparams, evolvable_hyper
 # %%
 # Furthermore, it is possible to set the metrics used to evaluate the model, and use one of them as the fitness score.
 from sklearn.metrics import mean_squared_error, root_mean_squared_error
-regression_metrics = {
-        "mse": mean_squared_error,
-        "rmse": root_mean_squared_error
-}
+#regression_metrics = {
+#        "mse": mean_squared_error,
+#        "rmse": root_mean_squared_error
+#}
 
-mlopt = Optimizer(estimator_class=RandomForestRegressor,
-                  hyperparam_space=custom_hyperparam_space,
-                  fitness_score='rmse', metrics=regression_metrics,
-                  features=X, labels=y, folder="regression_example")
+mlopt = GeneticSearch(estimator_class=RandomForestRegressor,
+                      hyperparam_space=custom_hyperparam_space,
+                      scoring='rmse')
 
-clf = mlopt.optimize_clf(5, 5)
+mlopt.fit(X, y, 100, 10)
 
-print(clf)
+print(mlopt.best_estimator_)
