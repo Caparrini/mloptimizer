@@ -143,7 +143,7 @@ class GeneticAlgorithm:
                                                          mutpb=mutation_prob, ngen=n_generations, halloffame=hof,
                                                          checkpoint_path=self.tracker.opt_run_checkpoint_path,
                                                          stats=self.stats)
-
+        self.logbook = logbook
         self._log_and_visualize_results(logbook)
 
         return population, logbook, hof

@@ -20,10 +20,10 @@ from time import time
 from functools import reduce
 import plotly
 
-from mloptimizer.application import Optimizer
 from mloptimizer.domain.hyperspace import HyperparameterSpace, Hyperparam
 from mloptimizer.domain.evaluation import kfold_stratified_score
 from mloptimizer.application.reporting.plots import plotly_search_space
+from mloptimizer.interfaces import HyperparameterSpaceBuilder, GeneticSearch
 
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_val_score
 from sklearn.datasets import load_iris
@@ -69,9 +69,9 @@ print(f"1) Description of the dataset")
 print(f"Dataset: {name}, X shape: {X.shape}, y shape: {y.shape}")
 
 # %%
-# 2) Genetic Optimization of XGBoost Algorithm
+# 2) Genetic Search of XGBoost Algorithm
 # --------------------------------------------
-# Genetic optimization is performed using the mloptimizer library to fine-tune the hyperparameters of the XGBoost
+# Genetic search optimization is performed using the mloptimizer library to fine-tune the hyperparameters of the XGBoost
 # algorithm.
 #
 # Hyperparameters to Optimize:
@@ -111,24 +111,22 @@ evolvable_hyperparams = {
 }
 hyperparameter_space = HyperparameterSpace(fixed_hyperparams, evolvable_hyperparams)
 
-opt = Optimizer(
+opt = GeneticSearch(
     estimator_class=XGBClassifier,
-    features=X,
-    labels=y,
     hyperparam_space=hyperparameter_space,
     eval_function=kfold_stratified_score,
-    fitness_score="balanced_accuracy", seed=0,
+    scoring="balanced_accuracy", seed=0,
     use_parallel=False
 )
 population_size = 10
 generations = 10
 t0_gen = time()
-clf = opt.optimize_clf(population_size=population_size, generations=generations)  # Aprox 100 elements
+clf = opt.fit(X,y, population_size=population_size, generations=generations)  # Aprox 100 elements
 t1_gen = time()
 print(f"Genetic optimization around {population_size * (generations + 1)} algorithm executions")
 execution_time_gen = round(t1_gen - t0_gen, 2)
 print(f"Time of the genetic optimization {execution_time_gen} s")
-population_df = opt.genetic_algorithm.population_2_df()
+population_df = opt.optimizer_service.optimizer.genetic_algorithm.population_2_df()
 print(f"Genetic optimization {population_df.shape[0]} algorithm executions")
 df = population_df[list(hyperparameter_space.evolvable_hyperparams.keys()) + ['fitness']]
 fig_gen = plotly_search_space(df).update_layout(

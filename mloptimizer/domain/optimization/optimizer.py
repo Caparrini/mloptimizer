@@ -245,7 +245,7 @@ class Optimizer:
                                                                      checkpoint=checkpoint)
 
         #self.runs.append(ga_runner)
-        self.logbook = logbook
+        #self.logbook = logbook
 
         # self.populations = population
         # self.populations.append([[ind, ind.fitness] for ind in population])
