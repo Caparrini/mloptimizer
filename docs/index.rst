@@ -8,38 +8,15 @@ Welcome to mloptimizer's documentation!
 
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Home:
+   :maxdepth: 4
 
    readme_link
-
-.. toctree::
-   :maxdepth: 1
-   :caption: User guide:
-
-   sections/introduction
-   sections/installation
-   sections/Basics/index
-   sections/Concepts/index
+   sections/install
+   sections/user_guide
+   api/api_reference
    auto_examples/index
    sections/mloptimizerUI
-
-.. toctree::
-   :maxdepth: 3
-   :caption: API reference:
-
-   api/api_reference
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Development:
-
    sections/development
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Releases:
-
    sections/changelog
 
 

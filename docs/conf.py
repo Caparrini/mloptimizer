@@ -64,7 +64,9 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store',
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'pydata_sphinx_theme'
-# html_static_path = ['_static']
+html_static_path = ['_static']
+html_css_files = ["custom.css"]
+html_js_files = ["custom.js"]
 
 image_scrapers = ('matplotlib', plotly_sg_scraper,)
 
@@ -84,7 +86,7 @@ autoclass_content = 'both'
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
 
-html_show_sourcelink = False
+html_show_sourcelink = True
 set_type_checking_flag = True
 
 sphinx_gallery_conf = {
@@ -101,6 +103,7 @@ html_theme_options = {
     "show_nav_level": 2,  # Control the navigation levels displayed
     "show_prev_next": False,  # Hide previous/next links
     "navigation_depth": 3,  # Set navigation depth to control sidebar depth
+    "navbar_align": "left",  # Align the navbar to the left
     "icon_links": [
         {
             "name": "GitHub",  # The name that will appear on hover

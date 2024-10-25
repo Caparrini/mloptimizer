@@ -1,5 +1,5 @@
 ====================
-Installation
+Install
 ====================
 This package is available in the `Python Package Index
 <http://pypi.python.org/pypi/mloptimizer>`__.
@@ -40,3 +40,12 @@ To install ``mloptimizer``, then simply run:
 .. code:: bash
 
    pip install mloptimizer
+
+===============
+Troubleshooting
+===============
+
+If you experience any unexpected issues during the installation of mloptimizer,
+you’re welcome to submit a report to the `issue tracker <https://github.com/Caparrini/mloptimizer/issues>`_.
+Before doing so, please review the commonly detected issues listed here.
+Currently, there are no known installation issues.
