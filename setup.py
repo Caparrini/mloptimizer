@@ -1,10 +1,13 @@
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
 import pathlib
+import os
 
 here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / "README.md").read_text(encoding="utf-8")
-version = (here / "VERSION").read_text().strip()
+base_version = (here / "VERSION").read_text().strip()
+suffix = os.getenv("VERSION_SUFFIX", "")
+version = f"{base_version}{suffix}"
 
 
 
