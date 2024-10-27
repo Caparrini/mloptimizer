@@ -22,12 +22,18 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install build
 
+    - name: Determine Branch Associated with Tag
+      id: get_branch
+      run: |
+        branch=$(git branch -r --contains ${GITHUB_SHA} | grep -v '\->' | head -n 1 | sed 's/.*\///')
+        echo "branch_name=$branch" >> $GITHUB_ENV
+
     - name: Set Version Suffix Based on Branch
       run: |
-        if [ "${GITHUB_REF_NAME}" == "master" ] || [ "${GITHUB_REF_NAME}" == "main" ]; then
-          echo "VERSION_SUFFIX=" >> $GITHUB_ENV
+        if [ "${branch_name}" == "main" ] || [ "${branch_name}" == "master" ]; then
+           echo "VERSION_SUFFIX=" >> $GITHUB_ENV
         else
-          echo "VERSION_SUFFIX=-${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          echo "VERSION_SUFFIX=-alpha" >> $GITHUB_ENV
         fi
 
     - name: Build a binary wheel and a source tarball
