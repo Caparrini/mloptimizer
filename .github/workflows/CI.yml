@@ -9,7 +9,8 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.9, '3.10', 3.11]
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: ${{ (github.ref_type == 'branch' && contains(['main', 'master'], github.ref_name)) && ['ubuntu-latest', 'windows-latest', 'macOS-latest'] || ['ubuntu-latest'] }}
+
 
     steps:
       - name: Checkout code
