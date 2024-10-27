@@ -33,13 +33,31 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Install pytest and pytest-cov
-        run: pip install pytest pytest-cov
+        run: pip install pytest pytest-cov pytest-mock
 
       - name: Install mlflow
         run: pip install mlflow
 
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV  # Set PYTHONPATH to the root of the project
+
+      - name: List directory structure
+        run: |
+          echo "Listing project directory:"
+          ls -R  # Recursively list the directory contents to help diagnose the structure
+
+      - name: Print Python version and Path
+        run: |
+          echo "Python version:"
+          python --version
+          echo "Python Path:"
+          python -c "import sys; print(sys.path)"  # Print Python's path to see if mloptimizer is included
+
       - name: Run tests and collect coverage
-        run: pytest --cov mloptimizer
+        run: |
+          echo "Running tests..."
+          pytest --cov=mloptimizer -v  # Use verbose mode for more output
 
       - name: Upload coverage to Codecov
         if: github.ref_name == 'dev' || github.ref_name == 'alpha' || github.ref_name == 'master'

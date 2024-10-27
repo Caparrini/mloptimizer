@@ -49,8 +49,8 @@ The simplest example of using the Optimizer is:
 
 .. code-block:: python
 
-    from mloptimizer.core import Optimizer
-    from mloptimizer.hyperparams import HyperparameterSpace
+    from mloptimizer.application import Optimizer
+    from mloptimizer.domain.hyperspace import HyperparameterSpace
     from xgboost import XGBClassifier
     from sklearn.datasets import load_iris
 
@@ -89,7 +89,7 @@ An example of using custom hyperparameters is:
 
 .. code-block:: python
 
-    from mloptimizer.hyperparams import Hyperparam, HyperparameterSpace
+    from mloptimizer.domain.hyperspace import Hyperparam, HyperparameterSpace
     # Define your custom hyperparameters
     fixed_hyperparams = {
         'max_depth': 5
@@ -136,8 +136,8 @@ An example of two executions of the optimization process with the same seed that
 
 .. code-block:: python
 
-    from mloptimizer.core import Optimizer
-    from mloptimizer.hyperparams import HyperparameterSpace
+    from mloptimizer.application import Optimizer
+    from mloptimizer.domain.hyperspace import HyperparameterSpace
     from xgboost import XGBClassifier
     from sklearn.datasets import load_iris
 

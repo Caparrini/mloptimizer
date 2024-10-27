@@ -20,10 +20,10 @@ from time import time
 from functools import reduce
 import plotly
 
-from mloptimizer.core import Optimizer
-from mloptimizer.hyperparams import HyperparameterSpace, Hyperparam
-from mloptimizer.evaluation import kfold_stratified_score
-from mloptimizer.aux.plots import plotly_search_space
+from mloptimizer.domain.hyperspace import HyperparameterSpace, Hyperparam
+from mloptimizer.domain.evaluation import kfold_stratified_score
+from mloptimizer.application.reporting.plots import plotly_search_space
+from mloptimizer.interfaces import HyperparameterSpaceBuilder, GeneticSearch
 
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_val_score
 from sklearn.datasets import load_iris
@@ -32,6 +32,9 @@ from xgboost import XGBClassifier
 
 from hyperopt import STATUS_OK, hp, tpe
 from hyperopt import Trials, fmin
+
+width = 1000
+height = 1000
 
 # %%
 # 1) Dataset Description
@@ -66,9 +69,9 @@ print(f"1) Description of the dataset")
 print(f"Dataset: {name}, X shape: {X.shape}, y shape: {y.shape}")
 
 # %%
-# 2) Genetic Optimization of XGBoost Algorithm
+# 2) Genetic Search of XGBoost Algorithm
 # --------------------------------------------
-# Genetic optimization is performed using the mloptimizer library to fine-tune the hyperparameters of the XGBoost
+# Genetic search optimization is performed using the mloptimizer library to fine-tune the hyperparameters of the XGBoost
 # algorithm.
 #
 # Hyperparameters to Optimize:
@@ -108,30 +111,28 @@ evolvable_hyperparams = {
 }
 hyperparameter_space = HyperparameterSpace(fixed_hyperparams, evolvable_hyperparams)
 
-opt = Optimizer(
+opt = GeneticSearch(
     estimator_class=XGBClassifier,
-    features=X,
-    labels=y,
     hyperparam_space=hyperparameter_space,
     eval_function=kfold_stratified_score,
-    fitness_score="balanced_accuracy", seed=0,
+    scoring="balanced_accuracy", seed=0,
     use_parallel=False
 )
 population_size = 10
 generations = 10
 t0_gen = time()
-clf = opt.optimize_clf(population_size=population_size, generations=generations)  # Aprox 100 elements
+clf = opt.fit(X,y, population_size=population_size, generations=generations)  # Aprox 100 elements
 t1_gen = time()
 print(f"Genetic optimization around {population_size * (generations + 1)} algorithm executions")
 execution_time_gen = round(t1_gen - t0_gen, 2)
 print(f"Time of the genetic optimization {execution_time_gen} s")
-population_df = opt.runs[0].population_2_df()
+population_df = opt.optimizer_service.optimizer.genetic_algorithm.population_2_df()
 print(f"Genetic optimization {population_df.shape[0]} algorithm executions")
 df = population_df[list(hyperparameter_space.evolvable_hyperparams.keys()) + ['fitness']]
 fig_gen = plotly_search_space(df).update_layout(
     autosize=True,
-    width=800,  # Adjust width as needed
-    height=800,  # Adjust height as needed
+    width=width,  # Adjust width as needed
+    height=height,  # Adjust height as needed
     margin=dict(l=20, r=20, t=50, b=20)  # Adjust margins as needed
 )
 plotly.io.show(fig_gen)
@@ -194,8 +195,8 @@ synth_population_gs = pd.DataFrame(clf_gs.cv_results_['params'])
 synth_population_gs['fitness'] = clf_gs.cv_results_['mean_test_score']
 fig_gs = plotly_search_space(synth_population_gs).update_layout(
     autosize=True,
-    width=800,  # Adjust width as needed
-    height=800,  # Adjust height as needed
+    width=width,  # Adjust width as needed
+    height=height,  # Adjust height as needed
     margin=dict(l=20, r=20, t=50, b=20)  # Adjust margins as needed
 )
 plotly.io.show(fig_gs)
@@ -258,8 +259,8 @@ synth_population_rs = pd.DataFrame(clf_rs.cv_results_['params'])
 synth_population_rs['fitness'] = clf_rs.cv_results_['mean_test_score']
 fig_rs = plotly_search_space(synth_population_rs).update_layout(
     autosize=True,
-    width=800,  # Adjust width as needed
-    height=800,  # Adjust height as needed
+    width=width,  # Adjust width as needed
+    height=height,  # Adjust height as needed
     margin=dict(l=20, r=20, t=50, b=20)  # Adjust margins as needed
 )
 print(f"Random Search optimization has run {synth_population_rs.shape[0]} algorithm executions")
@@ -331,8 +332,8 @@ synth_population_bay.columns = [col.replace('vals_', '') for col in synth_popula
 
 fig_bay = plotly_search_space(synth_population_bay).update_layout(
     autosize=True,
-    width=800,  # Adjust width as needed
-    height=800,  # Adjust height as needed
+    width=width,  # Adjust width as needed
+    height=height,  # Adjust height as needed
     margin=dict(l=20, r=20, t=50, b=20)  # Adjust margins as needed
 )
 print(f"Bayesian Search optimization has run {num_eval} algorithm executions")

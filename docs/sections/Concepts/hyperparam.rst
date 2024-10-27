@@ -92,7 +92,7 @@ Here's an example of how you can create a `HyperparameterSpace` instance and pas
 
 .. code-block:: python
 
-   from mloptimizer.hyperparams import Hyperparam, HyperparameterSpace
+   from mloptimizer.domain.hyperspace import Hyperparam, HyperparameterSpace
 
    # Define custom hyperparameters
    fixed_hyperparams = {
@@ -113,7 +113,7 @@ Here's an example of how you can create a `HyperparameterSpace` instance and pas
    # Then we can use the hyperparam_space instance to optimize the hyperparameters
    from sklearn.tree import DecisionTreeClassifier
    from sklearn.datasets import load_iris
-   from mloptimizer.core import Optimizer
+   from mloptimizer.application import Optimizer
 
    # Load the iris dataset
    X,y = load_iris(return_X_y=True)
