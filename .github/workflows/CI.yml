@@ -1,29 +1,48 @@
-name: Tests workflow for Codecov
+name: CI/CD Workflow for mloptimizer
+
 on: [push, pull_request]
+
 jobs:
-  run:
+  test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         python-version: [3.9, '3.10', 3.11]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Set up Python 3.x environment
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
+
       - name: Install dependencies
         run: pip install -r requirements.txt
+
       - name: Install pytest and pytest-cov
         run: pip install pytest pytest-cov
+
       - name: Install mlflow
         run: pip install mlflow
+
       - name: Run tests and collect coverage
         run: pytest --cov mloptimizer
+
       - name: Upload coverage to Codecov
+        if: github.ref_name == 'dev' || github.ref_name == 'alpha' || github.ref_name == 'master'
         uses: codecov/codecov-action@v3
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
