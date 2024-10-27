@@ -7,14 +7,19 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 import os
 import sys
+import pathlib
 from plotly.io._sg_scraper import plotly_sg_scraper
+
+# Path to the VERSION file
+version_file = pathlib.Path(__file__).parent.parent / "VERSION"
+version = version_file.read_text().strip()
 
 sys.path.insert(0, os.path.abspath('..'))
 
 project = 'mloptimizer'
 copyright = '2024, Antonio Caparrini, Javier Arroyo'
 author = 'Antonio Caparrini, Javier Arroyo'
-release = '0.8.7'
+release = version
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
