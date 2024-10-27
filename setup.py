@@ -143,7 +143,7 @@ setup(
     # If there are data files included in your packages that need to be
     # installed, specify them here.
     package_data={  # Optional
-        "mloptimizer": ["infrastructure/conf/*"],
+        "mloptimizer": ["infrastructure/config/*"],
     },
     # Entry points. The following would provide a command called `sample` which
     # executes the function `main` from this package when invoked:
