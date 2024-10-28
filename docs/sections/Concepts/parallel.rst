@@ -18,8 +18,8 @@ An example of the speedup that can be achieved using parallel processing is show
 
 .. code-block:: python
 
-    from mloptimizer.core import Optimizer
-    from mloptimizer.hyperparams import HyperparameterSpace
+    from mloptimizer.application import Optimizer
+    from mloptimizer.domain.hyperspace import HyperparameterSpace
     from sklearn.tree import DecisionTreeClassifier
     from sklearn.datasets import load_iris
     import time

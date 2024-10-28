@@ -17,8 +17,8 @@ An example of usage is:
 
     from sklearn.datasets import load_breast_cancer as dataset
     from sklearn.tree import DecisionTreeClassifier
-    from mloptimizer.core import Optimizer
-    from mloptimizer.hyperparams import HyperparameterSpace
+    from mloptimizer.application import Optimizer
+    from mloptimizer.domain.hyperspace import HyperparameterSpace
 
     X, y = load_iris(return_X_y=True)
     default_hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(DecisionTreeClassifier)

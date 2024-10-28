@@ -1,9 +1,14 @@
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
 import pathlib
+import os
 
 here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / "README.md").read_text(encoding="utf-8")
+base_version = (here / "VERSION").read_text().strip()
+suffix = os.getenv("VERSION_SUFFIX", "")
+version = f"{base_version}{suffix}"
+
 
 
 def read_requirements(requirements_file):
@@ -30,7 +35,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/guides/single-sourcing-package-version/
-    version="0.8.7",  # Required
+    version=version,  # Required
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#summary
@@ -138,7 +143,7 @@ setup(
     # If there are data files included in your packages that need to be
     # installed, specify them here.
     package_data={  # Optional
-        "mloptimizer": ["conf/*"],
+        "mloptimizer": ["infrastructure/config/**/*"],
     },
     # Entry points. The following would provide a command called `sample` which
     # executes the function `main` from this package when invoked:
