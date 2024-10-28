@@ -38,9 +38,11 @@ extensions = [
     'sphinx.ext.intersphinx',
     #'autoapi.extension',
     'sphinx_favicon',
-    'sphinxcontrib.mermaid'
+    'sphinxcontrib.mermaid',
+    'sphinx_github_changelog',
 ]
 
+sphinx_github_changelog_token = os.getenv("SPHINX_GITHUB_CHANGELOG_TOKEN")
 autosectionlabel_prefix_document = True
 autosectionlabel_maxdepth = 2
 
