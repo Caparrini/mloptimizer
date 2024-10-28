@@ -12,18 +12,7 @@ from plotly.io._sg_scraper import plotly_sg_scraper
 
 # Path to the VERSION file
 version_file = pathlib.Path(__file__).parent.parent / "VERSION"
-base_version = version_file.read_text().strip()
-# Check if we are on Read the Docs
-on_rtd = os.getenv("READTHEDOCS") == "True"
-# Determine suffix based on the branch
-suffix = ""
-if on_rtd:
-    branch = os.getenv("READTHEDOCS_VERSION", "main")
-    if branch in ["main", "master"]:
-        suffix = ""
-    else:
-        suffix = f"-{branch}"
-version = f'{base_version}{suffix}'
+version = version_file.read_text().strip()
 
 sys.path.insert(0, os.path.abspath('..'))
 
