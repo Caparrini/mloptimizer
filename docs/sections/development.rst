@@ -11,3 +11,4 @@ used to maintain code quality and streamline deployment.
    :numbered:
 
    Development/process
+   Development/contributors

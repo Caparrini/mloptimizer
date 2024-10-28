@@ -27,3 +27,4 @@ xgboost>=1.7.3
 hyperopt
 ucimlrepo
 sphinx-github-changelog
+sphinx-contributors

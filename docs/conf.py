@@ -40,6 +40,7 @@ extensions = [
     'sphinx_favicon',
     'sphinxcontrib.mermaid',
     'sphinx_github_changelog',
+    'sphinx_contributors'
 ]
 
 sphinx_github_changelog_token = os.getenv("SPHINX_GITHUB_CHANGELOG_TOKEN")
