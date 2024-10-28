@@ -1,0 +1,45 @@
+name: Build and Install Test for mloptimizer
+
+on:
+  push:
+    branches:
+      - alpha
+  pull_request:
+    branches:
+      - alpha
+
+jobs:
+  build-install-test:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Python environment (choose Python version as needed)
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.10'
+
+      # Install build tool and create the package
+      - name: Install build tool and build package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build
+          python -m build --sdist --wheel --outdir dist/
+
+      # Set up virtual environment and install the built package
+      - name: Test package installation in a clean environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install dist/*.whl  # Install the wheel package created
+          # Confirm installation
+          pip show mloptimizer
+
+      # Run tests to ensure package works as expected without source code
+      - name: Run package tests
+        run: |
+          source venv/bin/activate
+          pytest --pyargs mloptimizer  # Run tests directly from installed package
