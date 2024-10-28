@@ -28,3 +28,4 @@ hyperopt
 ucimlrepo
 sphinx-github-changelog
 sphinx-contributors
+sphinx_copybutton
