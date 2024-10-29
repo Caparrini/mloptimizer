@@ -38,12 +38,6 @@ jobs:
           # Confirm installation
           pip show mloptimizer
 
-      - name: Install pytest not included in mloptimizer
-        run: |
           python -m pip install pytest pytest-mock pytest-cov
 
-      # Run tests to ensure package works as expected without source code
-      - name: Run package tests
-        run: |
-          source venv/bin/activate
           pytest --pyargs mloptimizer  # Run tests directly from installed package
