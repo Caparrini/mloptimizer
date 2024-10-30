@@ -39,5 +39,6 @@ jobs:
           pip show mloptimizer
 
           python -m pip install pytest pytest-mock pytest-cov
+          python -m pip install mlflow
 
           pytest --pyargs mloptimizer  # Run tests directly from installed package
