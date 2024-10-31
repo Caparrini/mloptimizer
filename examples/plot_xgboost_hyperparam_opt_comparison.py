@@ -111,17 +111,21 @@ evolvable_hyperparams = {
 }
 hyperparameter_space = HyperparameterSpace(fixed_hyperparams, evolvable_hyperparams)
 
+population_size = 10
+generations = 10
+
 opt = GeneticSearch(
     estimator_class=XGBClassifier,
     hyperparam_space=hyperparameter_space,
+    genetic_params_dict={"generations": generations, "population_size": population_size},
     eval_function=kfold_stratified_score,
     scoring="balanced_accuracy", seed=0,
     use_parallel=False
 )
-population_size = 10
-generations = 10
+
+
 t0_gen = time()
-clf = opt.fit(X,y, population_size=population_size, generations=generations)  # Aprox 100 elements
+clf = opt.fit(X,y)  # Aprox 100 elements
 t1_gen = time()
 print(f"Genetic optimization around {population_size * (generations + 1)} algorithm executions")
 execution_time_gen = round(t1_gen - t0_gen, 2)

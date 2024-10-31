@@ -17,6 +17,9 @@ class GeneticSearch:
     hyperparam_space : dict or HyperparameterSpace
         The hyperparameter search space as a dictionary or a `HyperparameterSpace` object.
 
+    genetic_params_dict : dict, optional (default=None)
+        Genetic algorithm parameters for the optimization process. If None, default parameters are used.
+
     eval_function : callable, optional (default=None)
         Custom evaluation function for the estimator. If None, the default estimator's score method is used.
 
@@ -44,9 +47,14 @@ class GeneticSearch:
         A log of the optimization progress, containing details such as fitness scores and hyperparameters
         evaluated during each generation.
     """
+    default_genetic_params = {
+        "generations": 20,
+        "population_size": 15,
+    }
 
     def __init__(self, estimator_class, hyperparam_space, eval_function=None,
-                 seed=None, scoring=None, use_parallel=False, cv=None):
+                 genetic_params_dict=None, seed=None, scoring=None, use_parallel=False,
+                 cv=None):
         """Initialize the GeneticOptimizer with the necessary components."""
         self.optimizer_service = OptimizerService(
             estimator_class=estimator_class,
@@ -59,12 +67,16 @@ class GeneticSearch:
         self.hyperparam_service = HyperparameterSpaceService()
         self.cv = cv  # Optional cross-validator
 
+        # Set the genetic algorithm parameters
+        self.genetic_params = genetic_params_dict or self.default_genetic_params
+
         # Attributes to store the best results
         self.best_estimator_ = None
         self.best_params_ = None
         self.cv_results_ = None
 
-    def fit(self, X, y, generations=10, population_size=50):
+
+    def fit(self, X, y):
         """
         Run the genetic algorithm optimization to fit the best model.
 
@@ -76,12 +88,6 @@ class GeneticSearch:
         y : np.array
             Label set for the optimization process.
 
-        generations : int, optional (default=10)
-            Number of generations for the genetic algorithm to run.
-
-        population_size : int, optional (default=50)
-            Size of the population for the genetic algorithm.
-
         Returns
         -------
         self : object
@@ -91,7 +97,11 @@ class GeneticSearch:
             raise ValueError("Features and labels must not be empty.")
 
         # Perform optimization via the optimizer service
-        estimator_with_best_params = self.optimizer_service.optimize(X, y, generations, population_size)
+        estimator_with_best_params = self.optimizer_service.optimize(
+                                        X, y,
+                                        self.genetic_params["generations"],
+                                        self.genetic_params["population_size"]
+                                    )
         self.best_estimator_ = estimator_with_best_params.fit(X, y)
 
         # Extract best hyperparameters from the optimizer service
@@ -245,4 +255,33 @@ class GeneticSearch:
         """
         for param, value in params.items():
             setattr(self, param, value)
+        return self
+
+    def get_genetic_params(self):
+        """
+        Get the genetic algorithm parameters.
+
+        Returns
+        -------
+        genetic_params : dict
+            Genetic algorithm parameters.
+        """
+        return self.genetic_params
+
+    def set_genetic_params(self, **params):
+        """
+        Set the genetic algorithm parameters.
+
+        Parameters
+        ----------
+        **params : dict
+            Genetic algorithm parameters to update.
+
+        Returns
+        -------
+        self : object
+            Updated `GeneticOptimizer` object.
+        """
+        for param, value in params.items():
+            self.genetic_params[param] = value
         return self
