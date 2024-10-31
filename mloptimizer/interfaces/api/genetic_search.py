@@ -74,6 +74,8 @@ class GeneticSearch:
         self.best_estimator_ = None
         self.best_params_ = None
         self.cv_results_ = None
+        self.logbook_ = None
+        self.populations_ = None
 
 
     def fit(self, X, y):
@@ -107,8 +109,14 @@ class GeneticSearch:
         # Extract best hyperparameters from the optimizer service
         self.best_params_ = self.best_estimator_.get_params()
 
-        # Store the detailed cross-validation or genetic algorithm results
+        # Store the detailed cross-validation or genetic algorithm results TODO
         self.cv_results_ = self.optimizer_service.optimizer.genetic_algorithm.logbook
+
+        # Store logbook
+        self.logbook_ = self.optimizer_service.optimizer.genetic_algorithm.logbook
+
+        # Store population df
+        self.populations_ = self.optimizer_service.optimizer.genetic_algorithm.population_2_df()
 
         return self
 
@@ -161,6 +169,17 @@ class GeneticSearch:
             The hyperparameter space object to be used for optimization.
         """
         self.optimizer_service.set_hyperparameter_space(hyperparam_space)
+
+    def get_evolvable_hyperparams(self):
+        """
+        Get the evolvable hyperparameters from the hyperparameter space.
+
+        Returns
+        -------
+        evolvable_hyperparams : dict
+            Dictionary of evolvable hyperparameters.
+        """
+        return self.optimizer_service.hyperparam_space.evolvable_hyperparams
 
     def set_eval_function(self, eval_function: callable):
         """

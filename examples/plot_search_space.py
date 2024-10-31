@@ -41,8 +41,8 @@ clf = opt.best_estimator_
 
 # %%
 # Following we can generate the plot of the search space
-population_df = opt.optimizer_service.optimizer.genetic_algorithm.population_2_df()
-param_names = list(opt.optimizer_service.hyperparam_space.evolvable_hyperparams.keys())
+population_df = opt.populations_
+param_names = list(opt.get_evolvable_hyperparams().keys())
 param_names.append("fitness")
 df = population_df[param_names]
 g_search_space = plotly_search_space(df, param_names)
