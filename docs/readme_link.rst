@@ -1,4 +1,4 @@
-MLOptimizer
+mloptimizer
 ===========
 
 .. mdinclude:: ../README.md

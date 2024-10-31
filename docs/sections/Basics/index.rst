@@ -8,7 +8,7 @@ The class includes methods for setting up the optimization process,
 defining the hyperparameters to be optimized, and running the optimization.
 
 The BaseOptimizer class is designed to be subclassed.
-MLOptimizer provides several subclasses of the BaseOptimizer class.
+mloptimizer provides several subclasses of the BaseOptimizer class.
 
 
 

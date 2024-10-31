@@ -3,7 +3,7 @@ Reproducibility
 
 Reproducibility is a key aspect of
 scientific research, and more precisely,
-in machine learning. ``MLOptimizer`` provides an
+in machine learning. ``mloptimizer`` provides an
 input parameter ``seed`` that allows to set
 the random seed for:
 

@@ -1,5 +1,5 @@
 ====================
-MLOptimizer UI
+mloptimizer UI
 ====================
 
-This page is here, to provide some content for the use of the MLOptimizer UI. (Work in progress)
+This page is here, to provide some content for the use of the mloptimizer UI. (Work in progress)

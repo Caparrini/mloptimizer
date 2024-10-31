@@ -1,13 +1,13 @@
 ============
 Introduction
 ============
-This user guide is an introduction to the MLOptimizer library,
+This user guide is an introduction to the mloptimizer library,
 designed to optimize machine learning models with a focus on ease of use of the Deap library.
 The guide will demonstrate the library's capabilities through examples and highlight its features and customization options.
 
-MLOptimizer is intended to complement detailed API documentation, offering practical insights and optimal usage strategies.
+mloptimizer is intended to complement detailed API documentation, offering practical insights and optimal usage strategies.
 
-While MLOptimizer integrates seamlessly with Python's machine learning ecosystem,
+While mloptimizer integrates seamlessly with Python's machine learning ecosystem,
 it's built on Deap optimization algorithms, which are not specific to machine learning.
 This guide primarily uses Python examples, providing a
 straightforward path for practitioners familiar with Python-based machine learning libraries.
@@ -32,7 +32,7 @@ Using mloptimizer
 
 Step 1: Select and Setup the Algorithm to Optimize
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-MLOptimizer uses a wrapper, `SklearnOptimizer`, for the algorithm for classification or regression that is going to be optimized.
+mloptimizer uses a wrapper, `SklearnOptimizer`, for the algorithm for classification or regression that is going to be optimized.
 It currently have default hyperparameter spaces the following algorithms:
 
 - `DecisionTreeClassifier`: Decision Tree Classifier from scikit-learn
