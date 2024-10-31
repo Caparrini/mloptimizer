@@ -50,25 +50,30 @@ class GeneticSearch:
     default_genetic_params = {
         "generations": 20,
         "population_size": 15,
+        'cxpb':  0.5, 'mutpb': 0.5,
+        'n_elites': 10, 'tournsize': 3, 'indpb': 0.05
     }
 
     def __init__(self, estimator_class, hyperparam_space, eval_function=None,
                  genetic_params_dict=None, seed=None, scoring=None, use_parallel=False,
                  cv=None):
         """Initialize the GeneticOptimizer with the necessary components."""
+        # Set the genetic algorithm parameters
+        self.genetic_params = self.default_genetic_params
+        self.set_genetic_params(**(genetic_params_dict or {}))
+
         self.optimizer_service = OptimizerService(
             estimator_class=estimator_class,
             hyperparam_space=hyperparam_space,
+            genetic_params=self.genetic_params,
             eval_function=eval_function,
             scoring=scoring,
             seed=seed or random.randint(0, 1000000),
             use_parallel=use_parallel
         )
+
         self.hyperparam_service = HyperparameterSpaceService()
         self.cv = cv  # Optional cross-validator
-
-        # Set the genetic algorithm parameters
-        self.genetic_params = genetic_params_dict or self.default_genetic_params
 
         # Attributes to store the best results
         self.best_estimator_ = None
@@ -99,11 +104,7 @@ class GeneticSearch:
             raise ValueError("Features and labels must not be empty.")
 
         # Perform optimization via the optimizer service
-        estimator_with_best_params = self.optimizer_service.optimize(
-                                        X, y,
-                                        self.genetic_params["generations"],
-                                        self.genetic_params["population_size"]
-                                    )
+        estimator_with_best_params = self.optimizer_service.optimize(X, y)
         self.best_estimator_ = estimator_with_best_params.fit(X, y)
 
         # Extract best hyperparameters from the optimizer service

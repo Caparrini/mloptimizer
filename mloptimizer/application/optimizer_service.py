@@ -13,6 +13,7 @@ class OptimizerService:
     """
 
     def __init__(self, estimator_class, hyperparam_space: HyperparameterSpace,
+                 genetic_params: dict,
                  eval_function: callable = train_score, scoring = None,
                  metrics:dict = None, seed: int=None, use_parallel: bool=False):
         """
@@ -24,6 +25,8 @@ class OptimizerService:
             The machine learning model class (e.g., RandomForestClassifier, SVC).
         hyperparam_space : HyperparameterSpace
             The hyperparameter space defining which parameters to evolve and optimize.
+        genetic_params : dict
+            The parameters for the genetic algorithm optimization.
         eval_function : callable, optional
             The function to evaluate the model performance, defaulting to train_score.
         metrics : dict, optional
@@ -35,6 +38,7 @@ class OptimizerService:
         """
         self.estimator_class = estimator_class
         self.hyperparam_space = hyperparam_space
+        self.genetic_params = genetic_params
         self.eval_function = eval_function or train_score
         self.scoring = get_default_fitness_score(estimator_class, scoring)
         self.metrics = metrics
@@ -42,7 +46,7 @@ class OptimizerService:
         self.use_parallel = use_parallel
         self.optimizer = None
 
-    def optimize(self, features: np.array, labels: np.array, generations=10, population_size=50):
+    def optimize(self, features: np.array, labels: np.array):
         """
         Optimize the machine learning model using genetic algorithms.
 
@@ -75,7 +79,7 @@ class OptimizerService:
         )
 
         # Run the genetic algorithm-based optimization and return the best model
-        best_model = self.optimizer.optimize_clf(population_size=population_size, generations=generations)
+        best_model = self.optimizer.optimize_clf(**self.genetic_params)
         return best_model
 
     def set_hyperparameter_space(self, hyperparam_space: HyperparameterSpace):
@@ -99,3 +103,15 @@ class OptimizerService:
             A new evaluation function to use during the optimization.
         """
         self.eval_function = eval_function
+
+    def set_genetic_params(self, genetic_params: dict):
+        """
+        Allows the user to set or change the genetic algorithm parameters dynamically.
+
+        Parameters:
+        ----------
+        genetic_params : dict
+            The new genetic algorithm parameters to use during the optimization.
+        """
+        for key, value in genetic_params.items():
+            self.genetic_params[key] = value
