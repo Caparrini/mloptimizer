@@ -112,6 +112,10 @@ with examples, classes and methods reference.
 * **Antonio Caparrini** - *Author* - [caparrini](https://github.com/caparrini)
 * **Javier Arroyo Gallardo** - *Author* - [javiag](https://github.com/javiag)
 
+## Analytics
+
+![Alt](https://repobeats.axiom.co/api/embed/e971cafaa4d71a2f24df2ede80714b2e2d06901f.svg "Repobeats analytics image")
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
