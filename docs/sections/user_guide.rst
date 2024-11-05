@@ -8,6 +8,7 @@ User Guide
    :maxdepth: 3
    :numbered:
 
-   introduction
-   Basics/index
-   Concepts/index
+   Introduction/index
+   Quickstart/index
+   Results/index
+   Advanced/index
