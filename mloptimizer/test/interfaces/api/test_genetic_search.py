@@ -62,6 +62,7 @@ def genetic_optimizer_rf(hyperparam_space_rf):
     return GeneticSearch(
         estimator_class=RandomForestClassifier,
         hyperparam_space=hyperparam_space_rf,
+        genetic_params_dict={"generations": 5, "population_size": 5},
         eval_function=None,
         seed=42,
         use_parallel=False
@@ -74,6 +75,7 @@ def genetic_optimizer_svc(hyperparam_space_svc):
     return GeneticSearch(
         estimator_class=SVC,
         hyperparam_space=hyperparam_space_svc,
+        genetic_params_dict={"generations": 5, "population_size": 5},
         eval_function=None,
         seed=42,
         use_parallel=False
@@ -86,6 +88,7 @@ def genetic_optimizer_dt(hyperparam_space_dt):
     return GeneticSearch(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=hyperparam_space_dt,
+        genetic_params_dict={"generations": 5, "population_size": 5},
         eval_function=None,
         seed=42,
         use_parallel=False
@@ -95,7 +98,7 @@ def genetic_optimizer_dt(hyperparam_space_dt):
 def test_fit_random_forest(genetic_optimizer_rf, iris_data):
     """Test fitting the GeneticOptimizerAPI with RandomForestClassifier using the Iris dataset."""
     X, y = iris_data
-    genetic_optimizer_rf.fit(X, y, generations=5, population_size=10)
+    genetic_optimizer_rf.fit(X, y)
 
     # Validate that the best estimator and best parameters are set
     assert genetic_optimizer_rf.best_estimator_ is not None
@@ -109,7 +112,7 @@ def test_fit_svc(genetic_optimizer_svc, breast_cancer_data):
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
 
-    genetic_optimizer_svc.fit(X, y, generations=5, population_size=10)
+    genetic_optimizer_svc.fit(X, y)
 
     # Validate that the best estimator and best parameters are set
     assert genetic_optimizer_svc.best_estimator_ is not None
@@ -120,7 +123,7 @@ def test_fit_svc(genetic_optimizer_svc, breast_cancer_data):
 def test_predict(genetic_optimizer_rf, iris_data):
     """Test predicting with the fitted model from GeneticOptimizerAPI with RandomForestClassifier."""
     X, y = iris_data
-    genetic_optimizer_rf.fit(X, y, generations=5, population_size=10)
+    genetic_optimizer_rf.fit(X, y)
 
     predictions = genetic_optimizer_rf.predict(X)
 
@@ -132,7 +135,7 @@ def test_predict(genetic_optimizer_rf, iris_data):
 def test_score(genetic_optimizer_rf, iris_data):
     """Test scoring with the fitted model from GeneticOptimizerAPI with RandomForestClassifier."""
     X, y = iris_data
-    genetic_optimizer_rf.fit(X, y, generations=5, population_size=10)
+    genetic_optimizer_rf.fit(X, y)
 
     score = genetic_optimizer_rf.score(X, y)
 
@@ -148,7 +151,7 @@ def test_set_hyperparameter_space(genetic_optimizer_rf, hyperparam_space_dt, iri
     genetic_optimizer_rf.set_hyperparameter_space(hyperparam_space_dt)
 
     # Fit with the new hyperparameter space
-    genetic_optimizer_rf.fit(X, y, generations=3, population_size=5)
+    genetic_optimizer_rf.fit(X, y)
 
     # Validate that the model was fitted with the new hyperparameter space
     assert genetic_optimizer_rf.best_estimator_ is not None
@@ -195,3 +198,28 @@ def test_load_hyperparameter_space(genetic_optimizer_rf, tmp_path):
     assert loaded_hyperparam_space is not None
     assert isinstance(loaded_hyperparam_space, HyperparameterSpace)
     assert loaded_hyperparam_space == hyperparam_space
+
+
+def test_get_genetic_params(genetic_optimizer_rf):
+    """Test getting the genetic algorithm parameters."""
+    genetic_params = genetic_optimizer_rf.get_genetic_params()
+
+    # Validate that the genetic parameters are retrieved correctly
+    assert genetic_params is not None
+    assert isinstance(genetic_params, dict)
+    assert genetic_params["generations"] == 5
+    assert genetic_params["population_size"] == 5
+
+
+def test_set_genetic_params(genetic_optimizer_rf):
+    """Test setting the genetic algorithm parameters."""
+    # Update genetic parameters
+    new_genetic_params = {"generations": 10, "population_size": 8}
+    genetic_optimizer_rf.set_genetic_params(**new_genetic_params)
+
+    # Retrieve the updated genetic parameters
+    updated_genetic_params = genetic_optimizer_rf.get_genetic_params()
+
+    # Validate that the genetic parameters were updated correctly
+    assert updated_genetic_params["generations"] == 10
+    assert updated_genetic_params["population_size"] == 8

@@ -5,6 +5,8 @@
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/mloptimizer.svg)](https://pypi.python.org/pypi/mloptimizer/)
 [![Tests](https://github.com/Caparrini/mloptimizer/actions/workflows/CI.yml/badge.svg)](https://github.com/Caparrini/mloptimizer/actions/workflows/CI.yml)
 [![Coverage Status](http://codecov.io/github/Caparrini/mloptimizer/coverage.svg?branch=master)](https://app.codecov.io/gh/Caparrini/mloptimizer)
+[![Shield: Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-Support-yellow?logo=buymeacoffee)](https://www.buymeacoffee.com/caparrini)
+
 
 
 **mloptimizer** is a Python library for optimizing hyperparameters of machine learning algorithms using genetic algorithms. 
@@ -65,12 +67,15 @@ X, y = load_iris(return_X_y=True)
 hyperparameter_space = HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier)
 
 # 3) Create the optimizer and optimize the classifier
+# - 10 generations starting with a population of 10 individuals, other parameters are set to default
+
 opt = GeneticSearch(estimator_class=DecisionTreeClassifier,
-                    hyperparam_space=hyperparameter_space)
+                    hyperparam_space=hyperparameter_space,
+                    genetic_params_dict={"generations": 5, "population_size": 5}
+                    )
 
 # 4) Optimize the classifier, the optimization returns the best estimator found in the optimization process
-# - 10 generations starting with a population of 10 individuals, other parameters are set to default
-opt.fit(X, y, population_size=10, generations=10)
+opt.fit(X, y)
 
 print(opt.best_estimator_)
 ```
@@ -108,6 +113,10 @@ with examples, classes and methods reference.
 
 * **Antonio Caparrini** - *Author* - [caparrini](https://github.com/caparrini)
 * **Javier Arroyo Gallardo** - *Author* - [javiag](https://github.com/javiag)
+
+## Analytics
+
+![Alt](https://repobeats.axiom.co/api/embed/e971cafaa4d71a2f24df2ede80714b2e2d06901f.svg "Repobeats analytics image")
 
 ## License
 

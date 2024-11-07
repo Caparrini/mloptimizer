@@ -30,14 +30,13 @@ hyperparam_space = HyperparameterSpaceBuilder.get_default_space(estimator_class=
 # The GeneticSearch class is the main wrapper for the optimization of a machine learning model.
 opt = GeneticSearch(
         estimator_class=DecisionTreeClassifier, hyperparam_space=hyperparam_space,
+        genetic_params_dict={"generations": 30, "population_size": 100}
     )
 
 # %%
 # To optimizer the classifier we need to call the optimize_clf method.
-# The first argument is the number of generations and
-# the second is the number of individuals in each generation.
 # The method returns the best classifier with the best hyperparameters found.
-opt.fit(X, y, 100, 30)
+opt.fit(X, y)
 
 print(opt.best_estimator_)
 

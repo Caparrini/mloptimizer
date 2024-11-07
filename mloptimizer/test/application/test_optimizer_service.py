@@ -30,11 +30,12 @@ def test_optimizer_service_with_estimators(estimator_class, default_metrics_dict
     optimizer_service = OptimizerService(
         estimator_class=estimator_class,
         hyperparam_space=hyperparam_space,
+        genetic_params={"generations": 5, "population_size": 5},
         metrics=default_metrics_dict,
         seed=42,
         use_parallel=False
     )
-    best_model = optimizer_service.optimize(x, y, generations=5, population_size=5)
+    best_model = optimizer_service.optimize(x, y)
     assert best_model is not None
 
 @pytest.mark.parametrize('estimator_class',
@@ -51,11 +52,12 @@ def test_optimizer_service_with_datasets(estimator_class, dataset, default_metri
     optimizer_service = OptimizerService(
         estimator_class=estimator_class,
         hyperparam_space=hyperparam_space,
+        genetic_params={"generations": 5, "population_size": 5},
         metrics=default_metrics_dict,
         seed=42,
         use_parallel=False
     )
-    best_model = optimizer_service.optimize(x, y, generations=5, population_size=5)
+    best_model = optimizer_service.optimize(x, y)
     assert best_model is not None
 
 @pytest.mark.parametrize('estimator_class',
@@ -75,24 +77,26 @@ def test_optimizer_service_parallel_speedup(estimator_class, dataset, default_me
     optimizer_service_parallel = OptimizerService(
         estimator_class=estimator_class,
         hyperparam_space=hyperparam_space,
+        genetic_params={"generations": generations, "population_size": population_size},
         metrics=default_metrics_dict,
         seed=seed,
         use_parallel=True
     )
     start_time_parallel = time.time()
-    best_model_parallel = optimizer_service_parallel.optimize(x, y, generations=generations, population_size=population_size)
+    best_model_parallel = optimizer_service_parallel.optimize(x, y)
     end_time_parallel = time.time()
     elapsed_time_parallel = end_time_parallel - start_time_parallel
 
     optimizer_service = OptimizerService(
         estimator_class=estimator_class,
         hyperparam_space=hyperparam_space,
+        genetic_params={"generations": generations, "population_size": population_size},
         metrics=default_metrics_dict,
         seed=seed,
         use_parallel=False
     )
     start_time = time.time()
-    best_model = optimizer_service.optimize(x, y, generations=generations, population_size=population_size)
+    best_model = optimizer_service.optimize(x, y)
     end_time = time.time()
     elapsed_time = end_time - start_time
 
@@ -123,30 +127,33 @@ def test_optimizer_service_reproducibility(estimator_class, default_metrics_dict
     optimizer_service_1 = OptimizerService(
         estimator_class=estimator_class,
         hyperparam_space=hyperparam_space,
+        genetic_params={"generations": generations, "population_size": population_size},
         metrics=default_metrics_dict,
         eval_function=eval_function,
         seed=seed,
         use_parallel=False
     )
-    best_model_1 = optimizer_service_1.optimize(x, y, generations=generations, population_size=population_size)
+    best_model_1 = optimizer_service_1.optimize(x, y)
     optimizer_service_2 = OptimizerService(
         estimator_class=estimator_class,
         hyperparam_space=hyperparam_space,
+        genetic_params={"generations": generations, "population_size": population_size},
         metrics=default_metrics_dict,
         eval_function=eval_function,
         seed=seed,
         use_parallel=False
     )
-    best_model_2 = optimizer_service_2.optimize(x, y, generations=generations, population_size=population_size)
+    best_model_2 = optimizer_service_2.optimize(x, y)
     optimizer_service_3 = OptimizerService(
         estimator_class=estimator_class,
         hyperparam_space=hyperparam_space,
+        genetic_params={"generations": generations, "population_size": population_size},
         metrics=default_metrics_dict,
         eval_function=eval_function,
         seed=distinct_seed,
         use_parallel=False
     )
-    best_model_3 = optimizer_service_3.optimize(x, y, generations=generations, population_size=population_size)
+    best_model_3 = optimizer_service_3.optimize(x, y)
     assert str(best_model_1) == str(best_model_2)
     assert str(best_model_1) != str(best_model_3)
 
@@ -156,6 +163,7 @@ def test_optimizer_service_set_evaluator(tmp_path, default_metrics_dict):
     optimizer_service = OptimizerService(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=hyperparam_space,
+        genetic_params={"generations": 5, "population_size": 5},
         metrics=default_metrics_dict,
         seed=42,
         use_parallel=False
@@ -163,7 +171,7 @@ def test_optimizer_service_set_evaluator(tmp_path, default_metrics_dict):
     new_eval_function = train_test_score
     optimizer_service.set_eval_function(new_eval_function)
     assert optimizer_service.eval_function == new_eval_function
-    best_model = optimizer_service.optimize(x, y, generations=3, population_size=5)
+    best_model = optimizer_service.optimize(x, y)
     assert best_model is not None
 
 def test_optimizer_service_set_hyperparameter_space(tmp_path):
@@ -172,6 +180,7 @@ def test_optimizer_service_set_hyperparameter_space(tmp_path):
     optimizer_service = OptimizerService(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=initial_hyperparam_space,
+        genetic_params={"generations": 5, "population_size": 5},
         eval_function=train_test_score,
         seed=42,
         use_parallel=False
@@ -185,7 +194,7 @@ def test_optimizer_service_set_hyperparameter_space(tmp_path):
     )
     optimizer_service.set_hyperparameter_space(new_hyperparam_space)
     assert optimizer_service.hyperparam_space == new_hyperparam_space
-    best_model = optimizer_service.optimize(x, y, generations=3, population_size=5)
+    best_model = optimizer_service.optimize(x, y)
     assert best_model is not None
 
 def test_optimizer_service_invalid_hyperparameter_space(tmp_path):
@@ -199,25 +208,27 @@ def test_optimizer_service_invalid_hyperparameter_space(tmp_path):
     optimizer_service = OptimizerService(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=invalid_hyperparam_space,
+        genetic_params={"generations": 5, "population_size": 5},
         eval_function=accuracy_score,
         seed=42,
         use_parallel=False
     )
     with pytest.raises(ValueError,
                        match="Parameters {'invalid_param'} are not parameters of DecisionTreeClassifier"):
-        optimizer_service.optimize(x, y, generations=3, population_size=5)
+        optimizer_service.optimize(x, y)
 
 def test_optimizer_service_hyperparameter_space_none(tmp_path):
     x, y = load_iris(return_X_y=True)
     optimizer_service = OptimizerService(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=None,
+        genetic_params={"generations": 5, "population_size": 5},
         eval_function=accuracy_score,
         seed=42,
         use_parallel=False
     )
     with pytest.raises(ValueError, match="hyperparam_space is None"):
-        optimizer_service.optimize(x, y, generations=3, population_size=5)
+        optimizer_service.optimize(x, y)
 
 def test_optimizer_service_custom_svc(tmp_path):
     x, y = load_breast_cancer(return_X_y=True)
@@ -237,9 +248,10 @@ def test_optimizer_service_custom_svc(tmp_path):
     optimizer_service = OptimizerService(
         estimator_class=SVC,
         hyperparam_space=hyperparam_space,
+        genetic_params={"generations": 5, "population_size": 5},
         eval_function=train_test_score,
         seed=42,
         use_parallel=False
     )
-    best_model = optimizer_service.optimize(x, y, generations=3, population_size=5)
+    best_model = optimizer_service.optimize(x, y)
     assert best_model is not None

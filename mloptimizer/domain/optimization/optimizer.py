@@ -24,6 +24,8 @@ class Optimizer:
         np.array with the labels
     hyperparam_space : HyperparameterSpace
         object with the hyperparameter space: fixed and evolvable hyperparams
+    genetic_params : dict
+        dictionary with the parameters of the genetic algorithm
     evaluator : Evaluator
         object to evaluate the classifier
     eval_dict : dict
@@ -43,6 +45,7 @@ class Optimizer:
     def __init__(self, estimator_class, features: np.array, labels: np.array,
                  folder=os.curdir, log_file="mloptimizer.log",
                  hyperparam_space: HyperparameterSpace = None,
+                 genetics_params: dict = None,
                  eval_function=train_score,
                  fitness_score=None, metrics=None, seed=random.randint(0, 1000000),
                  use_parallel=False, use_mlflow=False):
@@ -63,6 +66,8 @@ class Optimizer:
             log file name
         hyperparam_space : HyperparameterSpace, optional (default=None)
             object with the hyperparameter space: fixed and evolvable hyperparams
+        genetics_params : dict, optional (default=None)
+            dictionary with the parameters of the genetic algorithm
         eval_function : func, optional (default=train_score)
             function to evaluate the model from X, y, clf
         fitness_score : str, optional (default="accuracy")
@@ -90,6 +95,7 @@ class Optimizer:
         # ML Evaluator
         # if metrics is None:
         #     metrics = {"accuracy": accuracy_score}
+        self.genetic_params = genetics_params
 
         # State vars
         self.eval_dict = {}
@@ -178,6 +184,9 @@ class Optimizer:
         # clf = self.estimator_class(random_state=self.mlopt_seed, **individual_dict)
         return self.individual_utils.get_clf(individual)
 
+    #def optimize_clf(self, population_size: int = 10, generations: int = 3,
+    #                 cxpb=0.5, mutpb=0.5, tournsize=4, indpb=0.5, n_elites=10,
+    #                 checkpoint: str = None, opt_run_folder_name: str = None) -> object:
     def optimize_clf(self, population_size: int = 10, generations: int = 3,
                      cxpb=0.5, mutpb=0.5, tournsize=4, indpb=0.5, n_elites=10,
                      checkpoint: str = None, opt_run_folder_name: str = None) -> object:

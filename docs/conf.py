@@ -11,7 +11,7 @@ import pathlib
 from plotly.io._sg_scraper import plotly_sg_scraper
 
 # Path to the VERSION file
-version_file = pathlib.Path(__file__).parent.parent / "VERSION"
+version_file = pathlib.Path(__file__).parent.parent / "mloptimizer" / "VERSION"
 version = version_file.read_text().strip()
 
 sys.path.insert(0, os.path.abspath('..'))
@@ -51,6 +51,15 @@ autosectionlabel_maxdepth = 2
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
+    'scikit-learn': ('https://scikit-learn.org/stable/', None),
+    'mlflow': ('https://www.mlflow.org/docs/latest/', None),
+    'xgboot': ('https://xgboost.readthedocs.io/en/latest/', None),
+    'lightgbm': ('https://lightgbm.readthedocs.io/en/latest/', None),
+    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
+    'matplotlib': ('https://matplotlib.org/stable/', None),
+    'seaborn': ('https://seaborn.pydata.org/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
+    'deap': ('https://deap.readthedocs.io/en/master/', None),
 }
 
 templates_path = ['_templates']
