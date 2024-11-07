@@ -4,7 +4,7 @@ import pathlib
 
 here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / "README.md").read_text(encoding="utf-8")
-version = (here / "VERSION").read_text().strip()
+version = (here / "mloptimizer" / "VERSION").read_text().strip()
 
 
 
@@ -140,7 +140,7 @@ setup(
     # If there are data files included in your packages that need to be
     # installed, specify them here.
     package_data={  # Optional
-        "mloptimizer": ["infrastructure/config/**/*"],
+        "mloptimizer": ["infrastructure/config/**/*", "VERSION"],
     },
     # Entry points. The following would provide a command called `sample` which
     # executes the function `main` from this package when invoked:

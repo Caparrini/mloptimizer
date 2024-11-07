@@ -11,7 +11,7 @@ import pathlib
 from plotly.io._sg_scraper import plotly_sg_scraper
 
 # Path to the VERSION file
-version_file = pathlib.Path(__file__).parent.parent / "VERSION"
+version_file = pathlib.Path(__file__).parent.parent / "mloptimizer" / "VERSION"
 version = version_file.read_text().strip()
 
 sys.path.insert(0, os.path.abspath('..'))

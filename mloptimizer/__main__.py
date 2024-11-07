@@ -3,7 +3,7 @@ from pathlib import Path
 
 def get_version():
     # Read the version from the VERSION file located one directory up
-    version_file = Path(__file__).resolve().parent.parent / "VERSION"
+    version_file = Path(__file__).resolve().parent / "VERSION"
     with open(version_file) as f:
         return f.read().strip()
 
