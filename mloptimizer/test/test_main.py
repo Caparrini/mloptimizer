@@ -4,7 +4,7 @@ from mloptimizer.__main__ import main, get_version
 
 def test_version_output(monkeypatch, capsys):
     # Read the version from the VERSION file directly for the expected output
-    version_file = Path(__file__).resolve().parent.parent.parent / "VERSION"
+    version_file = Path(__file__).resolve().parent.parent / "VERSION"
     with open(version_file) as f:
         expected_version = f.read().strip()
 
