@@ -87,12 +87,18 @@ class HyperparameterSpace:
         """
         try:
             # Load JSON data from the file
-            with open(file_path, 'r') as file:
-                json_data = json.load(file)
+            with open(file_path, 'r', encoding='utf-8') as file:
+                json_text = file.read()  # Read raw JSON string
+                json_data = json.loads(json_text)  # Try to parse it
+
         except FileNotFoundError:
             raise FileNotFoundError(f"The file {file_path} does not exist")
         except json.JSONDecodeError as e:
-            raise json.JSONDecodeError("The file {file_path} is not a valid JSON file", json_data, e.pos)
+            raise json.JSONDecodeError(
+                f"The file '{file_path}' is not a valid JSON file: {e.msg}",
+                doc=json_text,  # The original JSON string
+                pos=e.pos  # The error position
+            )
 
         # Extract fixed hyperparams, just a dictionary
         fixed_hyperparams = json_data['fixed_hyperparams']
