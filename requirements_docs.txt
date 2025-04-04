@@ -7,10 +7,11 @@ keras>=2.13.1rc0
 numpy
 pandas>=1.5.3
 plotly>=5.15.0
+matplotlib<3.10.0
 pytest-cov
 python-dateutil>=2.8.1
 pytz>=2022.7.1
-scikit-learn>=1.2.1
+scikit-learn>=1.2.1,<=1.5.2
 scipy>=1.10.0
 seaborn==0.12.2
 six>=1.15.0

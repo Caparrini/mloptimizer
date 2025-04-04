@@ -126,11 +126,13 @@ class GeneticAlgorithm:
         population_df = self.population_2_df()
         df = population_df[hyperparam_names]
         g = plotly_search_space(df)
-        g.write_html(os.path.join(self.tracker.graphics_path, "search_space.html"))
+        g.write_html(os.path.join(self.tracker.graphics_path, "search_space.html"),
+                     full_html=False, include_plotlyjs='cdn')
         plt.close()
 
         g2 = plotly_logbook(logbook, population_df)
-        g2.write_html(os.path.join(self.tracker.graphics_path, "logbook.html"))
+        g2.write_html(os.path.join(self.tracker.graphics_path, "logbook.html"),
+                     full_html=False, include_plotlyjs='cdn')
         plt.close()
 
     def custom_run(self, population_size: int, n_generations: int, cxpb: float = 0.5, mutation_prob: float = 0.5,
