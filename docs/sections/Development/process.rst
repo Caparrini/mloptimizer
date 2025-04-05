@@ -17,23 +17,27 @@ Pushes and Merge Workflow
 -------------------------
 
 1. **Feature Branch Development**:
+
    - Each developer creates a `featureXXX` branch to work on their feature.
    - When the feature is complete, a pull request (PR) is made to merge `featureXXX` into `dev`.
    - GitHub Actions will automatically run tests and generate a coverage report on the PR.
    - If the tests pass, the feature can be merged into `dev`; if tests fail, the PR cannot be merged until issues are resolved.
 
 2. **Development Integration on `dev`**:
+
    - Multiple `featureXXX` branches may be merged into `dev` concurrently.
    - This branch is intended for integrating and testing new features collectively before staging.
    - When `dev` reaches a stable state with passing tests, it can proceed to the `alpha` branch.
 
 3. **Alpha Testing on `alpha`**:
+
    - The `dev` branch is merged into `alpha` for pre-release validation.
    - GitHub Actions re-runs tests and generates a coverage report to verify stability.
    - If all tests pass, the version is tagged on `alpha`, marking it as ready for release.
    - Build and installation tests are also performed to ensure the package can be installed correctly.
 
 4. **Production Release on `master`**:
+
    - The fully tested and working code is merged into `master`.
    - The version is tagged on `master` to mark it as a stable release.
    - Once there is a tag, a release is created on GitHub, documenting the changes.
