@@ -53,7 +53,7 @@ intersphinx_mapping = {
     'numpy': ('https://numpy.org/doc/stable/', None),
     'scikit-learn': ('https://scikit-learn.org/stable/', None),
     'mlflow': ('https://www.mlflow.org/docs/latest/', None),
-    'xgboot': ('https://xgboost.readthedocs.io/en/latest/', None),
+    'xgboost': ('https://xgboost.readthedocs.io/en/latest/', None),
     'lightgbm': ('https://lightgbm.readthedocs.io/en/latest/', None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
     'matplotlib': ('https://matplotlib.org/stable/', None),
