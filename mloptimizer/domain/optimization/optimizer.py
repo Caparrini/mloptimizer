@@ -262,4 +262,7 @@ class Optimizer:
         # Log and save results
         # self._log_and_save_results(hof)
 
+        # End optimization, if MLflow is used, parent run is ended
+        self.tracker.end_optimization()
+
         return self.individual_utils.get_clf(hof[0])

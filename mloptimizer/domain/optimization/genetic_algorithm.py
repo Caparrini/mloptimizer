@@ -187,6 +187,7 @@ class GeneticAlgorithm:
                 joblib.dump(cp, cp_file)
             self.tracker.write_population_file(self.population_2_df())
             self.tracker.write_logbook_file(logbook)
+            self.tracker.log_clfs([], gen, [])
 
         return population, logbook, halloffame
 

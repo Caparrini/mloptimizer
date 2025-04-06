@@ -130,3 +130,52 @@ Setting the same `seed` value across multiple runs will produce identical result
 .. warning::
 
    On macOS with newer processor architectures (e.g., M1 or M2 chips), users may experience occasional reproducibility issues due to hardware-related differences in random number generation and floating-point calculations. To ensure consistency across runs, we recommend running `mloptimizer` within a Docker container configured for reproducible behavior. This approach helps isolate the environment and improves reproducibility on macOS hardware.
+
+MLflow Integration Example
+------------------------------
+
+To track the optimization process using `MLflow <https://mlflow.org>`_, set the `use_mlflow=True` flag when initializing `GeneticSearch`. Each generation and individual will be logged as nested MLflow runs under a parent optimization run.
+
+.. code-block:: python
+
+    import mlflow
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.datasets import load_iris
+    from sklearn.model_selection import train_test_split
+    from mloptimizer.interfaces import GeneticSearch, HyperparameterSpaceBuilder
+
+    # Start MLflow tracking (optional: only needed if not already set globally)
+    mlflow.set_tracking_uri("http://127.0.0.1:5001")
+
+    # Load dataset
+    X, y = load_iris(return_X_y=True)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+
+    # Define hyperparameter space for DecisionTreeClassifier
+    space = HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier)
+
+    # Run optimization with MLflow logging enabled
+    search = GeneticSearch(
+        estimator_class=DecisionTreeClassifier,
+        hyperparam_space=space,
+        scoring="accuracy",
+        genetic_params_dict={"generations": 5, "population_size": 6},
+        use_mlflow=True
+    )
+
+    search.fit(X_train, y_train)
+
+    # Log the final best model manually (optional)
+    mlflow.sklearn.log_model(search.best_estimator_, "best_model")
+
+    print("Best estimator:", search.best_estimator_)
+
+This will create a parent run for the optimization and a nested run for each evaluated individual with their parameters, fitness score, and metrics.
+
+.. note::
+
+    Ensure an MLflow server is running locally (or remotely) before executing MLflow logging code. You can use:
+
+    .. code-block:: bash
+
+        mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns --port 5001
