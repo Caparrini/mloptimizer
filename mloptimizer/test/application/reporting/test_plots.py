@@ -11,6 +11,7 @@ def default_tree_optimizer():
     x, y = load_iris(return_X_y=True)
     default_hyperparameter_space = HyperparameterSpace.get_default_hyperparameter_space(DecisionTreeClassifier)
     opt = Optimizer(features=x, labels=y, estimator_class=DecisionTreeClassifier,
+                    genetic_params={"population_size": 5, "generations": 5},
                     hyperparam_space=default_hyperparameter_space)
     opt.optimize_clf(10, 10)
     return opt

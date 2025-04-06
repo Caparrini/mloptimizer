@@ -139,6 +139,13 @@ class Tracker:
             os.path.join(self.opt_run_folder, "opt.log")
         )
 
+    def log_dataset(self, X, y):
+        if self.use_mlflow:
+            df_dataset = pd.DataFrame(X)
+            df_dataset["label"] = y
+            dataset = self.mlflow.data.from_pandas(df_dataset)
+            self.mlflow.log_input(dataset, context="training")
+
     def log_clfs(self, classifiers_list: list, generation: int, fitness_list: list[float]):
         self.gen = generation
         self.individual_index = 0
@@ -251,3 +258,7 @@ class Tracker:
     def _init_progress_bar(self, n_generations, msg="Genetic execution"):
         self.gen_pbar = tqdm.tqdm(desc=msg, total=n_generations+1, postfix={"best fitness": "?"})
         # self.pbar.refresh()
+
+    def log_genetic_params(self, genetic_params):
+        if self.use_mlflow:
+            self.mlflow.log_params(genetic_params)

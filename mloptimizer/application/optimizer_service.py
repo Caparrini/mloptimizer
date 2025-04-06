@@ -2,7 +2,6 @@ import random
 import numpy as np
 from mloptimizer.domain.hyperspace import HyperparameterSpace
 from mloptimizer.domain.evaluation import train_score
-from mloptimizer.domain.optimization import Optimizer
 from mloptimizer.application.utils import get_default_fitness_score
 
 
@@ -51,6 +50,7 @@ class OptimizerService:
         self.optimizer = None
 
     def optimize(self, features: np.array, labels: np.array):
+        from mloptimizer.domain.optimization.optimizer import Optimizer  # <- moved here
         """
         Optimize the machine learning model using genetic algorithms.
 
@@ -75,6 +75,7 @@ class OptimizerService:
             features=features,
             labels=labels,
             hyperparam_space=self.hyperparam_space,
+            genetic_params=self.genetic_params,
             eval_function=self.eval_function,
             fitness_score=self.scoring,
             metrics=self.metrics,
