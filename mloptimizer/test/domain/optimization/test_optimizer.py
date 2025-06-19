@@ -48,6 +48,7 @@ def test_mloptimizer(use_mlflow, tmp_path):
     x, y = load_breast_cancer(return_X_y=True)
     mlopt = Optimizer(estimator_class=XGBClassifier,
                       hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBClassifier),
+                      genetic_params={"population_size": 5, "generations": 5},
                       features=x, labels=y, use_mlflow=use_mlflow, folder=tmp_path)
     mlopt.optimize_clf(5, 5)
     assert mlopt is not None
@@ -57,11 +58,13 @@ def test_checkpoints():
     x, y = load_breast_cancer(return_X_y=True)
     mlopt = Optimizer(estimator_class=XGBClassifier,
                       hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBClassifier),
+                      genetic_params={"population_size": 5, "generations": 5},
                       features=x, labels=y)
     clf = mlopt.optimize_clf(5, 5)
 
     mlopt2 = Optimizer(estimator_class=XGBClassifier,
                        hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBClassifier),
+                       genetic_params={"population_size": 5, "generations": 5},
                        features=x, labels=y,
                        seed=mlopt.mlopt_seed)
 
@@ -87,6 +90,7 @@ def test_optimizer(estimator_class, dataset, default_metrics_dict, tmp_path):
     evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
     opt = Optimizer(features=x, labels=y, fitness_score="accuracy",
                     metrics=default_metrics_dict, estimator_class=estimator_class,
+                    genetic_params={"generations": 2, "population_size": 2}, seed=42,
                     hyperparam_space=evolvable_hyperparams, folder=tmp_path)
     clf = opt.optimize_clf(2, 2)
     assert clf is not None
@@ -111,6 +115,7 @@ def test_optimizer_use_parallel(estimator_class, dataset, default_metrics_dict, 
                                   metrics=default_metrics_dict,
                                   seed=my_seed, use_parallel=True,
                                   hyperparam_space=evolvable_hyperparams, estimator_class=estimator_class,
+                                    genetic_params={"population_size": population, "generations": generations},
                                   folder=tmp_path)
 
     start_time_parallel = time.time()
@@ -120,6 +125,7 @@ def test_optimizer_use_parallel(estimator_class, dataset, default_metrics_dict, 
     opt = Optimizer(features=x, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
                     seed=my_seed, use_parallel=False,
                     hyperparam_space=evolvable_hyperparams, estimator_class=estimator_class,
+                    genetic_params={"population_size": population, "generations": generations},
                     folder=tmp_path)
 
     start_time = time.time()
@@ -157,14 +163,17 @@ def test_reproducibility(estimator_class, target_score, default_metrics_dict, tm
     distinct_seed = 2
     optimizer1 = Optimizer(features=x, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
                            eval_function=target_score, seed=seed, estimator_class=estimator_class,
+                           genetic_params={"generations": generations, "population_size": population},
                            hyperparam_space=evolvable_hyperparams, folder=tmp_path)
     result1 = optimizer1.optimize_clf(population_size=population, generations=generations)
     optimizer2 = Optimizer(features=x, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
                            eval_function=target_score, seed=seed, estimator_class=estimator_class,
+                           genetic_params={"generations": generations, "population_size": population},
                            hyperparam_space=evolvable_hyperparams, folder=tmp_path)
     result2 = optimizer2.optimize_clf(population_size=population, generations=generations)
     optimizer3 = Optimizer(features=x, labels=y, fitness_score="accuracy", metrics=default_metrics_dict,
                            eval_function=target_score, seed=distinct_seed, estimator_class=estimator_class,
+                           genetic_params={"generations": generations, "population_size": population},
                            hyperparam_space=evolvable_hyperparams, folder=tmp_path)
     result3 = optimizer3.optimize_clf(population_size=population, generations=generations)
     assert str(result1) == str(result2)
@@ -190,6 +199,7 @@ def test_custom_svc():
                     metrics={"balanced_accuracy": accuracy_score},
                     estimator_class=SVC,
                     hyperparam_space=evolvable_hyperparams,
+                    genetic_params={"generations": 4, "population_size": 60}, seed=42,
                     use_parallel=False)
     clf = opt.optimize_clf(60, 4)
     assert clf is not None
@@ -197,7 +207,9 @@ def test_custom_svc():
 def test_validate_hyperparam_space_none():
     x, y = load_iris(return_X_y=True)
     with pytest.raises(ValueError, match="hyperparam_space is None"):
-        Optimizer(estimator_class=DecisionTreeClassifier, hyperparam_space=None, features=x, labels=y)
+        Optimizer(estimator_class=DecisionTreeClassifier, hyperparam_space=None,
+                  genetic_params={},
+                  features=x, labels=y)
 
 def test_validate_hyperparam_space_invalid_params():
     x, y = load_iris(return_X_y=True)
@@ -211,7 +223,8 @@ def test_validate_hyperparam_space_invalid_params():
                                            fixed_hyperparams=invalid_fixed_hyperparams)
     with pytest.raises(ValueError,
                        match="Parameters {'invalid_param'} are not parameters of DecisionTreeClassifier"):
-        Optimizer(estimator_class=DecisionTreeClassifier, hyperparam_space=hyperparam_space, features=x, labels=y)
+        Optimizer(estimator_class=DecisionTreeClassifier, hyperparam_space=hyperparam_space,
+                  genetic_params={}, features=x, labels=y)
 
 def test_validate_hyperparam_space_valid_params():
     x, y = load_iris(return_X_y=True)
@@ -220,5 +233,6 @@ def test_validate_hyperparam_space_valid_params():
     }
     hyperparam_space = HyperparameterSpace(evolvable_hyperparams=valid_hyperparams,
                                            fixed_hyperparams={})
-    optimizer = Optimizer(estimator_class=DecisionTreeClassifier, hyperparam_space=hyperparam_space, features=x, labels=y)
+    optimizer = Optimizer(estimator_class=DecisionTreeClassifier, hyperparam_space=hyperparam_space,
+                          genetic_params={}, features=x, labels=y)
     assert optimizer is not None

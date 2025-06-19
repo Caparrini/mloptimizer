@@ -35,6 +35,9 @@ class GeneticSearch:
     cv : int, cross-validation generator or an iterable, optional (default=None)
         Cross-validation splitting strategy. If None, the default cross-validation strategy is used.
 
+    use_mlflow : bool, optional (default=False)
+        If True, the optimization process will be tracked using MLFlow. Default is False.
+
     Attributes
     ----------
     best_estimator_ : estimator
@@ -56,7 +59,7 @@ class GeneticSearch:
 
     def __init__(self, estimator_class, hyperparam_space, eval_function=None,
                  genetic_params_dict=None, seed=None, scoring=None, use_parallel=False,
-                 cv=None):
+                 cv=None, use_mlflow=False):
         """Initialize the GeneticOptimizer with the necessary components."""
         # Set the genetic algorithm parameters
         self.genetic_params = self.default_genetic_params
@@ -69,7 +72,8 @@ class GeneticSearch:
             eval_function=eval_function,
             scoring=scoring,
             seed=seed or random.randint(0, 1000000),
-            use_parallel=use_parallel
+            use_parallel=use_parallel,
+            use_mlflow=use_mlflow
         )
 
         self.hyperparam_service = HyperparameterSpaceService()

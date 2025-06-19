@@ -33,6 +33,7 @@ class Tracker:
 
         self.name = name
         self.gen = 0
+        self.individual_index = 0
         # Main folder, current by default
         self.folder = create_optimization_folder(folder)
         # Log files
@@ -55,6 +56,7 @@ class Tracker:
 
         # MLFlow
         self.use_mlflow = use_mlflow
+        self.parent_run = None  # MLflow parent run for the full optimization
 
         # Best fitness
         self.best_fitness = None
@@ -82,6 +84,23 @@ class Tracker:
         if not self.use_parallel:
             self._init_progress_bar(generations)
 
+
+    def end_optimization(self):
+        """
+        Ends the optimization process by finalizing any active MLflow runs.
+
+        This method checks whether MLflow is being used and if a parent MLflow run
+        is active. If both conditions are satisfied, the method ends the active
+        parent run, ensuring proper closure and cleanup associated with the
+        optimization process.
+
+        Raises
+        ------
+        None
+        """
+        if self.use_mlflow and self.parent_run is not None:
+            self.mlflow.end_run()  # Ends the parent run
+
     def start_checkpoint(self, opt_run_folder_name, estimator_class):
         """
         Start a checkpoint for the optimization process.
@@ -101,6 +120,7 @@ class Tracker:
 
         if self.use_mlflow:
             self.mlflow.set_experiment(opt_run_folder_name)
+            self.parent_run = self.mlflow.start_run(run_name=opt_run_folder_name)
 
         self.opt_run_folder = os.path.join(self.folder, opt_run_folder_name)
         self.opt_run_checkpoint_path = os.path.join(self.opt_run_folder, "checkpoints")
@@ -119,8 +139,16 @@ class Tracker:
             os.path.join(self.opt_run_folder, "opt.log")
         )
 
-    def log_clfs(self, classifiers_list: list, generation: int, fitness_list: list[int]):
+    def log_dataset(self, X, y):
+        if self.use_mlflow:
+            df_dataset = pd.DataFrame(X)
+            df_dataset["label"] = y
+            dataset = self.mlflow.data.from_pandas(df_dataset)
+            self.mlflow.log_input(dataset, context="training")
+
+    def log_clfs(self, classifiers_list: list, generation: int, fitness_list: list[float]):
         self.gen = generation
+        self.individual_index = 0
         for i in range(len(classifiers_list)):
             self.optimization_logger.info(f"Generation {generation} - Classifier TOP {i}")
             self.optimization_logger.info(f"Classifier: {classifiers_list[i]}")
@@ -139,13 +167,18 @@ class Tracker:
                 self.gen_pbar.set_postfix({"best fitness": self.best_fitness})
 
         self.optimization_logger.debug(f"Adding to mlflow...\nClassifier: {classifier}\nMetrics: {metrics}")
-
+        self.individual_index += 1
+        individual_index = self.individual_index
         if self.use_mlflow:
-            with self.mlflow.start_run():
+            run_name = f"gen_{self.gen}_ind_{individual_index}_{classifier.__class__.__name__}"
+            with self.mlflow.start_run(run_name=run_name, nested=True):
                 self.mlflow.log_params(classifier.get_params())
                 # We use the generation as the step
                 # self.mlflow.log_metric(key="fitness", value=metric, step=self.gen)
                 self.mlflow.log_metrics(metrics, step=self.gen)
+                self.mlflow.set_tag("generation", self.gen)
+                self.mlflow.set_tag("individual_index", individual_index)
+                self.mlflow.set_tag("estimator", classifier.__class__.__name__)
 
     def load_checkpoint(self, checkpoint):
 
@@ -225,3 +258,7 @@ class Tracker:
     def _init_progress_bar(self, n_generations, msg="Genetic execution"):
         self.gen_pbar = tqdm.tqdm(desc=msg, total=n_generations+1, postfix={"best fitness": "?"})
         # self.pbar.refresh()
+
+    def log_genetic_params(self, genetic_params):
+        if self.use_mlflow:
+            self.mlflow.log_params(genetic_params)

@@ -2,7 +2,6 @@ import random
 import numpy as np
 from mloptimizer.domain.hyperspace import HyperparameterSpace
 from mloptimizer.domain.evaluation import train_score
-from mloptimizer.domain.optimization import Optimizer
 from mloptimizer.application.utils import get_default_fitness_score
 
 
@@ -15,7 +14,8 @@ class OptimizerService:
     def __init__(self, estimator_class, hyperparam_space: HyperparameterSpace,
                  genetic_params: dict,
                  eval_function: callable = train_score, scoring = None,
-                 metrics:dict = None, seed: int=None, use_parallel: bool=False):
+                 metrics:dict = None, seed: int=None, use_parallel: bool=False,
+                 use_mlflow: bool=False):
         """
         Initialize the OptimizerService.
 
@@ -35,6 +35,8 @@ class OptimizerService:
             Random seed for reproducibility, defaults to a random value.
         use_parallel : bool, optional
             Whether to use parallel processing for optimization, defaults to False.
+        use_mlflow : bool, optional
+            Whether to use MLflow for tracking experiments, defaults to False.
         """
         self.estimator_class = estimator_class
         self.hyperparam_space = hyperparam_space
@@ -44,9 +46,11 @@ class OptimizerService:
         self.metrics = metrics
         self.seed = seed or random.randint(0, 1000000)
         self.use_parallel = use_parallel
+        self.use_mlflow = use_mlflow
         self.optimizer = None
 
     def optimize(self, features: np.array, labels: np.array):
+        from mloptimizer.domain.optimization.optimizer import Optimizer  # <- moved here
         """
         Optimize the machine learning model using genetic algorithms.
 
@@ -71,11 +75,13 @@ class OptimizerService:
             features=features,
             labels=labels,
             hyperparam_space=self.hyperparam_space,
+            genetic_params=self.genetic_params,
             eval_function=self.eval_function,
             fitness_score=self.scoring,
             metrics=self.metrics,
             seed=self.seed,
-            use_parallel=self.use_parallel
+            use_parallel=self.use_parallel,
+            use_mlflow=self.use_mlflow
         )
 
         # Run the genetic algorithm-based optimization and return the best model
