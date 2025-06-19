@@ -42,10 +42,12 @@ class Evaluator:
         The tracker to use to log the evaluations
     individual_utils : IndividualUtils
         The individual utils to use to get the classifier from the individual
+    seed : int
+        The random seed to use for reproducibility
     """
 
     def __init__(self, estimator_class, features: np.array, labels: np.array, eval_function, fitness_score=None,
-                 metrics=None, tracker: Tracker = None, individual_utils=None):
+                 metrics=None, tracker: Tracker = None, individual_utils=None, seed: int = 0):
 
         self.estimator_class = estimator_class
         if not is_classifier(self.estimator_class) and not is_regressor(self.estimator_class):
@@ -57,6 +59,7 @@ class Evaluator:
         self.features = features
         self.labels = labels
         self.individual_utils = individual_utils
+        self.seed = seed
 
         if metrics is None:
             if is_classifier(self.estimator_class):
@@ -92,7 +95,17 @@ class Evaluator:
         metrics : dict
             Dictionary of the form {"metric_name": metric_value}
         """
-        metrics = self.eval_function(features, labels, clf, self.metrics)
+        import inspect
+
+        def call_eval_function(eval_function, features, labels, clf, metrics, seed):
+            sig = inspect.signature(eval_function)
+            if "random_state" in sig.parameters:
+                return eval_function(features, labels, clf, metrics, random_state=seed)
+            else:
+                return eval_function(features, labels, clf, metrics)
+
+        metrics = call_eval_function(self.eval_function, features, labels, clf, self.metrics, self.seed)
+
         return metrics
 
     def evaluate_individual(self, individual):

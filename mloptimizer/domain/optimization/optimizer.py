@@ -101,7 +101,7 @@ class Optimizer:
         self.eval_dict = {}
         self.populations = []
         self.logbook = None
-        self.mlopt_seed = None
+        self.mlopt_seed = seed
         self.set_mlopt_seed(seed)
 
         # Parallel
@@ -120,7 +120,8 @@ class Optimizer:
         self.evaluator = Evaluator(estimator_class=self.estimator_class, features=features, labels=labels,
                                    eval_function=eval_function, fitness_score=fitness_score,
                                    metrics=metrics, tracker=self.tracker,
-                                   individual_utils=self.individual_utils)
+                                   individual_utils=self.individual_utils,
+                                   seed=self.mlopt_seed)
 
         # DeapOptimizer
         # self.deap_optimizer = None
