@@ -45,7 +45,7 @@ class Optimizer:
     def __init__(self, estimator_class, features: np.array, labels: np.array,
                  folder=os.curdir, log_file="mloptimizer.log",
                  hyperparam_space: HyperparameterSpace = None,
-                 genetics_params: dict = None,
+                 genetic_params: dict = None,
                  eval_function=train_score,
                  fitness_score=None, metrics=None, seed=random.randint(0, 1000000),
                  use_parallel=False, use_mlflow=False):
@@ -95,13 +95,13 @@ class Optimizer:
         # ML Evaluator
         # if metrics is None:
         #     metrics = {"accuracy": accuracy_score}
-        self.genetic_params = genetics_params
+        self.genetic_params = genetic_params
 
         # State vars
         self.eval_dict = {}
         self.populations = []
         self.logbook = None
-        self.mlopt_seed = None
+        self.mlopt_seed = seed
         self.set_mlopt_seed(seed)
 
         # Parallel
@@ -120,7 +120,8 @@ class Optimizer:
         self.evaluator = Evaluator(estimator_class=self.estimator_class, features=features, labels=labels,
                                    eval_function=eval_function, fitness_score=fitness_score,
                                    metrics=metrics, tracker=self.tracker,
-                                   individual_utils=self.individual_utils)
+                                   individual_utils=self.individual_utils,
+                                   seed=self.mlopt_seed)
 
         # DeapOptimizer
         # self.deap_optimizer = None
@@ -227,6 +228,11 @@ class Optimizer:
         # Creation of folders and checkpoint
         self.tracker.start_checkpoint(opt_run_folder_name, estimator_class=self.estimator_class)
 
+        # Log dataset
+        self.tracker.log_dataset(self.features, self.labels)
+        # Log genetic parameters
+        self.tracker.log_genetic_params(self.genetic_params)
+
         # Creation of deap optimizer
         #self.deap_optimizer = DeapOptimizer(hyperparam_space=self.hyperparam_space, seed=self.mlopt_seed,
         #                                    use_parallel=self.use_parallel,
@@ -261,5 +267,8 @@ class Optimizer:
 
         # Log and save results
         # self._log_and_save_results(hof)
+
+        # End optimization, if MLflow is used, parent run is ended
+        self.tracker.end_optimization()
 
         return self.individual_utils.get_clf(hof[0])

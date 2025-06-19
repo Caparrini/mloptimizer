@@ -44,6 +44,7 @@ def test_mloptimizer(use_mlflow, tmp_path):
     x, y = load_diabetes(return_X_y=True)
     mlopt = Optimizer(estimator_class=XGBRegressor,
                       hyperparam_space=HyperparameterSpace.get_default_hyperparameter_space(XGBRegressor),
+                      genetic_params={"population_size": 5, "generations": 5},
                       features=x, labels=y, use_mlflow=use_mlflow, folder=tmp_path)
     mlopt.optimize_clf(5, 5)
     assert mlopt is not None
