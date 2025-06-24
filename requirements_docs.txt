@@ -2,7 +2,7 @@ catboost>=1.1.1
 deap>=1.3.3
 hyperopt
 joblib>=1.2.0
-kaleido
+kaleido==0.2.1
 keras>=2.13.1rc0
 numpy
 pandas>=1.5.3
