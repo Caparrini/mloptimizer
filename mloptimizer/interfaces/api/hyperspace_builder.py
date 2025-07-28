@@ -101,9 +101,9 @@ class HyperparameterSpaceBuilder:
         ----------
         name : str
             The name of the hyperparameter.
-        min_value : float
+        min_value : int
             The minimum value the parameter can take.
-        max_value : float
+        max_value : int
             The maximum value the parameter can take.
         scale : int, optional
             Scaling factor for the float parameter (default is 100).
