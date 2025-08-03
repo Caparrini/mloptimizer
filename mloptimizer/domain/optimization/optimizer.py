@@ -124,8 +124,6 @@ class Optimizer:
         self.use_mlflow = use_mlflow
 
         # Early stopping
-        if early_stopping and not is_classifier(self.estimator_class):
-            raise ValueError("Early stopping is only supported for classifiers.")
         self.early_stopping = early_stopping
         if self.early_stopping:
             if patience <= 0:
