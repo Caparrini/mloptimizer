@@ -1,4 +1,4 @@
-from domain.evaluation import train_score
+from mloptimizer.domain.evaluation import train_score
 from mloptimizer.application import OptimizerService, HyperparameterSpaceService
 import random
 from sklearn.model_selection import StratifiedKFold, KFold, BaseCrossValidator
@@ -47,6 +47,15 @@ class GeneticSearch:
     use_mlflow : bool, optional (default=False)
         If True, the optimization process will be tracked using MLFlow. Default is False.
 
+    early_stopping : bool, optional (default=False)
+        If True, the optimization will stop early if no improvement is observed in the fitness score.
+
+    patience : int, optional (default=5)
+        Number of generations to wait before stopping if no improvement is observed.
+
+    min_delta : float, optional (default=0.01)
+        Minimum change in the fitness score to qualify as an improvement.
+
     Attributes
     ----------
     best_estimator_ : estimator
@@ -68,7 +77,7 @@ class GeneticSearch:
 
     def __init__(self, estimator_class, hyperparam_space, eval_function=None,
                  genetic_params_dict=None, seed=None, scoring=None, use_parallel=False,
-                 cv=None, use_mlflow=False):
+                 cv=None, use_mlflow=False, early_stopping=False, patience=5, min_delta=0.01):
         """Initialize the GeneticOptimizer with the necessary components."""
         # Set the genetic algorithm parameters
         self.genetic_params = self.default_genetic_params
@@ -110,6 +119,19 @@ class GeneticSearch:
             else:
                 eval_function = train_score
 
+        # Early stopping parameters
+        if not isinstance(early_stopping, bool):
+            raise TypeError("early_stopping must be a boolean value.")
+        self.early_stopping = early_stopping
+
+        if not isinstance(patience, int) or patience < 1:
+            raise ValueError("patience must be a positive integer.")
+        self.patience = patience
+
+        if not isinstance(min_delta, (int, float)):
+            raise TypeError("min_delta must be a numeric value (int or float).")
+        self.min_delta = min_delta
+
         self.optimizer_service = OptimizerService(
             estimator_class=estimator_class,
             hyperparam_space=hyperparam_space,
@@ -118,7 +140,10 @@ class GeneticSearch:
             scoring=scoring,
             seed=self.seed,
             use_parallel=use_parallel,
-            use_mlflow=use_mlflow
+            use_mlflow=use_mlflow,
+            early_stopping=early_stopping,
+            patience=patience,
+            min_delta=min_delta
         )
 
         self.hyperparam_service = HyperparameterSpaceService()
