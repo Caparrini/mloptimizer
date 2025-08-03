@@ -214,6 +214,9 @@ class GeneticAlgorithm:
                 self.stopped_early_ = True
                 break
 
+        if not self.stopped_early_:
+            self.generations_run_ = ngen
+
         return population, logbook, halloffame
 
     def population_2_df(self):
