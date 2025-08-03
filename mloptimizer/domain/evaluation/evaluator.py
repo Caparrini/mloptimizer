@@ -117,18 +117,13 @@ class Evaluator:
 
         # Fallback for partial matches
         else:
-            warnings.warn(
+            raise TypeError(
                 f"The evaluation function `{self.eval_function.__name__}` does not match expected signatures.\n"
                 "It should be either:\n"
                 "  (features, labels, clf, metrics[, random_state]) [OLD STYLE], or\n"
-                "  (clf, X, y, metrics[, random_state]) [NEW STYLE]",
-                DeprecationWarning
+                "  (clf, X, y, metrics[, random_state]) [NEW STYLE].\n"
+                f"Found parameters: {param_names}"
             )
-            # Try default fallback attempt (may fail noisily)
-            try:
-                return self.eval_function(clf, features, labels, self.metrics, random_state=self.seed)
-            except TypeError:
-                return self.eval_function(features, labels, clf, self.metrics)
 
     def evaluate_individual(self, individual):
         clf = self.individual_utils.get_clf(individual)
