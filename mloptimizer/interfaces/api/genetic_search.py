@@ -1,5 +1,9 @@
+from domain.evaluation import train_score
 from mloptimizer.application import OptimizerService, HyperparameterSpaceService
 import random
+from sklearn.model_selection import StratifiedKFold, KFold, BaseCrossValidator
+from mloptimizer.domain.evaluation import make_crossval_eval
+from sklearn.base import is_classifier
 
 
 class GeneticSearch:
@@ -22,6 +26,7 @@ class GeneticSearch:
 
     eval_function : callable, optional (default=None)
         Custom evaluation function for the estimator. If None, the default estimator's score method is used.
+        If provided, `cv` must be None.
 
     seed : int, optional (default=None)
         Random seed for reproducibility. If None, a random seed is generated.
@@ -32,8 +37,12 @@ class GeneticSearch:
     use_parallel : bool, optional (default=False)
         Whether to run the optimization in parallel. If True, parallel processing is enabled.
 
-    cv : int, cross-validation generator or an iterable, optional (default=None)
-        Cross-validation splitting strategy. If None, the default cross-validation strategy is used.
+    cv : int, sklearn.model_selection.BaseCrossValidator, or None
+        Cross-validation strategy:
+        - int: number of splits (StratifiedKFold if classifier, else KFold)
+        - CV splitter object: e.g., StratifiedKFold, KFold, TimeSeriesSplit
+        - None: default behavior inside the optimizer service (train_score function).
+        Cannot be set simultaneously with `eval_function`.
 
     use_mlflow : bool, optional (default=False)
         If True, the optimization process will be tracked using MLFlow. Default is False.
@@ -65,19 +74,54 @@ class GeneticSearch:
         self.genetic_params = self.default_genetic_params
         self.set_genetic_params(**(genetic_params_dict or {}))
 
+        if cv is not None and eval_function is not None:
+            raise ValueError("Only one of 'cv' or 'eval_function' should be provided. Please choose one.")
+
+        # Random seed for reproducibility
+        if seed is None:
+            seed = random.randint(0, 1000000)
+        elif not isinstance(seed, int):
+            raise ValueError("Seed must be an integer.")
+        elif seed < 0:
+            raise ValueError("Seed must be a non-negative integer.")
+        self.seed = seed
+
+        # cv - Cross-validation handling
+        if isinstance(cv, int):
+            if cv < 2:
+                raise ValueError("cv must be >= 2 when given as an integer.")
+            if is_classifier(estimator_class()):
+                self.cv = StratifiedKFold(n_splits=cv, shuffle=True, random_state=self.seed)
+            else:
+                self.cv = KFold(n_splits=cv, shuffle=True, random_state=self.seed)
+        elif isinstance(cv, BaseCrossValidator):
+            self.cv = cv
+        elif cv is None:
+            self.cv = None
+        else:
+            raise TypeError(
+                "`cv` must be an integer, a scikit-learn CV splitter (e.g., KFold), or None."
+            )
+
+        # Build eval_function
+        if eval_function is None:
+            if self.cv is not None:
+                eval_function = make_crossval_eval(self.cv)
+            else:
+                eval_function = train_score
+
         self.optimizer_service = OptimizerService(
             estimator_class=estimator_class,
             hyperparam_space=hyperparam_space,
             genetic_params=self.genetic_params,
             eval_function=eval_function,
             scoring=scoring,
-            seed=seed or random.randint(0, 1000000),
+            seed=self.seed,
             use_parallel=use_parallel,
             use_mlflow=use_mlflow
         )
 
         self.hyperparam_service = HyperparameterSpaceService()
-        self.cv = cv  # Optional cross-validator
 
         # Attributes to store the best results
         self.best_estimator_ = None

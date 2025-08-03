@@ -41,7 +41,7 @@ class OptimizerService:
         self.estimator_class = estimator_class
         self.hyperparam_space = hyperparam_space
         self.genetic_params = genetic_params
-        self.eval_function = eval_function or train_score
+        self.eval_function = eval_function
         self.scoring = get_default_fitness_score(estimator_class, scoring)
         self.metrics = metrics
         self.seed = seed or random.randint(0, 1000000)

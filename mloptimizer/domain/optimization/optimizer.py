@@ -46,7 +46,7 @@ class Optimizer:
                  folder=os.curdir, log_file="mloptimizer.log",
                  hyperparam_space: HyperparameterSpace = None,
                  genetic_params: dict = None,
-                 eval_function=train_score,
+                 eval_function: callable = train_score,
                  fitness_score=None, metrics=None, seed=random.randint(0, 1000000),
                  use_parallel=False, use_mlflow=False):
         """
