@@ -49,6 +49,6 @@ def test_early_stopping_triggers(noisy_dataset):
     ga = optimizer.genetic_algorithm
 
     assert hasattr(ga, "generations_run_")
-    assert ga.generations_run_ < 100, f"Expected early stop before gen 10, but ran {ga.generations_run_}"
+    assert ga.generations_run_ < 100, f"Expected early stopping (patience={genetic_optimizer.patience}) before reaching 100 generations, but ran {ga.generations_run_}"
     assert getattr(ga, "stopped_early_", False) is True
 
