@@ -33,7 +33,7 @@ def test_reproducibility(estimator_class, target_score):
     optimizer1 = GeneticSearch(estimator_class=estimator_class,
                                hyperparam_space=evolvable_hyperparams,
                                eval_function=target_score,
-                               genetic_params_dict=genetic_params,
+                               **genetic_params,
                                seed=seed,
                                scoring="accuracy",
                                use_parallel=False,
@@ -42,14 +42,14 @@ def test_reproducibility(estimator_class, target_score):
 
     optimizer1.fit(x, y)
     result1 = optimizer1.best_params_
-    population_df_1 = optimizer1.optimizer_service.optimizer.genetic_algorithm.population_2_df()
+    population_df_1 = optimizer1._optimizer_service.optimizer.genetic_algorithm.population_2_df()
     best_row_1 = population_df_1.sort_values(by="fitness", ascending=False).iloc[0]
     best_score_1 = float(best_row_1['fitness'])
 
     optimizer2 = GeneticSearch(estimator_class=estimator_class,
                                hyperparam_space=evolvable_hyperparams,
                                eval_function=target_score,
-                               genetic_params_dict=genetic_params,
+                               **genetic_params,
                                seed=seed,
                                scoring="accuracy",
                                use_parallel=False,
@@ -58,14 +58,14 @@ def test_reproducibility(estimator_class, target_score):
 
     optimizer2.fit(x, y)
     result2 = optimizer2.best_params_
-    population_df_2 = optimizer2.optimizer_service.optimizer.genetic_algorithm.population_2_df()
+    population_df_2 = optimizer2._optimizer_service.optimizer.genetic_algorithm.population_2_df()
     best_row_2 = population_df_2.sort_values(by="fitness", ascending=False).iloc[0]
     best_score_2 = float(best_row_2['fitness'])
 
     optimizer3 = GeneticSearch(estimator_class=estimator_class,
                                hyperparam_space=evolvable_hyperparams,
                                eval_function=target_score,
-                               genetic_params_dict=genetic_params,
+                               **genetic_params,
                                seed=distinct_seed,
                                scoring="accuracy",
                                use_parallel=False,
@@ -74,7 +74,7 @@ def test_reproducibility(estimator_class, target_score):
 
     optimizer3.fit(x, y)
     result3 = optimizer3.best_params_
-    population_df_3 = optimizer3.optimizer_service.optimizer.genetic_algorithm.population_2_df()
+    population_df_3 = optimizer3._optimizer_service.optimizer.genetic_algorithm.population_2_df()
     best_row_3 = population_df_3.sort_values(by="fitness", ascending=False).iloc[0]
     best_score_3 = float(best_row_3['fitness'])
 

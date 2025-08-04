@@ -27,7 +27,7 @@ def test_early_stopping_triggers(noisy_dataset):
     genetic_optimizer = GeneticSearch(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier),
-        genetic_params_dict={
+        **{
             "generations": 100,
             "population_size": 50,
             "cxpb": 0.5,
@@ -45,7 +45,7 @@ def test_early_stopping_triggers(noisy_dataset):
 
     genetic_optimizer.fit(X, y)
 
-    optimizer = genetic_optimizer.optimizer_service.optimizer
+    optimizer = genetic_optimizer._optimizer_service.optimizer
     ga = optimizer.genetic_algorithm
 
     assert hasattr(ga, "generations_run_")

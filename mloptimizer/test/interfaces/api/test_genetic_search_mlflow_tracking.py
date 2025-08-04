@@ -54,7 +54,7 @@ def test_genetic_search_creates_mlflow_runs(mlflow_server):
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=space,
         scoring="accuracy",
-        genetic_params_dict={"generations": 2, "population_size": 3},
+        **{"generations": 2, "population_size": 3},
         use_mlflow=True
     )
     search.fit(X_train, y_train)

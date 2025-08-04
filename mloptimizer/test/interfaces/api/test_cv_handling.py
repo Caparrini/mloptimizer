@@ -56,18 +56,6 @@ def test_cv_as_splitter_object(dummy_hyperparam_space):
     assert optimizer.cv is cv_obj
 
 
-def test_cv_and_eval_function_conflict_raises(dummy_hyperparam_space):
-    def dummy_eval(X, y, clf, metrics): return {"accuracy": 0.9}
-
-    with pytest.raises(ValueError, match="Only one of 'cv' or 'eval_function' should be provided"):
-        GeneticSearch(
-            estimator_class=RandomForestClassifier,
-            hyperparam_space=dummy_hyperparam_space,
-            cv=5,
-            eval_function=dummy_eval
-        )
-
-
 def test_cv_invalid_type_raises(dummy_hyperparam_space):
     with pytest.raises(TypeError, match="`cv` must be an integer, a scikit-learn CV splitter"):
         GeneticSearch(

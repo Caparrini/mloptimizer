@@ -29,7 +29,7 @@ def test_genetic_search_cv_int_casts_to_stratifiedkfold(iris_data, hyperparam_sp
         estimator_class=RandomForestClassifier,
         hyperparam_space=hyperparam_space_rf_cv,
         cv=3,  # should be interpreted as StratifiedKFold
-        genetic_params_dict={"generations": 3, "population_size": 4},
+        **{"generations": 3, "population_size": 4},
         seed=42,
         use_parallel=False
     )
@@ -51,7 +51,7 @@ def test_genetic_search_explicit_kfold(iris_data, hyperparam_space_rf_cv):
         estimator_class=RandomForestClassifier,
         hyperparam_space=hyperparam_space_rf_cv,
         cv=custom_cv,
-        genetic_params_dict={"generations": 3, "population_size": 4},
+        **{"generations": 3, "population_size": 4},
         seed=42,
         use_parallel=False
     )
