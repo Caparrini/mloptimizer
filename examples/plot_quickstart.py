@@ -30,7 +30,7 @@ hyperparam_space = HyperparameterSpaceBuilder.get_default_space(estimator_class=
 # The GeneticSearch class is the main wrapper for the optimization of a machine learning model.
 opt = GeneticSearch(
         estimator_class=DecisionTreeClassifier, hyperparam_space=hyperparam_space,
-        genetic_params_dict={"generations": 30, "population_size": 100}
+        **{"generations": 30, "population_size": 100}
     )
 
 # %%

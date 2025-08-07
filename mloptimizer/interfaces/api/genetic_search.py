@@ -9,7 +9,7 @@ from sklearn.base import BaseEstimator, MetaEstimatorMixin
 from copy import deepcopy
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 import numpy as np
-from sklearn.utils import deprecated
+
 
 
 
