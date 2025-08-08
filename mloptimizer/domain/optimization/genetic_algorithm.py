@@ -52,6 +52,9 @@ class GeneticAlgorithm:
         self.stats = None
         self.setup()
 
+        self.generations_run_ = 0
+        self.stopped_early_ = False
+
     def setup(self):
         """
         Set up DEAP's toolbox and statistics (from DeapOptimizer)
@@ -136,7 +139,8 @@ class GeneticAlgorithm:
         plt.close()
 
     def custom_run(self, population_size: int, n_generations: int, cxpb: float = 0.5, mutation_prob: float = 0.5,
-                   n_elites: int = 10, tournsize: int = 3, indpb: float = 0.05, checkpoint: str = None):
+                   n_elites: int = 10, tournsize: int = 3, indpb: float = 0.05, checkpoint: str = None,
+                   early_stopping: bool = False, patience: int = 10, min_delta: float = 0.01):
         """
         Run the genetic algorithm with tracking of each generation (from GeneticAlgorithmRunner)
         """
@@ -144,7 +148,8 @@ class GeneticAlgorithm:
         population, logbook, hof = self.custom_ea_simple(population=pop, toolbox=self.toolbox, cxpb=cxpb,
                                                          mutpb=mutation_prob, ngen=n_generations, halloffame=hof,
                                                          checkpoint_path=self.tracker.opt_run_checkpoint_path,
-                                                         stats=self.stats)
+                                                         stats=self.stats, early_stopping=early_stopping,
+                                                         patience=patience, min_delta=min_delta)
         self.logbook = logbook
         self._log_and_visualize_results(logbook)
 
@@ -152,12 +157,17 @@ class GeneticAlgorithm:
 
     def custom_ea_simple(self, population: list, toolbox: base.Toolbox, cxpb: float = 0.5, mutpb: float = 0.5,
                          start_gen: int = 0, ngen: int = 4, checkpoint_path: str = None, stats: tools.Statistics = None,
-                         halloffame: tools.HallOfFame = None, verbose: bool = True):
+                         halloffame: tools.HallOfFame = None, verbose: bool = True,
+                         early_stopping: bool = False, patience: int = 10, min_delta: float = 0.01):
         """
         Custom evolution algorithm with tracking and checkpointing (from GeneticAlgorithmRunner)
         """
         logbook = tools.Logbook()
         logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
+
+        # Early stopping variables
+        best_fitness = None
+        no_improve = 0
 
         for gen in range(start_gen, ngen + 1):
             self.tracker.start_progress_file(gen)
@@ -188,6 +198,24 @@ class GeneticAlgorithm:
             self.tracker.write_population_file(self.population_2_df())
             self.tracker.write_logbook_file(logbook)
             self.tracker.log_clfs([], gen, [])
+
+            # Early stopping logic
+            gen_best_fitness = max([ind.fitness.values[0] for ind in population])
+
+            if best_fitness is None or gen_best_fitness > best_fitness + min_delta:
+                best_fitness = gen_best_fitness
+                no_improve = 0
+            else:
+                no_improve += 1
+
+            if early_stopping and no_improve >= patience:
+                self.generations_run_ = gen
+                self.tracker.info(f"Early stopping at generation {gen} with best fitness: {best_fitness}")
+                self.stopped_early_ = True
+                break
+
+        if not self.stopped_early_:
+            self.generations_run_ = ngen
 
         return population, logbook, halloffame
 

@@ -25,7 +25,8 @@ from mloptimizer.domain.evaluation import kfold_stratified_score
 from mloptimizer.application.reporting.plots import plotly_search_space
 from mloptimizer.interfaces import HyperparameterSpaceBuilder, GeneticSearch
 
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_val_score
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_val_score, \
+    StratifiedKFold
 from sklearn.datasets import load_iris
 
 from xgboost import XGBClassifier
@@ -114,11 +115,13 @@ hyperparameter_space = HyperparameterSpace(fixed_hyperparams, evolvable_hyperpar
 population_size = 10
 generations = 10
 
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
 opt = GeneticSearch(
     estimator_class=XGBClassifier,
     hyperparam_space=hyperparameter_space,
-    genetic_params_dict={"generations": generations, "population_size": population_size},
-    eval_function=kfold_stratified_score,
+    **{"generations": generations, "population_size": population_size},
+    #eval_function=kfold_stratified_score,
+    cv=cv,
     scoring="balanced_accuracy", seed=0,
     use_parallel=False
 )
