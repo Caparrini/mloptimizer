@@ -40,15 +40,22 @@ class Optimizer:
         flag to use parallel processing
     use_mlflow : bool
         flag to use mlflow
+    early_stopping : bool, optional (default=False)
+        If True, the optimization will stop early if no improvement is observed in the fitness score.
+    patience : int, optional (default=5)
+        Number of generations to wait before stopping if no improvement is observed.
+    min_delta : float, optional (default=0.01)
+        Minimum change in the fitness score to qualify as an improvement.
     """
 
     def __init__(self, estimator_class, features: np.array, labels: np.array,
                  folder=os.curdir, log_file="mloptimizer.log",
                  hyperparam_space: HyperparameterSpace = None,
                  genetic_params: dict = None,
-                 eval_function=train_score,
+                 eval_function: callable = train_score,
                  fitness_score=None, metrics=None, seed=random.randint(0, 1000000),
-                 use_parallel=False, use_mlflow=False):
+                 use_parallel=False, use_mlflow=False,
+                 early_stopping: bool = False, patience: int = 5, min_delta: float = 0.01):
         """
         Creates object BaseOptimizer.
 
@@ -78,6 +85,12 @@ class Optimizer:
             flag to use mlflow
         seed : int, optional (default=0)
             seed for the random functions (deap, models, and splits on evaluations)
+        early_stopping : bool, optional (default=False)
+            If True, the optimization will stop early if no improvement is observed in the fitness score.
+        patience : int, optional (default=5)
+            Number of generations to wait before stopping if no improvement is observed.
+        min_delta : float, optional (default=0.01)
+            Minimum change in the fitness score to qualify as an improvement.
         """
         from mloptimizer.domain.population import IndividualUtils
         # Model class
@@ -109,6 +122,16 @@ class Optimizer:
 
         # mlflow
         self.use_mlflow = use_mlflow
+
+        # Early stopping
+        self.early_stopping = early_stopping
+        if self.early_stopping:
+            if patience <= 0:
+                raise ValueError("Patience must be a positive integer.")
+            if min_delta < 0:
+                raise ValueError("min_delta must be non-negative.")
+        self.patience = patience
+        self.min_delta = min_delta
 
         # Tracker
         self.tracker = Tracker(name="mloptimizer", folder=folder, log_file=log_file, use_mlflow=self.use_mlflow,
@@ -257,7 +280,10 @@ class Optimizer:
                                                                      n_elites=n_elites,
                                                                      tournsize=tournsize,
                                                                      indpb=indpb,
-                                                                     checkpoint=checkpoint)
+                                                                     checkpoint=checkpoint,
+                                                                     early_stopping=self.early_stopping,
+                                                                     patience=self.patience,
+                                                                     min_delta=self.min_delta)
 
         #self.runs.append(ga_runner)
         #self.logbook = logbook

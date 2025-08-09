@@ -57,16 +57,17 @@ def hyperparam_space_dt():
 
 
 @pytest.fixture
-def genetic_optimizer_rf(hyperparam_space_rf):
+def genetic_optimizer_rf(hyperparam_space_rf, iris_data):
     """Fixture to create a GeneticOptimizerAPI instance for RandomForestClassifier."""
+    X, y = iris_data
     return GeneticSearch(
         estimator_class=RandomForestClassifier,
         hyperparam_space=hyperparam_space_rf,
-        genetic_params_dict={"generations": 5, "population_size": 5},
+        **{"generations": 5, "population_size": 5},
         eval_function=None,
         seed=42,
         use_parallel=False
-    )
+    ).fit(X, y)
 
 
 @pytest.fixture
@@ -75,7 +76,7 @@ def genetic_optimizer_svc(hyperparam_space_svc):
     return GeneticSearch(
         estimator_class=SVC,
         hyperparam_space=hyperparam_space_svc,
-        genetic_params_dict={"generations": 5, "population_size": 5},
+        **{"generations": 5, "population_size": 5},
         eval_function=None,
         seed=42,
         use_parallel=False
@@ -88,7 +89,7 @@ def genetic_optimizer_dt(hyperparam_space_dt):
     return GeneticSearch(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=hyperparam_space_dt,
-        genetic_params_dict={"generations": 5, "population_size": 5},
+        **{"generations": 5, "population_size": 5},
         eval_function=None,
         seed=42,
         use_parallel=False
@@ -160,7 +161,7 @@ def test_set_hyperparameter_space(genetic_optimizer_rf, hyperparam_space_dt, iri
 
 def test_save_hyperparameter_space(genetic_optimizer_rf, tmp_path):
     """Test saving the hyperparameter space."""
-    hyperparam_space = genetic_optimizer_rf.optimizer_service.hyperparam_space
+    hyperparam_space = genetic_optimizer_rf.hyperparam_space
     saved_hyperspace_path = tmp_path / f"{RandomForestClassifier.__name__.lower()}_hyperparameter_space.json"
     # Save the hyperparameter space to a temporary path
     genetic_optimizer_rf.save_hyperparameter_space(saved_hyperspace_path,
@@ -182,7 +183,7 @@ def test_load_default_hyperparameter_space(genetic_optimizer_rf):
 def test_load_hyperparameter_space(genetic_optimizer_rf, tmp_path):
     """Test loading the hyperparameter space."""
     # First we save the hyperparameter space
-    hyperparam_space = genetic_optimizer_rf.optimizer_service.hyperparam_space
+    hyperparam_space = genetic_optimizer_rf.hyperparam_space
     saved_hyperspace_path = tmp_path / f"{RandomForestClassifier.__name__.lower()}_hyperparameter_space.json"
     # Save the hyperparameter space to a temporary path
     genetic_optimizer_rf.save_hyperparameter_space(saved_hyperspace_path,
@@ -215,7 +216,7 @@ def test_set_genetic_params(genetic_optimizer_rf):
     """Test setting the genetic algorithm parameters."""
     # Update genetic parameters
     new_genetic_params = {"generations": 10, "population_size": 8}
-    genetic_optimizer_rf.set_genetic_params(**new_genetic_params)
+    genetic_optimizer_rf.set_params(**new_genetic_params)
 
     # Retrieve the updated genetic parameters
     updated_genetic_params = genetic_optimizer_rf.get_genetic_params()

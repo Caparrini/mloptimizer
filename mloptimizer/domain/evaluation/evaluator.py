@@ -2,6 +2,7 @@ from sklearn.metrics import accuracy_score, balanced_accuracy_score
 from sklearn.metrics import mean_absolute_error, mean_squared_error, root_mean_squared_error
 from mloptimizer.infrastructure.tracking import Tracker
 import numpy as np
+import warnings
 
 from sklearn.base import is_regressor, is_classifier
 
@@ -96,17 +97,33 @@ class Evaluator:
             Dictionary of the form {"metric_name": metric_value}
         """
         import inspect
+        sig = inspect.signature(self.eval_function)
+        param_names = list(sig.parameters)
 
-        def call_eval_function(eval_function, features, labels, clf, metrics, seed):
-            sig = inspect.signature(eval_function)
-            if "random_state" in sig.parameters:
-                return eval_function(features, labels, clf, metrics, random_state=seed)
+        # Match old-style: features, labels, clf, metrics
+        if param_names[:4] == ["features", "labels", "clf", "metrics"]:
+            if "random_state" in param_names:
+                return self.eval_function(features, labels, clf, self.metrics, random_state=self.seed)
             else:
-                return eval_function(features, labels, clf, metrics)
+                return self.eval_function(features, labels, clf, self.metrics)
 
-        metrics = call_eval_function(self.eval_function, features, labels, clf, self.metrics, self.seed)
+        # Match new-style: clf, X, y, metrics
+        elif param_names[:4] == ["estimator", "X", "y", "metrics"]:
+            if "random_state" in param_names:
+                return self.eval_function(clf, features, labels, self.metrics, random_state=self.seed)
+            else:
+                return self.eval_function(clf, features, labels, self.metrics)
 
-        return metrics
+
+        # Fallback for partial matches
+        else:
+            raise TypeError(
+                f"The evaluation function `{self.eval_function.__name__}` does not match expected signatures.\n"
+                "It should be either:\n"
+                "  (features, labels, clf, metrics[, random_state]) [OLD STYLE], or\n"
+                "  (clf, X, y, metrics[, random_state]) [NEW STYLE].\n"
+                f"Found parameters: {param_names}"
+            )
 
     def evaluate_individual(self, individual):
         clf = self.individual_utils.get_clf(individual)

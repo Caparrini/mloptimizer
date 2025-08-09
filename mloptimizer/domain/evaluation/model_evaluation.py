@@ -4,6 +4,7 @@ import time
 import numpy as np
 from sklearn.model_selection import StratifiedKFold, TimeSeriesSplit, \
     train_test_split, KFold
+from sklearn.base import clone
 
 
 def score_metrics(labels, predictions, metrics):
@@ -193,16 +194,17 @@ def kfold_stratified_score(features, labels, clf, metrics, n_splits=4,
         # Splits
         features_train, features_test = features[train_index], features[test_index]
         labels_train, labels_test = labels[train_index], labels[test_index]
+        clf_clone = clone(clf)
 
         # Train the classifier
         t1 = time.process_time()
         logging.info("Training clf...")
-        clf.fit(features_train, labels_train)
+        clf_clone.fit(features_train, labels_train)
         t2 = time.process_time()
         logging.info("Processing time: {:.3f}".format(t2 - t1))
 
         # Labels predicted for test split
-        labels_pred_test = clf.predict(features_test).reshape(-1)
+        labels_pred_test = clf_clone.predict(features_test).reshape(-1)
         labels_predicted[test_index] = labels_pred_test
 
         accuracies_kfold.append(score_metrics(labels_test, labels_pred_test, metrics))
@@ -211,11 +213,13 @@ def kfold_stratified_score(features, labels, clf, metrics, n_splits=4,
         labels_kfold_predicted.extend(labels_pred_test)
 
         kcounter += 1
-        clfs.append(clf)
+        clfs.append(clf_clone)
 
     # mean_accuracy = np.mean(accuracies_kfold)
     # std = np.std(accuracies_kfold)
     # logging.info("Accuracy: {:.3f} +- {:.3f}".format(round(mean_accuracy, 3), round(std, 3)))
+    for d in accuracies_kfold:
+        assert d.keys() == accuracies_kfold[0].keys()
     average_values = list(np.average(np.stack([list(d.values()) for d in accuracies_kfold]), axis=0))
     average_metrics = dict(zip(list(accuracies_kfold[0].keys()), average_values))
     # return mean_accuracy, std, labels, labels_predicted, clfs

@@ -15,7 +15,8 @@ class OptimizerService:
                  genetic_params: dict,
                  eval_function: callable = train_score, scoring = None,
                  metrics:dict = None, seed: int=None, use_parallel: bool=False,
-                 use_mlflow: bool=False):
+                 use_mlflow: bool=False, early_stopping: bool = False,
+                 patience: int = 5, min_delta: float = 0.01):
         """
         Initialize the OptimizerService.
 
@@ -37,17 +38,34 @@ class OptimizerService:
             Whether to use parallel processing for optimization, defaults to False.
         use_mlflow : bool, optional
             Whether to use MLflow for tracking experiments, defaults to False.
+        early_stopping : bool, optional (default=False)
+            If True, the optimization will stop early if no improvement is observed in the fitness score.
+        patience : int, optional (default=5)
+            Number of generations to wait before stopping if no improvement is observed.
+        min_delta : float, optional (default=0.01)
+            Minimum change in the fitness score to qualify as an improvement.
         """
         self.estimator_class = estimator_class
         self.hyperparam_space = hyperparam_space
         self.genetic_params = genetic_params
-        self.eval_function = eval_function or train_score
+        self.eval_function = eval_function
         self.scoring = get_default_fitness_score(estimator_class, scoring)
         self.metrics = metrics
         self.seed = seed or random.randint(0, 1000000)
         self.use_parallel = use_parallel
         self.use_mlflow = use_mlflow
         self.optimizer = None
+
+        # Early stopping parameters
+        if not isinstance(early_stopping, bool):
+            raise ValueError("early_stopping must be a boolean value.")
+        self.early_stopping = early_stopping
+        if not isinstance(patience, int) or patience <= 0:
+            raise ValueError("patience must be a positive integer.")
+        self.patience = patience
+        if not isinstance(min_delta, (int, float)) or min_delta < 0:
+            raise ValueError("min_delta must be a non-negative number.")
+        self.min_delta = min_delta
 
     def optimize(self, features: np.array, labels: np.array):
         from mloptimizer.domain.optimization.optimizer import Optimizer  # <- moved here
@@ -81,7 +99,10 @@ class OptimizerService:
             metrics=self.metrics,
             seed=self.seed,
             use_parallel=self.use_parallel,
-            use_mlflow=self.use_mlflow
+            use_mlflow=self.use_mlflow,
+            early_stopping=self.early_stopping,
+            patience=self.patience,
+            min_delta=self.min_delta
         )
 
         # Run the genetic algorithm-based optimization and return the best model

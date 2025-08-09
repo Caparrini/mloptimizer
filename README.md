@@ -71,7 +71,7 @@ hyperparameter_space = HyperparameterSpaceBuilder.get_default_space(DecisionTree
 
 opt = GeneticSearch(estimator_class=DecisionTreeClassifier,
                     hyperparam_space=hyperparameter_space,
-                    genetic_params_dict={"generations": 5, "population_size": 5}
+                    **{"generations": 5, "population_size": 5}
                     )
 
 # 4) Optimize the classifier, the optimization returns the best estimator found in the optimization process

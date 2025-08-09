@@ -37,7 +37,7 @@ from mloptimizer.interfaces import GeneticSearch
 mlopt = GeneticSearch(estimator_class=RandomForestRegressor,
                       hyperparam_space=hyperparam_space)
 
-mlopt.fit(X, y, 8, 5)
+mlopt.fit(X, y)
 clf = opt.best_estimator_
 # %%
 # The best individual is returned by the optimize_clf method.
@@ -74,6 +74,6 @@ mlopt = GeneticSearch(estimator_class=RandomForestRegressor,
                       hyperparam_space=custom_hyperparam_space,
                       scoring='rmse')
 
-mlopt.fit(X, y, 100, 10)
+mlopt.fit(X, y)
 
 print(mlopt.best_estimator_)

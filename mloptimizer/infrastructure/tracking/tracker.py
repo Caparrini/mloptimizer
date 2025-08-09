@@ -262,3 +262,16 @@ class Tracker:
     def log_genetic_params(self, genetic_params):
         if self.use_mlflow:
             self.mlflow.log_params(genetic_params)
+
+    def info(self, msg):
+        """
+        Log an informational message.
+
+        Parameters
+        ----------
+        msg : str
+            The message to log.
+        """
+        self.mloptimizer_logger.info(msg)
+        if self.optimization_logger:
+            self.optimization_logger.info(msg)

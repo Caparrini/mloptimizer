@@ -11,6 +11,7 @@ import plotly
 import os
 from sklearn.datasets import load_iris
 from mloptimizer.interfaces import HyperparameterSpaceBuilder, GeneticSearch
+from sklearn.model_selection import StratifiedKFold
 
 
 # %%
@@ -26,11 +27,12 @@ hyperparam_space = HyperparameterSpaceBuilder.get_default_space(estimator_class=
 
 # %%
 # The GeneticSearch class is used to optimize the hyperparameters of a machine learning model.
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 opt = GeneticSearch(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=hyperparam_space,
-        genetic_params_dict={"generations": 30, "population_size": 100},
-        eval_function=kfold_stratified_score
+        **{"generations": 30, "population_size": 100},
+        cv=cv
         )
 
 # %%
@@ -50,13 +52,13 @@ plotly.io.show(g_search_space)
 
 # %%
 # At the end of the evolution the graph is saved as an html at the path:
-print(opt.optimizer_service.optimizer.tracker.graphics_path)
-print(os.listdir(opt.optimizer_service.optimizer.tracker.graphics_path))
+print(opt._optimizer_service.optimizer.tracker.graphics_path)
+print(os.listdir(opt._optimizer_service.optimizer.tracker.graphics_path))
 
 
 # %%
 # The data to generate the graph is available at the path:
-print(opt.optimizer_service.optimizer.tracker.results_path)
-print(os.listdir(opt.optimizer_service.optimizer.tracker.results_path))
+print(opt._optimizer_service.optimizer.tracker.results_path)
+print(os.listdir(opt._optimizer_service.optimizer.tracker.results_path))
 
 del opt

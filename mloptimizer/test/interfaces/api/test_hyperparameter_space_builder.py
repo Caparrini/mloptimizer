@@ -74,3 +74,28 @@ def test_save_space(mock_service, mocker, tmp_path):
     builder.save_space(space, os.path.join(tmp_path, "hyperspace.json"), overwrite=True)
 
     HyperparameterSpaceRepository.save_json.assert_called_once()
+
+def test_load_space_from_file(mock_service, mocker, tmp_path):
+    import json
+    mocker.patch('mloptimizer.infrastructure.repositories.HyperparameterSpaceRepository.load_json')
+    builder = HyperparameterSpaceBuilder()
+    file_path = os.path.join(tmp_path, "hyperspace.json")
+
+    # Write dummy content to file
+    with open(file_path, 'w') as f:
+        f.write(json.dumps({
+            'fixed_hyperparams': {'prueba': 1},
+            'evolvable_hyperparams': {
+                "min_samples_split": {
+                    "name": "min_samples_split",
+                    "min_value": 2,
+                    "max_value": 50,
+                    "hyperparam_type": "int"
+                }
+            }
+        }))
+
+    result = builder.load_space(file_path)
+
+    assert isinstance(result, HyperparameterSpace)
+    HyperparameterSpaceRepository.load_json.assert_called_once_with(file_path)

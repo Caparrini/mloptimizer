@@ -101,9 +101,9 @@ class HyperparameterSpaceBuilder:
         ----------
         name : str
             The name of the hyperparameter.
-        min_value : float
+        min_value : int
             The minimum value the parameter can take.
-        max_value : float
+        max_value : int
             The maximum value the parameter can take.
         scale : int, optional
             Scaling factor for the float parameter (default is 100).
@@ -237,3 +237,19 @@ class HyperparameterSpaceBuilder:
         None
         """
         self.service.save_hyperparameter_space(hyperparam_space, file_path, overwrite)
+
+    def load_space(self, hyperparam_space_json_path):
+        """
+        Load a hyperparameter space from a JSON file using the `HyperparameterSpaceService`.
+
+        Parameters
+        ----------
+        hyperparam_space_json_path : str
+            The path to the JSON file containing the hyperparameter space.
+
+        Returns
+        -------
+        HyperparameterSpace
+            The loaded hyperparameter space.
+        """
+        return self.service.load_hyperparameter_space(hyperparam_space_json_path)
