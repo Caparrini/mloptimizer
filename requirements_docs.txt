@@ -8,6 +8,7 @@ numpy
 pandas>=1.5.3
 plotly>=5.15.0
 matplotlib<3.10.0
+mlflow
 pytest-cov
 python-dateutil>=2.8.1
 pytz>=2022.7.1
