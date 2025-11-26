@@ -89,17 +89,88 @@ class Tracker:
         """
         Ends the optimization process by finalizing any active MLflow runs.
 
-        This method checks whether MLflow is being used and if a parent MLflow run
-        is active. If both conditions are satisfied, the method ends the active
-        parent run, ensuring proper closure and cleanup associated with the
-        optimization process.
-
         Raises
         ------
-        None
+        Exception
+            If there is an error while ending the MLflow run.
         """
         if self.use_mlflow and self.parent_run is not None:
-            self.mlflow.end_run()  # Ends the parent run
+            try:
+                self.mlflow.end_run()
+                self.optimization_logger.info("Closed parent MLflow run.")
+            except Exception as e:
+                self.optimization_logger.exception("Error closing parent MLflow run: %s", e)
+            finally:
+                self.parent_run = None
+
+    def start_mlflow_experiment(self):
+        """
+        Start a new MLflow experiment with the specified run name.
+
+        Parameters
+        ----------
+        run_name : str
+            Name of the MLflow experiment to be started.
+        """
+        try:
+            try:
+                self.mlflow.set_experiment(self.name)
+                exp = self.mlflow.get_experiment_by_name(self.name)
+                if exp is not None:
+                    self.optimization_logger.info("Using MLflow experiment: %s id=%s", exp.name, exp.experiment_id)
+                else:
+                    self.optimization_logger.warning("MLflow set_experiment did not return an experiment for %s", self.name)
+            except Exception as e:
+                self.optimization_logger.exception("Failed to set/get MLflow experiment %s: %s", self.name, e)
+        except Exception as fatal:
+            self.optimization_logger.exception("Unexpected error when starting MLflow checkpoint: %s", fatal)
+            raise
+
+    def start_mlflow_run(self, run_name: str):
+        """
+        Start a new MLflow run with the specified run name.
+
+        Parameters
+        ----------
+        run_name : str
+            Name of the MLflow run to be started.
+        """
+        try:
+            active = None
+            try:
+                active = self.mlflow.active_run()
+            except Exception as e:
+                self.optimization_logger.warning("Could not read active MLflow run: %s", e)
+
+            if active is not None:
+                try:
+                    self.optimization_logger.warning(
+                        "MLflow active run detected before starting new run: run_id=%s, experiment_id=%s",
+                        active.info.run_id, active.info.experiment_id
+                    )
+                except Exception:
+                    self.optimization_logger.warning("MLflow active run detected (details unreadable)")
+
+                # Intentar cerrar el run activo para evitar colisiones
+                try:
+                    self.mlflow.end_run()
+                    self.optimization_logger.info("Closed previous MLflow active run successfully.")
+                except Exception as e:
+                    self.optimization_logger.exception("Failed to end active MLflow run: %s. Will attempt nested run.", e)
+
+            # Intentar iniciar un nuevo run normalmente
+            try:
+                self.parent_run = self.mlflow.start_run(run_name=run_name)
+                self.optimization_logger.info("Started MLflow run: run_id=%s", self.parent_run.info.run_id)
+            except Exception as e:
+                self.optimization_logger.exception("start_run failed, retrying with nested=True: %s", e)
+                # Reintentar como nested run para no chocar con runs globales que no se pueden cerrar
+                self.parent_run = self.mlflow.start_run(run_name=run_name, nested=True)
+                self.optimization_logger.info("Started nested MLflow run: run_id=%s", self.parent_run.info.run_id)
+
+        except Exception as fatal:
+            self.optimization_logger.exception("Unexpected error when starting MLflow checkpoint: %s", fatal)
+            raise
 
     def start_checkpoint(self, opt_run_folder_name, estimator_class):
         """
@@ -118,10 +189,6 @@ class Tracker:
                 datetime.now().strftime("%Y%m%d_%H%M%S"),
                 estimator_class.__name__)
 
-        if self.use_mlflow:
-            self.mlflow.set_experiment(opt_run_folder_name)
-            self.parent_run = self.mlflow.start_run(run_name=opt_run_folder_name)
-
         self.opt_run_folder = os.path.join(self.folder, opt_run_folder_name)
         self.opt_run_checkpoint_path = os.path.join(self.opt_run_folder, "checkpoints")
         self.results_path = os.path.join(self.opt_run_folder, "results")
@@ -138,6 +205,11 @@ class Tracker:
         self.optimization_logger, _ = init_logger(
             os.path.join(self.opt_run_folder, "opt.log")
         )
+
+        if self.use_mlflow:
+            self.start_mlflow_experiment()
+            self.start_mlflow_run(opt_run_folder_name)
+
 
     def log_dataset(self, X, y):
         if self.use_mlflow:
