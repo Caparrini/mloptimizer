@@ -25,7 +25,7 @@ X, y = data.data, data.target
 y = y - 1  # Adjust labels to start from 0
 # Use a subset for faster execution
 np.random.seed(42)
-sample_indices = np.random.choice(len(X), size=10000, replace=False)
+sample_indices = np.random.choice(len(X), size=80000, replace=False)
 X = X[sample_indices]
 y = y[sample_indices]
 
@@ -53,8 +53,8 @@ hyperparam_space = HyperparameterSpaceBuilder.get_default_space(
 opt = GeneticSearch(
     estimator_class=xgb.XGBClassifier,
     hyperparam_space=hyperparam_space,
-    generations=2,  # Reduced for quick demonstration
-    population_size=2,  # Reduced for quick demonstration
+    generations=12,  # Reduced for quick demonstration
+    population_size=30,  # Reduced for quick demonstration
     seed=42,
     use_mlflow=True,  # This enables MLflow tracking
     use_parallel=False # parallel does not work in this example
@@ -94,7 +94,10 @@ g_search_space.update_layout(
     width=1000,
     height=800
 )
+# Show plot
+plotly.io.show(g_search_space)
 
+# %%
 # Evolution logbook visualization
 g_logbook = plotly_logbook(opt.logbook_, population_df)
 g_logbook.update_layout(
@@ -102,9 +105,7 @@ g_logbook.update_layout(
     width=1000,
     height=600
 )
-
-# Show plots
-plotly.io.show(g_search_space)
+# Show plot
 plotly.io.show(g_logbook)
 
 # %%
