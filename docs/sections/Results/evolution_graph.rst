@@ -20,11 +20,7 @@ See the following example for practical usage and code details:
 Overview
 --------
 
-The evolution graph highlights key metrics throughout the optimization process:
-
-- **Max and Min Fitness Lines**: Black lines showing the overall max and min fitness values across generations.
-- **Generation-Based Metrics**: Green, red, and blue lines for max, min, and average fitness within each generation.
-- **Individual Fitness Scores**: Gray points representing fitness scores of each individual, illustrating the population’s diversity and convergence at each stage.
+The evolution graph highlights key metrics throughout the optimization process.
 
 The `mloptimizer` library provides a function to generate this graph using Plotly, making it interactive and customizable.
 

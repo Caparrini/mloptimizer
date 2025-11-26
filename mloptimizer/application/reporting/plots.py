@@ -2,6 +2,7 @@ import seaborn as sns
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import numpy as np
 
 
 def logbook_to_pandas(logbook):
@@ -41,108 +42,106 @@ def plotly_logbook(logbook, population):
     fig : plotly.graph_objects.Figure
         The figure
     """
+    # --- Prep ---------------------------------------------------------------
+    #df = pd.DataFrame(logbook).rename(columns=str.lower).sort_values("gen")
     df = pd.DataFrame(logbook)
+    xcat = df["gen"].astype(str)
 
-    # Count the number of individuals that share the same (generation, fitness) coordinates
-    population['count'] = population.groupby(['population', 'fitness'])['fitness'].transform('count')
+
+    pop = population.copy()
+    pop["population"] = pd.to_numeric(pop["population"], errors="coerce")
+    pop["fitness"] = pd.to_numeric(pop["fitness"], errors="coerce")
+    q = pop.groupby("population")["fitness"].quantile([0.25, 0.75]).unstack()
+    q = q.rename(columns={0.25: "q1", 0.75: "q3"}).reindex(df["gen"]).interpolate()
+    lower = q["q1"].clip(0, 1)
+    upper = q["q3"].clip(0, 1)
+    band_name = "Avg (IQR)"
+
+    # y-range for readability
+    data_min = float(min(df["min"].min(), lower.min()))
+    data_max = float(max(df["max"].max(), upper.max()))
+    y_min = data_min - (data_max - data_min)*0.1
+    y_max = data_max + (data_max - data_min)*0.1
+
+    # palette
+    c_avg = "rgb(56,128,255)"  # blue
+    c_best_gen = "rgb(147,112,219)"  # purple
+    c_best_all = "rgb(255,140,0)"  # orange
+    c_band = "rgba(56,128,255,0.10)"  # lighter so it doesn’t hide violins/boxes
 
     fig = go.Figure()
 
-    # Avg line: Dashed, NO POINTS
-    fig.add_trace(go.Scatter(x=df['gen'], y=df['avg'],
-                             line=dict(color='rgb(50,130,250)', dash='dash', width=3),  # Soft blue, thicker line
-                             mode='lines',  # No markers, just the line
-                             name='Avg'))
+    # --- draw BAND FIRST (in the back) -------------------------------------
+    fig.add_trace(go.Scatter(x=xcat, y=upper, mode="lines",
+                             line=dict(width=0), showlegend=False, hoverinfo="skip"))
+    fig.add_trace(go.Scatter(x=xcat, y=lower, mode="lines", name=band_name,
+                             fill="tonexty", fillcolor=c_band, line=dict(width=0),
+                             hoverinfo="skip"))
 
-    # Orange dashed line for the max value of each generation, NO POINTS
+    # --- Individuals as DISTRIBUTIONS --------------------------------------
+    tall = population.copy()
+    tall["gen"] = pd.to_numeric(tall["population"], errors="coerce").astype("Int64")
+    tall["fitness"] = pd.to_numeric(tall["fitness"], errors="coerce")
+    tall = tall.dropna(subset=["gen", "fitness"])
+    tall["gen"] = tall["gen"].astype(str)
+
+    # Choose violin when n>=10, else box (violins look bad with tiny samples)
+    counts = tall.groupby("gen")["fitness"].size()
+    use_violin = (counts.min() >= 10)
+
+    if use_violin:
+        fig.add_trace(go.Violin(
+            x=tall["gen"], y=tall["fitness"],
+            name="Individuals",
+            points=False,
+            box_visible=True,
+            meanline_visible=True,
+            opacity=0.7,
+            line=dict(width=1.2, color="rgba(30,30,30,0.7)"),
+            fillcolor="rgba(90,160,255,0.45)",
+            width=0.7,
+            spanmode="hard",
+            scalemode="width",
+        ))
+        fig.update_layout(violinmode="overlay")
+    else:
+        fig.add_trace(go.Box(
+            x=tall["gen"], y=tall["fitness"],
+            name="Individuals",
+            boxpoints=False,  # keep it clean
+            opacity=0.8,
+            line=dict(width=1.2, color="rgba(30,30,30,0.7)"),
+            fillcolor="rgba(90,160,255,0.35)",
+        ))
+
+    # --- Lines on top -------------------------------------------------------
     fig.add_trace(go.Scatter(
-        x=df['gen'], y=df['max'],
-        line=dict(color='rgba(255,165,0,0.8)', dash='dash', width=2),  # Orange dashed line for gen-specific max
-        mode='lines',  # No markers, just the line
-        name='Max per Gen',
+        x=xcat, y=df["avg"], name="Average",
+        mode="lines+markers",
+        line=dict(color=c_avg, width=4),
+        marker=dict(size=6, color=c_avg)
     ))
 
-    # Red dashed line for the min value of each generation, NO POINTS
     fig.add_trace(go.Scatter(
-        x=df['gen'], y=df['min'],
-        line=dict(color='rgba(255,0,0,0.8)', dash='dash', width=2),  # Red dashed line for gen-specific min
-        mode='lines',  # No markers, just the line
-        name='Min per Gen',
+        x=xcat, y=df["max"], name="Best per generation",
+        mode="markers",
+        line=dict(color=c_best_gen, width=2.5)
     ))
 
-    # Neutral gray dashed line for the overall max value
-    fig.add_trace(go.Scatter(
-        x=df['gen'],
-        y=[df['max'].max()] * len(df['gen']),
-        line=dict(color='rgba(100,100,100,0.8)', dash='dash', width=2),  # Neutral gray dashed line for overall max
-        mode='lines',
-        name='Max Overall',
-    ))
-
-    # Neutral gray dashed line for the overall min value
-    fig.add_trace(go.Scatter(
-        x=df['gen'],
-        y=[df['min'].min()] * len(df['gen']),
-        line=dict(color='rgba(100,100,100,0.8)', dash='dash', width=2),  # Neutral gray dashed line for overall min
-        mode='lines',
-        name='Min Overall',
-    ))
-
-    # Size of the points based on how many individuals share the same (generation, fitness) point
-    max_point_size = 15  # Maximum size for the points
-    population['scaled_size'] = (population['count'] / population['count'].max()) * max_point_size
-
-    # Plot individuals with varying sizes (the only visible points)
-    fig.add_trace(go.Scatter(
-        x=population['population'], y=population['fitness'],
-        name='Individuals',
-        mode='markers',
-        marker=dict(color='rgba(30,30,30,0.5)',
-                    size=population['scaled_size'],  # Size proportional to the number of overlaps
-                    sizemode='diameter',
-                    line=dict(color='white', width=1)),  # Semi-transparent markers with white border
-    ))
-
-    # Layout improvements: clearer fonts, cleaner grid, and better spacing
+    # --- Layout -------------------------------------------------------------
     fig.update_layout(
-        #title=dict(
-        #    text='Fitness Evolution',
-        #    x=0.5,  # Center the title
-        #    xanchor='center',
-        #    yanchor='top',
-        #    font=dict(size=24, family='Arial, sans-serif'),  # Professional font
-        #),
-        xaxis=dict(
-            title="Generation",
-            tickmode='linear',
-            tick0=0,
-            dtick=1,
-            linecolor='rgba(100,100,100,0.6)',  # Subtle axis line
-            tickfont=dict(size=16, color='rgb(50,50,50)'),  # Larger, clearer ticks
-            tickangle=-45,  # Rotate the x-axis labels for readability
-            gridcolor='rgba(200,200,200,0.3)',  # Subtle grid lines for x-axis
-        ),
-        yaxis=dict(
-            title="Fitness",
-            linecolor='rgba(100,100,100,0.6)',  # Subtle axis line
-            tickfont=dict(size=16, color='rgb(50,50,50)'),  # Larger, clearer ticks
-            gridcolor='rgba(200,200,200,0.3)',  # Subtle grid lines for y-axis
-        ),
-        legend=dict(
-            title="Fitness Metrics",
-            font=dict(size=16, color='rgb(50,50,50)'),  # Clear legend title and items
-            bordercolor='rgba(0,0,0,0.2)',
-            borderwidth=1,
-        ),
-        font=dict(
-            family="Arial, sans-serif",
-            size=18,
-            color="rgb(50,50,50)"
-        ),
-        plot_bgcolor='rgba(245,245,245,1)',  # Light gray background for better contrast
-        margin=dict(l=50, r=50, t=50, b=100),  # Extra bottom margin for rotated labels
-        width=900,  # Increased width for a better viewing experience
-        height=600,  # Adjusted height for better aspect ratio
+        template="plotly_white",
+        xaxis_title="Generation",
+        yaxis_title="Fitness",
+        xaxis=dict(type="category",
+                   categoryorder="array",
+                   categoryarray=[str(g) for g in df["gen"]]),
+        yaxis=dict(range=[y_min, y_max]),
+        legend=dict(orientation="h", y=1.02, yanchor="bottom",
+                    x=0.5, xanchor="center", font=dict(size=14)),
+        #margin=dict(l=60, r=40, t=50, b=60),
+        width=950, height=560,
+        font=dict(family="Arial", size=15)
     )
 
     return fig
@@ -167,9 +166,16 @@ def plot_logbook(logbook):
     return g.get_figure()
 
 
-def plotly_search_space(populations_df: pd.DataFrame, features: list = None, colorscale='Viridis'):
+import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import numpy as np
+from scipy import stats
+
+
+def plotly_search_space(populations_df: pd.DataFrame, features: list = None, height=2, s=25):
     """
-    Generate a plotly figure from populations dataframe with improved axis labels, histograms, and centered correlation values.
+    Generate plotly figure from populations dataframe and features. Search space.
 
     Parameters
     ----------
@@ -177,160 +183,171 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None, col
         The dataframe with the population data
     features : list
         The features to plot (column names of the dataframe)
-    colorscale : str
-        The colorscale to use for the scatter plots
 
     Returns
     -------
     fig : plotly.graph_objects.Figure
         The figure
     """
+    # Use specified features or default to all numeric columns
     if features is None:
-        features = populations_df.columns.tolist()
+        features = populations_df.select_dtypes(include="number").columns.tolist()
+    else:
+        missing_features = [f for f in features if f not in populations_df.columns]
+        if missing_features:
+            raise ValueError(f"Features not found in dataframe: {missing_features}")
+        features = list(features)
 
-    # Separate numeric and categorical features
-    numeric_features = populations_df[features].select_dtypes(include='number').columns.tolist()
-    categorical_features = [feat for feat in features if feat not in numeric_features]
+    n_features = len(features)
 
-    # Compute the correlation matrix only for numeric features
-    corr_matrix = populations_df[numeric_features].corr()
+    # Smart scaling based on number of features
+    if n_features <= 3:
+        fig_size = 700
+        font_size = 11
+        title_size = 12
+        marker_size = s / 5
+    elif n_features <= 5:
+        fig_size = 900
+        font_size = 9
+        title_size = 10
+        marker_size = s / 6
+    elif n_features <= 8:
+        fig_size = 1000
+        font_size = 7
+        title_size = 8
+        marker_size = s / 8
+    else:
+        fig_size = 1100
+        font_size = 6
+        title_size = 7
+        marker_size = s / 10
 
-    # Initialize subplots: lower triangle for scatter plots, upper triangle for correlations, diagonal for histograms
+    # Create subplots with tighter spacing for many features
+    spacing = max(0.01, 0.03 - (n_features * 0.002))
+
     fig = make_subplots(
-        rows=len(features), cols=len(features),
-        shared_xaxes=False, shared_yaxes=False,
-        vertical_spacing=0.05, horizontal_spacing=0.05,
-        subplot_titles=features
+        rows=n_features,
+        cols=n_features,
+        vertical_spacing=spacing,
+        horizontal_spacing=spacing
     )
 
-    # Fill the subplots
-    for i, feat_x in enumerate(features):
-        for j, feat_y in enumerate(features):
-            if i == j:  # Diagonal: Add histograms for feature distributions
+    for i, row_feature in enumerate(features):
+        for j, col_feature in enumerate(features):
+            row_idx = i + 1
+            col_idx = j + 1
+
+            if i < j:  # Upper triangle - scatter plots
                 fig.add_trace(
-                    go.Histogram(x=populations_df[feat_x], marker=dict(color='skyblue'),
-                                 opacity=1, nbinsx=30),
-                    row=i + 1, col=j + 1
+                    go.Scattergl(
+                        x=populations_df[col_feature],
+                        y=populations_df[row_feature],
+                        mode='markers',
+                        marker=dict(
+                            size=marker_size,
+                            color='red',
+                            opacity=0.2
+                        ),
+                        showlegend=False,
+                        hovertemplate=f'{col_feature}: %{{x}}<br>{row_feature}: %{{y}}<extra></extra>'
+                    ),
+                    row=row_idx,
+                    col=col_idx
                 )
 
-            elif i > j:  # Lower triangle: Scatter plots
-                if feat_x in numeric_features and feat_y in numeric_features:
-                    # Numeric scatter plot
+            elif i > j:  # Lower triangle - KDE contour plots
+                x_data = populations_df[col_feature].dropna()
+                y_data = populations_df[row_feature].dropna()
+
+                try:
+                    xmin, xmax = x_data.min(), x_data.max()
+                    ymin, ymax = y_data.min(), y_data.max()
+
+                    xx, yy = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+                    positions = np.vstack([xx.ravel(), yy.ravel()])
+                    values = np.vstack([x_data, y_data])
+                    kernel = stats.gaussian_kde(values)
+                    f = np.reshape(kernel(positions).T, xx.shape)
+
+                    fig.add_trace(
+                        go.Contour(
+                            x=xx[:, 0],
+                            y=yy[0, :],
+                            z=f.T,
+                            colorscale='Reds',
+                            showscale=False,
+                            contours=dict(
+                                coloring='fill',
+                                showlines=False
+                            ),
+                            opacity=0.6,
+                            hovertemplate=f'{col_feature}: %{{x}}<br>{row_feature}: %{{y}}<extra></extra>'
+                        ),
+                        row=row_idx,
+                        col=col_idx
+                    )
+                except:
+                    pass
+
+            else:  # Diagonal - KDE distribution plots
+                data = populations_df[row_feature].dropna()
+
+                try:
+                    kde = stats.gaussian_kde(data)
+                    x_range = np.linspace(data.min(), data.max(), 200)
+                    y_kde = kde(x_range)
+
                     fig.add_trace(
                         go.Scatter(
-                            x=populations_df[feat_y], y=populations_df[feat_x],
-                            mode='markers',
-                            marker=dict(
-                                color=populations_df['fitness'],
-                                colorscale=colorscale,
-                                opacity=0.5,
-                                size=6,
-                                coloraxis='coloraxis1'
-                            ),
-                            showlegend=False
+                            x=x_range,
+                            y=y_kde,
+                            fill='tozeroy',
+                            mode='lines',
+                            line=dict(color='red', width=1),
+                            fillcolor='rgba(255, 0, 0, 0.2)',
+                            showlegend=False,
+                            hovertemplate=f'{row_feature}: %{{x}}<br>Density: %{{y}}<extra></extra>'
                         ),
-                        row=i + 1, col=j + 1
+                        row=row_idx,
+                        col=col_idx
                     )
-                elif feat_x in categorical_features or feat_y in categorical_features:
-                    # Categorical scatter plot with fixed color and different symbols
-                    fig.add_trace(
-                        go.Scatter(
-                            x=populations_df[feat_y], y=populations_df[feat_x],
-                            mode='markers',
-                            marker=dict(
-                                color='grey',
-                                opacity=0.5,
-                                size=6,
-                                symbol='circle'
-                            ),
-                            showlegend=False
-                        ),
-                        row=i + 1, col=j + 1
-                    )
+                except:
+                    pass
 
-            elif i < j and feat_x in numeric_features and feat_y in numeric_features:  # Upper triangle: Correlation values
-                corr_value = corr_matrix.loc[feat_x, feat_y]
-                fig.add_trace(
-                    go.Heatmap(
-                        z=[[corr_value]],
-                        colorscale="RdBu",
-                        zmin=-1, zmax=1,
-                        showscale=False,
-                        xgap=1, ygap=1,
-                        coloraxis='coloraxis2'
-                    ),
-                    row=i + 1, col=j + 1
+            # Update axis labels only on edges
+            if i == n_features - 1:  # Bottom row
+                fig.update_xaxes(
+                    title_text=col_feature,
+                    title_font=dict(size=title_size),
+                    tickfont=dict(size=font_size),
+                    row=row_idx,
+                    col=col_idx
                 )
-                fig.add_trace(
-                    go.Scatter(
-                        x=[0], y=[0],
-                        text=[f'{corr_value:.2f}'],
-                        mode='text',
-                        textfont=dict(size=14, color='black', family='Arial', weight='bold'),
-                        showlegend=False
-                    ),
-                    row=i + 1, col=j + 1
+            if j == 0:  # Left column
+                fig.update_yaxes(
+                    title_text=row_feature,
+                    title_font=dict(size=title_size),
+                    tickfont=dict(size=font_size),
+                    row=row_idx,
+                    col=col_idx
                 )
 
-    # Update layout
+    # Fixed size with smart margins
+    margin_size = max(40, 80 - n_features * 3)
+
     fig.update_layout(
-        height=1200,
-        width=1200,
-        showlegend=False,
-        coloraxis1=dict(colorscale=colorscale, cmin=populations_df['fitness'].min(),
-                        cmax=populations_df['fitness'].max(),
-                        colorbar=dict(
-                            title="Fitness",
-                            thickness=15,
-                            x=1.02,
-                            y=0.5,
-                            yanchor='middle'
-                        )
-                        ),
-        coloraxis2=dict(colorscale="RdBu", cmin=-1, cmax=1,
-                        colorbar=dict(
-                            title="Correlation",
-                            thickness=15,
-                            x=1.1,
-                            y=0.5,
-                            yanchor='middle'
-                        )
-                        )
+        height=fig_size,
+        width=fig_size,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        margin=dict(l=margin_size, r=20, t=20, b=margin_size)
     )
 
-    # Set consistent axis label fonts and tick parameters
-    for i, feature in enumerate(features):
-        # Subplot X-axis
-        fig.update_xaxes(
-            title_text=feature,
-            row=len(features),
-            col=i + 1,
-            title_font=dict(size=16, family='Arial', color='black'),  # Title font settings
-            title_standoff=20,
-            tickangle=45,
-            tickfont=dict(size=12, family='Arial', color='black'),  # Uniform tick font settings
-            ticklen=5
-        )
-        # Subplot Y-axis
-        fig.update_yaxes(
-            title_text=feature,
-            row=i + 1,
-            col=1,
-            title_font=dict(size=16, family='Arial', color='black'),  # Title font settings
-            title_standoff=20,
-            tickfont=dict(size=12, family='Arial', color='black'),  # Uniform tick font settings
-            ticklen=5
-        )
-
-    # Remove x and y ticks from the correlation heatmaps (upper triangle)
-    for i in range(len(features)):
-        for j in range(len(features)):
-            if i < j:
-                fig.update_xaxes(showticklabels=False, row=i + 1, col=j + 1)
-                fig.update_yaxes(showticklabels=False, row=i + 1, col=j + 1)
+    # Update all axes
+    fig.update_xaxes(showgrid=False, zeroline=False, tickfont=dict(size=font_size))
+    fig.update_yaxes(showgrid=False, zeroline=False, tickfont=dict(size=font_size))
 
     return fig
-
 
 
 def plot_search_space(populations_df: pd.DataFrame, height=2, s=25):

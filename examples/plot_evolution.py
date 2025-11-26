@@ -41,9 +41,6 @@ opt.fit(X, y)
 
 # %%
 # We can plot the evolution of the fitness function.
-# The black lines represent the max and min fitness values across all generations.
-# The green, red and blue line are respectively the max, min and avg fitness value for each generation.
-# Each grey point in the graph represents an individual.
 population_df = opt.populations_
 g_logbook = plotly_logbook(opt.logbook_, population_df)
 plotly.io.show(g_logbook)
