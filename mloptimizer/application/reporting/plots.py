@@ -167,7 +167,12 @@ def plot_logbook(logbook):
     return g.get_figure()
 
 
-def plotly_search_space(populations_df: pd.DataFrame, features: list = None, height=2, s=25):
+def plotly_search_space(populations_df: pd.DataFrame, features: list = None, s=25,
+                        marker_color: str = "blue",
+                        colorscale: str = "Blues",
+                        kde_line_color: str = "rgba(31, 119, 180, 1.0)",
+                        kde_fillcolor: str = "rgba(31, 119, 180, 0.2)",
+                        ):
     """
     Generate plotly figure from populations dataframe and features. Search space.
 
@@ -177,7 +182,16 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None, hei
         The dataframe with the population data
     features : list
         The features to plot (column names of the dataframe)
-
+    s : int
+        The size of the points
+    marker_color : str
+        The color of the scatter plot markers
+    colorscale : str
+        The colorscale for the KDE contour plots
+    kde_line_color : str
+        The line color for the KDE distribution plots
+    kde_fillcolor : str
+        The fill color for the KDE distribution plots
     Returns
     -------
     fig : plotly.graph_objects.Figure
@@ -239,7 +253,7 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None, hei
                         mode='markers',
                         marker=dict(
                             size=marker_size,
-                            color='red',
+                            color=marker_color,
                             opacity=0.2
                         ),
                         showlegend=False,
@@ -268,7 +282,7 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None, hei
                             x=xx[:, 0],
                             y=yy[0, :],
                             z=f.T,
-                            colorscale='Reds',
+                            colorscale=colorscale,
                             showscale=False,
                             contours=dict(
                                 coloring='fill',
@@ -297,8 +311,8 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None, hei
                             y=y_kde,
                             fill='tozeroy',
                             mode='lines',
-                            line=dict(color='red', width=1),
-                            fillcolor='rgba(255, 0, 0, 0.2)',
+                            line=dict(color=kde_line_color, width=1),
+                            fillcolor=kde_fillcolor,
                             showlegend=False,
                             hovertemplate=f'{row_feature}: %{{x}}<br>Density: %{{y}}<extra></extra>'
                         ),
