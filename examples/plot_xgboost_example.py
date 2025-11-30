@@ -6,15 +6,15 @@ for experiment tracking.
 """
 
 from sklearn.datasets import fetch_covtype
-from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import xgboost as xgb
 import numpy as np
 import plotly
 import os
-import tempfile
 from mloptimizer.interfaces import HyperparameterSpaceBuilder, GeneticSearch
-from mloptimizer.application.reporting.plots import plotly_search_space, plotly_logbook
+from mloptimizer.application.reporting.plots import (plotly_search_space, plotly_logbook,
+                                                     plot_logbook)
 
 # %%
 # Load and prepare a complex classification dataset
@@ -25,7 +25,7 @@ X, y = data.data, data.target
 y = y - 1  # Adjust labels to start from 0
 # Use a subset for faster execution
 np.random.seed(42)
-sample_indices = np.random.choice(len(X), size=80000, replace=False)
+sample_indices = np.random.choice(len(X), size=2000, replace=False)
 X = X[sample_indices]
 y = y[sample_indices]
 
@@ -53,8 +53,8 @@ hyperparam_space = HyperparameterSpaceBuilder.get_default_space(
 opt = GeneticSearch(
     estimator_class=xgb.XGBClassifier,
     hyperparam_space=hyperparam_space,
-    generations=12,  # Reduced for quick demonstration
-    population_size=30,  # Reduced for quick demonstration
+    generations=6,  # Reduced for quick demonstration
+    population_size=10,  # Reduced for quick demonstration
     seed=42,
     use_mlflow=True,  # This enables MLflow tracking
     use_parallel=False # parallel does not work in this example
@@ -96,6 +96,17 @@ g_search_space.update_layout(
 )
 # Show plot
 plotly.io.show(g_search_space)
+
+# %%
+# Simple logbook visualization
+g_logbook_s = plotly_logbook(opt.logbook_, population_df)
+g_logbook_s.update_layout(
+    title="XGBoost Optimization Evolution - CoverType Dataset",
+    width=1000,
+    height=600
+)
+# Show plot
+plt.show(g_logbook_s)
 
 # %%
 # Evolution logbook visualization

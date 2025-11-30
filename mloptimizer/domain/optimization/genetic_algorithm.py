@@ -8,7 +8,7 @@ from deap.algorithms import eaSimple, varAnd
 
 from mloptimizer.domain.hyperspace import HyperparameterSpace
 from matplotlib import pyplot as plt
-from mloptimizer.application.reporting.plots import plotly_search_space, plotly_logbook
+from mloptimizer.application.reporting.plots import plotly_search_space, plotly_logbook, plot_logbook
 from mloptimizer.infrastructure.tracking import Tracker
 from mloptimizer.domain.evaluation import Evaluator
 from mloptimizer.domain.population import IndividualUtils
@@ -63,6 +63,7 @@ class GeneticAlgorithm:
         self.stats.register("avg", np.mean)
         self.stats.register("min", np.min)
         self.stats.register("max", np.max)
+        self.stats.register("med", np.median)
 
         if hasattr(creator, "FitnessMax"):
             del creator.FitnessMax
@@ -136,6 +137,10 @@ class GeneticAlgorithm:
         g2 = plotly_logbook(logbook, population_df)
         g2.write_html(os.path.join(self.tracker.graphics_path, "logbook.html"),
                      full_html=False, include_plotlyjs='cdn')
+        plt.close()
+
+        g3 = plot_logbook(logbook)
+        g3.savefig(os.path.join(self.tracker.graphics_path, "logbook_s.png"))
         plt.close()
 
     def custom_run(self, population_size: int, n_generations: int, cxpb: float = 0.5, mutation_prob: float = 0.5,

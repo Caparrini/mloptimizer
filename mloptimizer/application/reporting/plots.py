@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
+from scipy import stats
 
 
 def logbook_to_pandas(logbook):
@@ -162,15 +163,8 @@ def plot_logbook(logbook):
         The figure
     """
     df = pd.DataFrame(logbook)
-    g = sns.lineplot(df.drop(columns=['gen', 'nevals']))
+    g = sns.lineplot(data=df.drop(columns=['gen', 'nevals']), palette="colorblind")
     return g.get_figure()
-
-
-import pandas as pd
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import numpy as np
-from scipy import stats
 
 
 def plotly_search_space(populations_df: pd.DataFrame, features: list = None, height=2, s=25):
