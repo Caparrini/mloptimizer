@@ -15,6 +15,7 @@ import os
 from mloptimizer.interfaces import HyperparameterSpaceBuilder, GeneticSearch
 from mloptimizer.application.reporting.plots import (plotly_search_space, plotly_logbook,
                                                      plot_logbook)
+import matplotlib.pyplot as plt
 
 # %%
 # Load and prepare a complex classification dataset
@@ -99,14 +100,9 @@ plotly.io.show(g_search_space)
 
 # %%
 # Simple logbook visualization
-g_logbook_s = plotly_logbook(opt.logbook_, population_df)
-g_logbook_s.update_layout(
-    title="XGBoost Optimization Evolution - CoverType Dataset",
-    width=1000,
-    height=600
-)
+g_logbook_s = plot_logbook(opt.logbook_)
 # Show plot
-plt.show(g_logbook_s)
+plt.show()
 
 # %%
 # Evolution logbook visualization
