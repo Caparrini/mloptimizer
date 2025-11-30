@@ -183,6 +183,7 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None, s=2
                         colorscale: str = "Blues",
                         kde_line_color: str = "rgba(31, 119, 180, 1.0)",
                         kde_fillcolor: str = "rgba(31, 119, 180, 0.2)",
+                        font_size: int = 10
                         ):
     """
     Generate plotly figure from populations dataframe and features. Search space.
@@ -203,6 +204,8 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None, s=2
         The line color for the KDE distribution plots
     kde_fillcolor : str
         The fill color for the KDE distribution plots
+    font_size : int
+        The font size for the axis labels and ticks
     Returns
     -------
     fig : plotly.graph_objects.Figure
@@ -222,24 +225,20 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None, s=2
     # Smart scaling based on number of features
     if n_features <= 3:
         fig_size = 700
-        font_size = 11
-        title_size = 12
-        marker_size = s / 5
+        title_size = font_size + 4
+        marker_size = max(3, int(s / 4 * (font_size / 11)))
     elif n_features <= 5:
         fig_size = 900
-        font_size = 9
-        title_size = 10
-        marker_size = s / 6
+        title_size = font_size + 3
+        marker_size = max(2, int(s / 5 * (font_size / 11)))
     elif n_features <= 8:
         fig_size = 1000
-        font_size = 7
-        title_size = 8
-        marker_size = s / 8
+        title_size = font_size + 2
+        marker_size = max(1, int(s / 6 * (font_size / 11)))
     else:
         fig_size = 1100
-        font_size = 6
-        title_size = 7
-        marker_size = s / 10
+        title_size = font_size + 1
+        marker_size = max(1, int(s / 8 * (font_size / 11)))
 
     # Create subplots with tighter spacing for many features
     spacing = max(0.01, 0.03 - (n_features * 0.002))
@@ -279,32 +278,33 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None, s=2
                 y_data = populations_df[row_feature].dropna()
 
                 try:
-                    xmin, xmax = x_data.min(), x_data.max()
-                    ymin, ymax = y_data.min(), y_data.max()
+                    if len(x_data) > 1 and len(y_data) > 1 and np.nanstd(x_data) > 0 and np.nanstd(y_data) > 0:
+                        xmin, xmax = x_data.min(), x_data.max()
+                        ymin, ymax = y_data.min(), y_data.max()
 
-                    xx, yy = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
-                    positions = np.vstack([xx.ravel(), yy.ravel()])
-                    values = np.vstack([x_data, y_data])
-                    kernel = stats.gaussian_kde(values)
-                    f = np.reshape(kernel(positions).T, xx.shape)
+                        xx, yy = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+                        positions = np.vstack([xx.ravel(), yy.ravel()])
+                        values = np.vstack([x_data, y_data])
+                        kernel = stats.gaussian_kde(values)
+                        f = np.reshape(kernel(positions).T, xx.shape)
 
-                    fig.add_trace(
-                        go.Contour(
-                            x=xx[:, 0],
-                            y=yy[0, :],
-                            z=f.T,
-                            colorscale=colorscale,
-                            showscale=False,
-                            contours=dict(
-                                coloring='fill',
-                                showlines=False
+                        fig.add_trace(
+                            go.Contour(
+                                x=xx[:, 0],
+                                y=yy[0, :],
+                                z=f.T,
+                                colorscale=colorscale,
+                                showscale=False,
+                                contours=dict(
+                                    coloring='fill',
+                                    showlines=False
+                                ),
+                                opacity=0.6,
+                                hovertemplate=f'{col_feature}: %{{x}}<br>{row_feature}: %{{y}}<extra></extra>'
                             ),
-                            opacity=0.6,
-                            hovertemplate=f'{col_feature}: %{{x}}<br>{row_feature}: %{{y}}<extra></extra>'
-                        ),
-                        row=row_idx,
-                        col=col_idx
-                    )
+                            row=row_idx,
+                            col=col_idx
+                        )
                 except:
                     pass
 
@@ -312,24 +312,25 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None, s=2
                 data = populations_df[row_feature].dropna()
 
                 try:
-                    kde = stats.gaussian_kde(data)
-                    x_range = np.linspace(data.min(), data.max(), 200)
-                    y_kde = kde(x_range)
+                    if len(data) > 1 and np.nanstd(data) > 0:
+                        kde = stats.gaussian_kde(data)
+                        x_range = np.linspace(data.min(), data.max(), 200)
+                        y_kde = kde(x_range)
 
-                    fig.add_trace(
-                        go.Scatter(
-                            x=x_range,
-                            y=y_kde,
-                            fill='tozeroy',
-                            mode='lines',
-                            line=dict(color=kde_line_color, width=1),
-                            fillcolor=kde_fillcolor,
-                            showlegend=False,
-                            hovertemplate=f'{row_feature}: %{{x}}<br>Density: %{{y}}<extra></extra>'
-                        ),
-                        row=row_idx,
-                        col=col_idx
-                    )
+                        fig.add_trace(
+                            go.Scatter(
+                                x=x_range,
+                                y=y_kde,
+                                fill='tozeroy',
+                                mode='lines',
+                                line=dict(color=kde_line_color, width=1),
+                                fillcolor=kde_fillcolor,
+                                showlegend=False,
+                                hovertemplate=f'{row_feature}: %{{x}}<br>Density: %{{y}}<extra></extra>'
+                            ),
+                            row=row_idx,
+                            col=col_idx
+                        )
                 except:
                     pass
 
