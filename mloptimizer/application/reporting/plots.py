@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 from scipy import stats
+import matplotlib.ticker as ticker
 
 
 def logbook_to_pandas(logbook):
@@ -148,7 +149,7 @@ def plotly_logbook(logbook, population):
     return fig
 
 
-def plot_logbook(logbook):
+def plot_logbook(logbook, font_size=12):
     """
     Generate sns figure from logbook. Evolution of fitness and population.
 
@@ -156,7 +157,8 @@ def plot_logbook(logbook):
     ----------
     logbook : deap.tools.Logbook
         The logbook to plot
-
+    font_size : int
+        The font size of the labels, legends and ticks (-2). Default is 12.
     Returns
     -------
     fig : plotly.graph_objects.Figure
@@ -164,6 +166,15 @@ def plot_logbook(logbook):
     """
     df = pd.DataFrame(logbook)
     g = sns.lineplot(data=df.drop(columns=['gen', 'nevals']), palette="colorblind")
+    # Labels
+    # 3 decimales en el eje Y
+    g.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
+    g.set_xlabel("Generation", fontsize=font_size)
+    g.set_ylabel("Fitness", fontsize=font_size)
+    g.tick_params(axis='x', labelsize=font_size-2)
+    g.tick_params(axis='y', labelsize=font_size-2)
+    g.legend(fontsize=font_size)
+
     return g.get_figure()
 
 

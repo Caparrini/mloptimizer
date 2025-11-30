@@ -46,6 +46,13 @@ g_logbook = plotly_logbook(opt.logbook_, population_df)
 plotly.io.show(g_logbook)
 
 # %%
+# Alternatively, we can use the simpler plot_logbook function.
+from mloptimizer.application.reporting.plots import plot_logbook
+
+g_logbook = plot_logbook(opt.logbook_)
+g_logbook.show()
+
+# %%
 # At the end of the evolution the graph is saved as an html at the path:
 print(opt._optimizer_service.optimizer.tracker.graphics_path)
 print(os.listdir(opt._optimizer_service.optimizer.tracker.graphics_path))
