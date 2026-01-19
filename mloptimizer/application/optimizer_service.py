@@ -15,8 +15,10 @@ class OptimizerService:
                  genetic_params: dict,
                  eval_function: callable = train_score, scoring = None,
                  metrics:dict = None, seed: int=None, use_parallel: bool=False,
-                 use_mlflow: bool=False, early_stopping: bool = False,
-                 patience: int = 5, min_delta: float = 0.01):
+                 use_mlflow: bool=False, disable_file_output: bool=True,
+                 early_stopping: bool = False,
+                 patience: int = 5, min_delta: float = 0.01,
+                 initial_params: list = None, include_default: bool = False):
         """
         Initialize the OptimizerService.
 
@@ -44,6 +46,10 @@ class OptimizerService:
             Number of generations to wait before stopping if no improvement is observed.
         min_delta : float, optional (default=0.01)
             Minimum change in the fitness score to qualify as an improvement.
+        initial_params : list of dict, optional (default=None)
+            List of hyperparameter dictionaries to seed the initial population with.
+        include_default : bool, optional (default=False)
+            If True, include an individual representing sklearn defaults in the initial population.
         """
         self.estimator_class = estimator_class
         self.hyperparam_space = hyperparam_space
@@ -54,6 +60,7 @@ class OptimizerService:
         self.seed = seed or random.randint(0, 1000000)
         self.use_parallel = use_parallel
         self.use_mlflow = use_mlflow
+        self.disable_file_output = disable_file_output
         self.optimizer = None
 
         # Early stopping parameters
@@ -66,6 +73,10 @@ class OptimizerService:
         if not isinstance(min_delta, (int, float)) or min_delta < 0:
             raise ValueError("min_delta must be a non-negative number.")
         self.min_delta = min_delta
+
+        # Initial population seeding
+        self.initial_params = initial_params
+        self.include_default = include_default
 
     def optimize(self, features: np.array, labels: np.array):
         from mloptimizer.domain.optimization.optimizer import Optimizer  # <- moved here
@@ -100,9 +111,12 @@ class OptimizerService:
             seed=self.seed,
             use_parallel=self.use_parallel,
             use_mlflow=self.use_mlflow,
+            disable_file_output=self.disable_file_output,
             early_stopping=self.early_stopping,
             patience=self.patience,
-            min_delta=self.min_delta
+            min_delta=self.min_delta,
+            initial_params=self.initial_params,
+            include_default=self.include_default
         )
 
         # Run the genetic algorithm-based optimization and return the best model

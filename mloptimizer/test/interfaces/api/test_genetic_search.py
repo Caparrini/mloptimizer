@@ -39,7 +39,7 @@ def hyperparam_space_svc():
     """Fixture to create a hyperparameter space for SVC."""
     builder = HyperparameterSpaceBuilder()
     hyperspace_svc = (builder.add_float_param("C", 1, 1000)
-                      .add_float_param("gamma", 100, 10000)
+                      .add_categorical_param("gamma", ["scale", "auto", 0.001, 0.01, 0.1, 1, 10])
                       .add_categorical_param("kernel", ["linear", "rbf", "poly"])
                       .build())
     return hyperspace_svc
@@ -224,3 +224,44 @@ def test_set_genetic_params(genetic_optimizer_rf):
     # Validate that the genetic parameters were updated correctly
     assert updated_genetic_params["generations"] == 10
     assert updated_genetic_params["population_size"] == 8
+
+
+def test_verbose_parameter(iris_data, hyperparam_space_rf):
+    """Test that verbose parameter is correctly set and returned in get_params."""
+    X, y = iris_data
+
+    # Test verbose=0 (default)
+    opt = GeneticSearch(
+        estimator_class=RandomForestClassifier,
+        hyperparam_space=hyperparam_space_rf,
+        generations=2,
+        population_size=5,
+        seed=42,
+        verbose=0
+    )
+    assert opt.verbose == 0
+    assert opt.get_params()["verbose"] == 0
+
+    # Test verbose=1
+    opt = GeneticSearch(
+        estimator_class=RandomForestClassifier,
+        hyperparam_space=hyperparam_space_rf,
+        generations=2,
+        population_size=5,
+        seed=42,
+        verbose=1
+    )
+    assert opt.verbose == 1
+    assert opt.get_params()["verbose"] == 1
+
+    # Test verbose=2
+    opt = GeneticSearch(
+        estimator_class=RandomForestClassifier,
+        hyperparam_space=hyperparam_space_rf,
+        generations=2,
+        population_size=5,
+        seed=42,
+        verbose=2
+    )
+    assert opt.verbose == 2
+    assert opt.get_params()["verbose"] == 2

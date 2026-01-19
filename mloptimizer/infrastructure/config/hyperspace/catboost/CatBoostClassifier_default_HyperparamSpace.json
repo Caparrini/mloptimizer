@@ -1,20 +1,23 @@
 {
     "fixed_hyperparams": {
       "auto_class_weights": "Balanced",
-      "bootstrap_type": "Bernoulli"
+      "bootstrap_type": "Bernoulli",
+      "allow_writing_files": false,
+      "verbose": false,
+      "thread_count": 1
     },
     "evolvable_hyperparams": {
-        "eta": {
-            "name": "eta",
+        "learning_rate": {
+            "name": "learning_rate",
             "min_value": 1,
             "max_value": 10,
             "hyperparam_type": "float",
-            "scale": 10
+            "scale": 100
         },
-        "max_depth": {
-            "name": "max_depth",
-            "min_value": 3,
-            "max_value": 16,
+        "depth": {
+            "name": "depth",
+            "min_value": 4,
+            "max_value": 10,
             "hyperparam_type": "int"
         },
         "n_estimators": {
@@ -29,6 +32,25 @@
             "max_value": 1000,
             "hyperparam_type": "float",
             "scale": 1000
+        },
+        "l2_leaf_reg": {
+            "name": "l2_leaf_reg",
+            "min_value": 1,
+            "max_value": 10,
+            "hyperparam_type": "int"
+        },
+        "colsample_bylevel": {
+            "name": "colsample_bylevel",
+            "min_value": 50,
+            "max_value": 100,
+            "hyperparam_type": "float",
+            "scale": 100
+        },
+        "random_strength": {
+            "name": "random_strength",
+            "min_value": 1,
+            "max_value": 10,
+            "hyperparam_type": "int"
         }
     }
 }

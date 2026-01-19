@@ -1,7 +1,9 @@
+import logging
 import warnings
 from mloptimizer.domain.evaluation import train_score
 from mloptimizer.application import OptimizerService, HyperparameterSpaceService
 import random
+import time
 from sklearn.model_selection import StratifiedKFold, KFold, BaseCrossValidator
 from mloptimizer.domain.evaluation import make_crossval_eval
 from sklearn.base import is_classifier
@@ -42,7 +44,7 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
     scoring : str or callable, optional (default=None)
         Scoring method to evaluate the estimator's performance. If None, the estimator’s default score method is used.
 
-    use_parallel : bool, optional (default=False)
+    use_parallel : bool, optional (default=True)
         Whether to run the optimization in parallel. If True, parallel processing is enabled.
 
     cv : int, sklearn.model_selection.BaseCrossValidator, or None
@@ -54,6 +56,14 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
 
     use_mlflow : bool, optional (default=False)
         If True, the optimization process will be tracked using MLFlow. Default is False.
+
+    disable_file_output : bool, optional (default=True)
+        If True, disables all file and directory creation during optimization. This includes:
+        - Log files, checkpoint files, progress files
+        - Result CSVs (logbook, populations)
+        - Visualization plots (HTML, PNG)
+        - Output directories
+        Note: MLflow tracking (if use_mlflow=True) will still function.
 
     early_stopping : bool, optional (default=False)
         If True, the optimization will stop early if no improvement is observed in the fitness score.
@@ -67,23 +77,41 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
     generations : int, optional (default=20)
         Number of generations to run in the genetic algorithm.
 
-    population_size : int, optional (default=15)
+    population_size : int, optional (default=20)
         Size of the population in each generation.
 
     cxpb : float, optional (default=0.5)
         Crossover probability, the probability of mating two individuals to produce offspring.
 
-    mutpb : float, optional (default=0.5)
-        Mutation probability, the probability of mutating an individual.
+    mutpb : float, optional (default=0.8)
+        Mutation probability, the probability that an individual undergoes mutation.
+        Higher values (0.8-1.0) ensure most offspring are mutated for better exploration.
 
-    n_elites : int, optional (default=10)
+    n_elites : int, optional (default=3)
         Number of elite individuals to carry over to the next generation without mutation.
+        Should be less than population_size (typically 10-20% of population).
 
     tournsize : int, optional (default=3)
         Tournament size for selection, the number of individuals to compete in each tournament.
+        Should be less than population_size (typically 2-5).
 
-    indpb : float, optional (default=0.05)
-        Independent probability for each attribute to be mutated, used in mutation operations.
+    indpb : float, optional (default=0.2)
+        Independent probability for each gene to be mutated within a mutated individual.
+        With mutpb=0.8, indpb=0.2, and 5 hyperparams: ~0.8 genes mutate per offspring on average.
+
+    initial_params : list of dict, optional (default=None)
+        List of hyperparameter dictionaries to seed the initial population with.
+        Example: [{'max_depth': 10, 'n_estimators': 100}, {'max_depth': 20, 'n_estimators': 200}]
+
+    include_default : bool, optional (default=True)
+        If True, include an individual representing sklearn defaults in the initial population.
+        This helps the GA start from a known good configuration.
+
+    verbose : int, optional (default=0)
+        Controls the verbosity of logging output:
+        - 0: Silent (no logging output)
+        - 1: Info level (optimization start/end, generation summaries)
+        - 2: Debug level (detailed evaluation info, internal state)
 
     Attributes
     ----------
@@ -96,15 +124,28 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
     cv_results_ : list of dicts
         A log of the optimization progress, containing details such as fitness scores and hyperparameters
         evaluated during each generation.
+
+    n_trials_ : int
+        Total number of hyperparameter configurations evaluated during optimization.
+        This is useful for comparing computational cost with GridSearch.
+
+    optimization_time_ : float
+        Total time (in seconds) spent on the optimization process.
+        This excludes the final refit on the full training set.
     """
     _required_parameters = ["estimator_class"]
 
     def __init__(self, estimator_class, hyperparam_space, eval_function: callable = None,
-                 seed=None, scoring=None, use_parallel=False,
-                 cv=None, use_mlflow=False, early_stopping=False, patience=5, min_delta=0.01,
-                 generations=20, population_size=15, cxpb=0.5, mutpb=0.5,
-                 n_elites=10, tournsize=3, indpb=0.05):
+                 seed=None, scoring=None, use_parallel=True,
+                 cv=None, use_mlflow=False, disable_file_output=True,
+                 early_stopping=False, patience=5, min_delta=0.01,
+                 generations=20, population_size=20, cxpb=0.5, mutpb=0.8,
+                 n_elites=3, tournsize=3, indpb=0.2,
+                 initial_params=None, include_default=True, verbose=0):
         """Initialize the GeneticOptimizer with the necessary components."""
+        # Configure logging based on verbose level
+        self.verbose = verbose
+        self._configure_logging()
         # Set the genetic algorithm parameters
         # If hyperparam_space not provided, use default for the estimator_class
         if hyperparam_space is None:
@@ -117,6 +158,7 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
         self.scoring = scoring
         self.use_parallel = use_parallel
         self.use_mlflow = use_mlflow
+        self.disable_file_output = disable_file_output
 
         self.generations = generations
         self.population_size = population_size
@@ -185,6 +227,112 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
             raise TypeError("min_delta must be a numeric value (int or float).")
         self.min_delta = min_delta
 
+        # Initial population seeding parameters
+        self.initial_params = initial_params
+        self.include_default = include_default
+
+        # Validate GA parameters relationships
+        self._validate_ga_params()
+
+    def _validate_ga_params(self):
+        """Validate that GA parameters have sensible relationships.
+
+        Checks for common misconfigurations that would prevent proper evolution:
+        - n_elites >= population_size: No offspring created, no evolution
+        - tournsize >= population_size: Selection becomes deterministic
+        - mutpb too low: Most offspring receive no mutation
+        - Expected mutations per offspring too low: Population converges prematurely
+        - Hyperparameter ranges too small: Insufficient search granularity
+        """
+        warnings_list = []
+        n_hyperparams = len(self.hyperparam_space.evolvable_hyperparams) if self.hyperparam_space else 5
+
+        # n_elites should be less than population_size
+        if self.n_elites >= self.population_size:
+            warnings_list.append(
+                f"n_elites ({self.n_elites}) >= population_size ({self.population_size}). "
+                f"This means ALL individuals are elites - no evolution will occur! "
+                f"Setting n_elites to {max(1, self.population_size // 5)}."
+            )
+            self.n_elites = max(1, self.population_size // 5)
+
+        # n_elites should not be too large (> 50% of population)
+        elif self.n_elites > self.population_size // 2:
+            warnings_list.append(
+                f"n_elites ({self.n_elites}) is more than half of population_size ({self.population_size}). "
+                f"This limits diversity. Consider n_elites <= {self.population_size // 5} (10-20% of population)."
+            )
+
+        # tournsize should be less than population_size
+        if self.tournsize >= self.population_size:
+            warnings_list.append(
+                f"tournsize ({self.tournsize}) >= population_size ({self.population_size}). "
+                f"Tournament should be smaller than population. "
+                f"Setting tournsize to {max(2, self.population_size // 4)}."
+            )
+            self.tournsize = max(2, self.population_size // 4)
+
+        # mutpb too low - most offspring won't mutate at all
+        if self.mutpb < 0.5:
+            pct_no_mutation = (1 - self.mutpb) * 100
+            warnings_list.append(
+                f"mutpb ({self.mutpb}) is low. {pct_no_mutation:.0f}% of offspring will receive NO mutation. "
+                f"This causes premature convergence. Consider mutpb >= 0.8 for proper exploration."
+            )
+
+        # Calculate expected mutations per offspring: mutpb * indpb * n_hyperparams
+        expected_mutations = self.mutpb * self.indpb * n_hyperparams
+        if expected_mutations < 0.5:
+            warnings_list.append(
+                f"Expected mutations per offspring is very low ({expected_mutations:.2f}). "
+                f"With mutpb={self.mutpb}, indpb={self.indpb}, and {n_hyperparams} hyperparameters, "
+                f"the population will converge prematurely. "
+                f"Recommended: mutpb >= 0.8, indpb >= 0.2 (gives ~{0.8 * 0.2 * n_hyperparams:.1f} mutations/offspring)."
+            )
+
+        # Check hyperparameter ranges for sufficient granularity
+        if self.hyperparam_space:
+            small_range_params = []
+            for name, hp in self.hyperparam_space.evolvable_hyperparams.items():
+                n_values = hp.max_value - hp.min_value + 1
+                if n_values < 10:
+                    if hp.hyperparam_type == 'float':
+                        actual_range = f"{hp.min_value/hp.scale:.3f} to {hp.max_value/hp.scale:.3f}"
+                    else:
+                        actual_range = f"{hp.min_value} to {hp.max_value}"
+                    small_range_params.append(f"'{name}' ({n_values} values: {actual_range})")
+
+            if small_range_params:
+                warnings_list.append(
+                    f"Some hyperparameters have very small integer ranges (< 10 distinct values): "
+                    f"{', '.join(small_range_params)}. "
+                    f"Small ranges limit search granularity. Consider increasing the range or scale for float types."
+                )
+
+        # Issue warnings
+        for warning in warnings_list:
+            warnings.warn(warning, UserWarning, stacklevel=3)
+
+    def _configure_logging(self):
+        """Configure logging based on verbose level.
+
+        - verbose=0: Silent (NullHandler only, no output)
+        - verbose=1: INFO level (optimization lifecycle, generation summaries)
+        - verbose=2: DEBUG level (detailed evaluation info)
+        """
+        if self.verbose > 0:
+            logger = logging.getLogger("mloptimizer")
+            level = logging.DEBUG if self.verbose > 1 else logging.INFO
+
+            logger.setLevel(level)
+
+            # Only add handler if one doesn't already exist
+            if not any(isinstance(h, logging.StreamHandler) for h in logger.handlers):
+                handler = logging.StreamHandler()
+                handler.setFormatter(
+                    logging.Formatter("%(asctime)s [%(levelname)s]: %(message)s")
+                )
+                logger.addHandler(handler)
 
     def fit(self, X, y):
         """
@@ -226,19 +374,30 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
             seed=self.seed,
             use_parallel=self.use_parallel,
             use_mlflow=self.use_mlflow,
+            disable_file_output=self.disable_file_output,
             early_stopping=self.early_stopping,
             patience=self.patience,
-            min_delta=self.min_delta
+            min_delta=self.min_delta,
+            initial_params=self.initial_params,
+            include_default=self.include_default
         )
+
+        # Start timing the optimization
+        start_time = time.time()
 
         # Perform optimization via the optimizer service
         estimator_with_best_params = self._optimizer_service.optimize(X, y)
+
+        # End timing (before final refit)
+        self.optimization_time_ = time.time() - start_time
+
+        # Final refit on full training set
         self.best_estimator_ = estimator_with_best_params.fit(X, y)
 
         # Extract best hyperparameters from the optimizer service
         self.best_params_ = self.best_estimator_.get_params()
 
-        # Store the detailed cross-validation or genetic algorithm results TODO
+        # Store the detailed cross-validation or genetic algorithm results
         self.cv_results_ = self._optimizer_service.optimizer.genetic_algorithm.logbook
 
         # Store logbook
@@ -246,6 +405,11 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
 
         # Store population df
         self.populations_ = self._optimizer_service.optimizer.genetic_algorithm.population_2_df()
+
+        # Count total number of trials (sum of actual evaluations from logbook)
+        # The logbook tracks 'nevals' per generation, which is the count of individuals
+        # that were actually evaluated (excluding those with cached fitness from elitism)
+        self.n_trials_ = sum(record['nevals'] for record in self.logbook_)
 
         return self
 
@@ -390,6 +554,9 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
             "early_stopping": self.early_stopping,
             "patience": self.patience,
             "min_delta": self.min_delta,
+            "initial_params": self.initial_params,
+            "include_default": self.include_default,
+            "verbose": self.verbose,
             ** self.get_genetic_params()
         }
 
@@ -426,15 +593,6 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
                 "n_elites": self.n_elites, "tournsize": self.tournsize,
                 "indpb": self.indpb
         }
-
-    def set_genetic_params(self, **params):
-        self.genetic_params = deepcopy(params) if params else None
-
-        self._internal_genetic_params = self.default_genetic_params.copy()
-        if self.genetic_params:
-            self._internal_genetic_params.update(self.genetic_params)
-
-        return self
 
     def get_feature_names_out(self, input_features=None):
         """Get output feature names for transformation.
@@ -474,7 +632,10 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
             'mutpb': self.mutpb,
             'n_elites': self.n_elites,
             'tournsize': self.tournsize,
-            'indpb': self.indpb
+            'indpb': self.indpb,
+            'initial_params': self.initial_params,
+            'include_default': self.include_default,
+            'verbose': self.verbose
         }
 
         # Remove None values to reduce pickle size

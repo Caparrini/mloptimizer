@@ -1,5 +1,6 @@
 import os
 import random
+import inspect
 import numpy as np
 from sklearn.base import is_regressor, is_classifier
 
@@ -7,6 +8,7 @@ from mloptimizer.domain.evaluation import train_score
 from mloptimizer.domain.hyperspace import HyperparameterSpace
 from mloptimizer.infrastructure.tracking import Tracker
 from mloptimizer.domain.evaluation import Evaluator
+from mloptimizer.__main__ import get_version
 
 
 
@@ -49,13 +51,14 @@ class Optimizer:
     """
 
     def __init__(self, estimator_class, features: np.array, labels: np.array,
-                 folder=os.curdir, log_file="mloptimizer.log",
+                 folder=os.curdir,
                  hyperparam_space: HyperparameterSpace = None,
                  genetic_params: dict = None,
                  eval_function: callable = train_score,
                  fitness_score=None, metrics=None, seed=random.randint(0, 1000000),
-                 use_parallel=False, use_mlflow=False,
-                 early_stopping: bool = False, patience: int = 5, min_delta: float = 0.01):
+                 use_parallel=False, use_mlflow=False, disable_file_output=True,
+                 early_stopping: bool = False, patience: int = 5, min_delta: float = 0.01,
+                 initial_params: list = None, include_default: bool = False):
         """
         Creates object BaseOptimizer.
 
@@ -69,8 +72,6 @@ class Optimizer:
             np.array with the labels
         folder : path, optional (default=os.curdir)
             folder to store the structure of files and folders product of executions
-        log_file : str, optional (default="mloptimizer.log")
-            log file name
         hyperparam_space : HyperparameterSpace, optional (default=None)
             object with the hyperparameter space: fixed and evolvable hyperparams
         genetics_params : dict, optional (default=None)
@@ -91,6 +92,10 @@ class Optimizer:
             Number of generations to wait before stopping if no improvement is observed.
         min_delta : float, optional (default=0.01)
             Minimum change in the fitness score to qualify as an improvement.
+        initial_params : list of dict, optional (default=None)
+            List of hyperparameter dictionaries to seed the initial population with.
+        include_default : bool, optional (default=False)
+            If True, include an individual representing sklearn defaults in the initial population.
         """
         from mloptimizer.domain.population import IndividualUtils
         # Model class
@@ -123,6 +128,9 @@ class Optimizer:
         # mlflow
         self.use_mlflow = use_mlflow
 
+        # File output control
+        self.disable_file_output = disable_file_output
+
         # Early stopping
         self.early_stopping = early_stopping
         if self.early_stopping:
@@ -133,9 +141,13 @@ class Optimizer:
         self.patience = patience
         self.min_delta = min_delta
 
+        # Initial population seeding
+        self.initial_params = initial_params
+        self.include_default = include_default
+
         # Tracker
-        self.tracker = Tracker(name="mloptimizer", folder=folder, log_file=log_file, use_mlflow=self.use_mlflow,
-                               use_parallel=self.use_parallel)
+        self.tracker = Tracker(name="mloptimizer", folder=folder, use_mlflow=self.use_mlflow,
+                               use_parallel=self.use_parallel, disable_file_output=self.disable_file_output)
 
         # Evaluator
         self.individual_utils = IndividualUtils(hyperparam_space=self.hyperparam_space,
@@ -157,8 +169,20 @@ class Optimizer:
         """
         if self.hyperparam_space is None:
             raise ValueError("hyperparam_space is None")
-        # Default params of the estimator_class
+
+        # Get default params of the estimator_class
         default_estimator_params = set(self.estimator_class().get_params().keys())
+
+        # For estimators like CatBoost that don't properly implement get_params(),
+        # use inspect to get constructor parameters
+        is_catboost = 'catboost' in self.estimator_class.__module__.lower()
+        if not default_estimator_params or is_catboost:
+            sig = inspect.signature(self.estimator_class.__init__)
+            default_estimator_params = set(
+                param_name for param_name in sig.parameters.keys()
+                if param_name != 'self'
+            )
+
         hyperparam_space_params = set(self.hyperparam_space.get_all_params().keys())
         illegal_params = hyperparam_space_params - default_estimator_params
 
@@ -245,16 +269,45 @@ class Optimizer:
         """
         #from mloptimizer.domain.optimization import DeapOptimizer, GeneticAlgorithmRunner
         from mloptimizer.domain.optimization import GeneticAlgorithm
-        # Log initialization
-        self.tracker.start_optimization(type(self).__name__, generations=generations)
+        # Log initialization with enhanced info
+        self.tracker.start_optimization(
+            type(self).__name__,
+            generations=generations,
+            population_size=population_size,
+            estimator_class=self.estimator_class
+        )
 
         # Creation of folders and checkpoint
         self.tracker.start_checkpoint(opt_run_folder_name, estimator_class=self.estimator_class)
 
         # Log dataset
         self.tracker.log_dataset(self.features, self.labels)
+
         # Log genetic parameters
         self.tracker.log_genetic_params(self.genetic_params)
+
+        # Log comprehensive optimization configuration (Phase 1 MLflow improvement)
+        if self.tracker.use_mlflow:
+            config = {
+                'estimator_class': self.estimator_class.__name__,
+                'population_size': population_size,
+                'generations': generations,
+                'early_stopping': self.early_stopping,
+                'patience': self.patience if self.early_stopping else None,
+                'min_delta': self.min_delta if self.early_stopping else None,
+                'use_parallel': self.use_parallel,
+                'n_evolvable_params': len(self.hyperparam_space.evolvable_hyperparams),
+                'evolvable_params': list(self.hyperparam_space.evolvable_hyperparams.keys()),
+            }
+            self.tracker.log_optimization_config(config)
+
+            # Set comprehensive tags (Phase 1 MLflow improvement)
+            tags = {
+                'estimator_class': self.estimator_class.__name__,
+                'mloptimizer_version': get_version(),
+                'optimization_algorithm': 'genetic_algorithm',
+            }
+            self.tracker.set_optimization_tags(tags)
 
         # Creation of deap optimizer
         #self.deap_optimizer = DeapOptimizer(hyperparam_space=self.hyperparam_space, seed=self.mlopt_seed,
@@ -270,7 +323,8 @@ class Optimizer:
                                                   seed=self.mlopt_seed,
                                                   evaluator=self.evaluator,
                                                   use_parallel=self.use_parallel,
-                                                  maximize=is_classifier(self.estimator_class))
+                                                  maximize=is_classifier(self.estimator_class),
+                                                  estimator_class=self.estimator_class)
 
 
         # Run genetic algorithm
@@ -283,7 +337,9 @@ class Optimizer:
                                                                      checkpoint=checkpoint,
                                                                      early_stopping=self.early_stopping,
                                                                      patience=self.patience,
-                                                                     min_delta=self.min_delta)
+                                                                     min_delta=self.min_delta,
+                                                                     initial_params=self.initial_params,
+                                                                     include_default=self.include_default)
 
         #self.runs.append(ga_runner)
         #self.logbook = logbook
@@ -294,7 +350,16 @@ class Optimizer:
         # Log and save results
         # self._log_and_save_results(hof)
 
-        # End optimization, if MLflow is used, parent run is ended
-        self.tracker.end_optimization()
+        # Calculate final statistics
+        best_fitness = hof[0].fitness.values[0] if hof else None
+        total_evaluations = sum(record['nevals'] for record in logbook) if logbook else None
+
+        # End optimization with comprehensive summary (Phase 1 MLflow improvement)
+        self.tracker.end_optimization(
+            best_fitness=best_fitness,
+            total_evaluations=total_evaluations,
+            stopped_early=self.genetic_algorithm.stopped_early_,
+            stopped_at_generation=self.genetic_algorithm.generations_run_
+        )
 
         return self.individual_utils.get_clf(hof[0])

@@ -1,0 +1,44 @@
+{
+    "fixed_hyperparams": {
+    },
+    "evolvable_hyperparams": {
+        "learning_rate": {
+            "name": "learning_rate",
+            "min_value": 1,
+            "max_value": 100,
+            "hyperparam_type": "float",
+            "scale": 1000
+        },
+        "depth": {
+            "name": "depth",
+            "min_value": 4,
+            "max_value": 10,
+            "hyperparam_type": "int"
+        },
+        "iterations": {
+            "name": "iterations",
+            "min_value": 50,
+            "max_value": 500,
+            "hyperparam_type": "int"
+        },
+        "l2_leaf_reg": {
+            "name": "l2_leaf_reg",
+            "min_value": 1,
+            "max_value": 10,
+            "hyperparam_type": "int"
+        },
+        "rsm": {
+            "name": "rsm",
+            "min_value": 600,
+            "max_value": 1000,
+            "hyperparam_type": "float",
+            "scale": 1000
+        },
+        "random_strength": {
+            "name": "random_strength",
+            "min_value": 1,
+            "max_value": 10,
+            "hyperparam_type": "int"
+        }
+    }
+}
