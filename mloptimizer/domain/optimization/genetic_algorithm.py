@@ -159,7 +159,7 @@ class GeneticAlgorithm:
                 if self.tracker:
                     logger.debug("Parallelization enabled using joblib with loky backend")
             except ImportError:
-                print("joblib not available, falling back to sequential execution")
+                logger.warning("joblib not available, falling back to sequential execution")
                 self.use_parallel = False
 
         self.toolbox.register("individual",

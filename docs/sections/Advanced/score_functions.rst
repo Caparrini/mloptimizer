@@ -1,97 +1,165 @@
 ===========================
-Metrics and score functions
+Metrics and Score Functions
 ===========================
 
-.. note::
-   This section provides an overview of metrics and score functions and how they are used in the context of genetic optimization. It also provides examples of how to use the score functions provided by the library.
+This section explains how to customize the scoring metric used during genetic optimization.
 
-Introduction
-------------
-
-Metrics and score functions are used to evaluate the performance of machine learning algorithms. They take as input the true labels\values of the data, the predicted labels\values of the data, a metric (e.g. accuracy, precision, rmse, mse, etc.)
-and a scoring function or strategy (train/test split, k-fold cross validation, stratified cross validation, time series split, etc.). The score function then calculates a score that quantifies how well the machine learning algorithm performed on the given data.
-Two main types of metrics are commonly used in machine learning:
-
-- Classification metrics: These are used to evaluate the performance of classification algorithms. They include metrics such as accuracy, precision, recall, F1 score, etc.
-
-- Regression metrics: These are used to evaluate the performance of regression algorithms. They include metrics such as mean squared error, mean absolute error, R-squared, etc.
-
-In the context of genetic optimization, the fitness score is the metric aimed to be maximized. When passing a classification or regression estimator mloptimizer will use by default the following score functions:
-
-- Classification: balanced_accuracy_score
-- Regression: rmse
-
-In the case of the regression metrics, we maximize the negative of the metric, so the optimization is done in the same way as in the classification case.
-
-However, the user can pass any score function.
-
-Metrics
--------
-
-The `metrics` input argument in the `Optimizer` class is a dictionary
-that maps a metric name to a metric function. This function can be one of the metrics provided
-by the `sklearn.metrics` module, or a custom metric function that shoutd comply with the sklearn library metric functions.
-
-Here's an example of how to use the `Optimizer` class with custom metrics:
-
-.. code-block:: python
-
-    from sklearn.metrics import balanced_accuracy_score, mean_squared_error
-    from mloptimizer.application import Optimizer
-    from mloptimizer.domain.hyperspace import HyperparameterSpace
-    from sklearn.ensemble import RandomForestRegressor
-
-    regression_metrics = {
-            "mse": mean_squared_error,
-            "rmse": root_mean_squared_error
-        }
-    evolvable_hyperparams = HyperparameterSpace.get_default_hyperparameter_space(RandomForestRegressor)
-
-    mlopt = Optimizer(estimator_class=RandomForestRegressor,
-                      hyperparam_space=evolvable_hyperparams,
-                      fitness_score='rmse', metrics=regression_metrics,
-                      features=X, labels=y)
-
-Score Functions
+Default Scoring
 ---------------
 
-Not only the metric should be defined, how the data is used or split to calculate the metric is also important.
-The `model_evaluation.py` module provides score functions that can be used to evaluate the performance of machine learning algorithms.
-These score functions take a estimator, features, labels, and a score metric as input, and return a score that quantifies how well the classifier performed on the given data.
+By default, :class:`GeneticSearch <mloptimizer.interfaces.GeneticSearch>` uses:
 
-The `model_evaluation.py` module provides the following score functions:
+- **Classification**: ``accuracy`` (from sklearn)
+- **Regression**: ``neg_mean_squared_error`` (from sklearn)
 
-- `train_score`: This function trains a classifier with the provided features and labels, and then calculates the score over the train data.
+Using Built-in Scoring Metrics
+------------------------------
 
-- `train_test_score`: This function splits the provided features and labels into a training set and a test set. Then, it trains an estimator on the training set and calculates a score on the test set using the provided score function.
-
-- `kfold_score`: This function evaluates an estimator using K-Fold cross-validation. It splits the provided features and labels into K folds, trains an estimator on K-1 folds, and calculates a score on the remaining fold. This process is repeated K times, and the function returns the average score across all folds.
-
-- `kfold_stratified_score`: This function is similar to `kfold_score`, but it uses stratified K-Fold cross-validation. This means that it preserves the percentage of samples for each class in each fold. For classification problems, this can help ensure that each fold has a representative sample of each class.
-
-- `temporal_kfold_score`: This function is similar to `kfold_score`, but it uses temporal K-Fold cross-validation. This means that it respects the order of the data, making it suitable for time series data in order to avoid look-ahead bias.
-
-Each of these score functions takes a classifier, features, and labels as input. They also take a score metric as input, which is used to calculate the score. The score function could be any function that takes the true labels\values and the predicted labels\values as input and returns a score. Examples of score functions include accuracy, precision, recall, F1 score, etc.
-
-Examples
---------
-
-Here's an example of how to use the `train_score` function:
+Use the ``scoring`` parameter to specify any sklearn-compatible scoring metric:
 
 .. code-block:: python
 
-   from mloptimizer.domain.evaluation import model_evaluation
-   from sklearn.ensemble import RandomForestClassifier
-   from sklearn.metrics import accuracy_score
+    from sklearn.datasets import load_iris
+    from sklearn.tree import DecisionTreeClassifier
+    from mloptimizer.interfaces import GeneticSearch, HyperparameterSpaceBuilder
 
-   # Define features, labels, and classifier
-   from sklearn.datasets import load_iris
-   features, labels = load_iris(return_X_y=True)
-   clf = RandomForestClassifier()
+    X, y = load_iris(return_X_y=True)
+    space = HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier)
 
-   # Use the train_score function
-   score = model_evaluation.train_score(features, labels, clf, metrics={"accuracy": accuracy_score})
+    # Use balanced accuracy instead of regular accuracy
+    opt = GeneticSearch(
+        estimator_class=DecisionTreeClassifier,
+        hyperparam_space=space,
+        scoring='balanced_accuracy',
+        generations=5,
+        population_size=10
+    )
+    opt.fit(X, y)
 
+Common Scoring Metrics
+----------------------
 
-In this example, we first define the features, labels, and classifier. We then use the `train_score` function to train the classifier and calculate the score. The `accuracy_score` function from `sklearn.metrics` is used as the score function.
+**Classification metrics:**
 
+- ``accuracy`` - Accuracy score
+- ``balanced_accuracy`` - Balanced accuracy (good for imbalanced datasets)
+- ``f1`` - F1 score (binary)
+- ``f1_weighted`` - Weighted F1 score (multiclass)
+- ``precision`` - Precision score
+- ``recall`` - Recall score
+- ``roc_auc`` - ROC AUC score
+
+**Regression metrics:**
+
+- ``neg_mean_squared_error`` - Negative MSE (sklearn convention: higher is better)
+- ``neg_root_mean_squared_error`` - Negative RMSE
+- ``neg_mean_absolute_error`` - Negative MAE
+- ``r2`` - R-squared score
+
+.. note::
+
+    sklearn uses the convention that higher scores are better. For error metrics like MSE,
+    the negative value is used so that minimizing error = maximizing the negative error.
+
+Custom Scoring Functions
+------------------------
+
+You can define custom scoring functions using sklearn's ``make_scorer``:
+
+.. code-block:: python
+
+    from sklearn.datasets import load_iris
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.metrics import make_scorer, fbeta_score
+    from mloptimizer.interfaces import GeneticSearch, HyperparameterSpaceBuilder
+
+    X, y = load_iris(return_X_y=True)
+    space = HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier)
+
+    # Create a custom F-beta scorer with beta=2 (recall-weighted)
+    f2_scorer = make_scorer(fbeta_score, beta=2, average='weighted')
+
+    opt = GeneticSearch(
+        estimator_class=DecisionTreeClassifier,
+        hyperparam_space=space,
+        scoring=f2_scorer,
+        generations=5,
+        population_size=10
+    )
+    opt.fit(X, y)
+
+Example: Custom Business Metric
+-------------------------------
+
+For domain-specific metrics, create a custom scoring function:
+
+.. code-block:: python
+
+    import numpy as np
+    from sklearn.datasets import load_iris
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.metrics import make_scorer
+    from mloptimizer.interfaces import GeneticSearch, HyperparameterSpaceBuilder
+
+    # Custom metric: penalize false negatives more than false positives
+    def weighted_error(y_true, y_pred):
+        fn_weight = 2.0  # False negatives cost twice as much
+        fp_weight = 1.0
+
+        fn = np.sum((y_true == 1) & (y_pred == 0))
+        fp = np.sum((y_true == 0) & (y_pred == 1))
+        tp = np.sum((y_true == 1) & (y_pred == 1))
+
+        # Return a score where higher is better
+        if tp + fn + fp == 0:
+            return 1.0
+        return tp / (tp + fn_weight * fn + fp_weight * fp)
+
+    X, y = load_iris(return_X_y=True)
+    # Binary classification for this example
+    y_binary = (y == 2).astype(int)
+
+    space = HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier)
+    custom_scorer = make_scorer(weighted_error)
+
+    opt = GeneticSearch(
+        estimator_class=DecisionTreeClassifier,
+        hyperparam_space=space,
+        scoring=custom_scorer,
+        generations=5,
+        population_size=10
+    )
+    opt.fit(X, y_binary)
+
+Cross-Validation Integration
+----------------------------
+
+The ``scoring`` parameter works with cross-validation. Use the ``cv`` parameter to specify the CV strategy:
+
+.. code-block:: python
+
+    from sklearn.datasets import load_iris
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.model_selection import StratifiedKFold
+    from mloptimizer.interfaces import GeneticSearch, HyperparameterSpaceBuilder
+
+    X, y = load_iris(return_X_y=True)
+    space = HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier)
+
+    # Use 5-fold stratified CV with F1 scoring
+    opt = GeneticSearch(
+        estimator_class=DecisionTreeClassifier,
+        hyperparam_space=space,
+        scoring='f1_weighted',
+        cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=42),
+        generations=5,
+        population_size=10
+    )
+    opt.fit(X, y)
+
+    print(f"Best F1 score: {opt.best_score_:.4f}")
+
+.. seealso::
+
+    - `sklearn scoring documentation <https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter>`_
+    - `sklearn make_scorer <https://scikit-learn.org/stable/modules/generated/sklearn.metrics.make_scorer.html>`_

@@ -1,58 +1,119 @@
 Parallel processing
 ===================
 
-Relying on the
-`Deap capability to parallelize the evaluation of the fitness function
-<https://deap.readthedocs.io/en/master/tutorials/basic/part4.html>`__,
-we can use the ``multiprocessing`` module to parallelize the evaluation of the fitness function.
-This is done passing the ``use_parallel`` parameter as ``True`` to initialize the ``Optimizer`` object.
-This parameter is set to ``False`` by default.
+``mloptimizer`` supports parallel evaluation of individuals using `joblib <https://joblib.readthedocs.io/>`_.
+This can significantly speed up optimization, especially for models with longer training times.
 
-An example of the speedup that can be achieved using parallel processing is shown below.
+Enabling Parallel Processing
+----------------------------
 
-.. note::
-   In the example below, the seed is set to 25 to ensure the result using parallel processing is the same as the one without parallel processing.
-
-.. warning::
-   Parallel processing is not supported for the ``XGBClassifier`` and ``KerasClassifier`` classifiers.
+Use the ``use_parallel`` parameter when initializing :class:`GeneticSearch <mloptimizer.interfaces.GeneticSearch>`:
 
 .. code-block:: python
 
-    from mloptimizer.application import Optimizer
-    from mloptimizer.domain.hyperspace import HyperparameterSpace
+    from mloptimizer.interfaces import GeneticSearch, HyperparameterSpaceBuilder
     from sklearn.tree import DecisionTreeClassifier
-    from sklearn.datasets import load_iris
+
+    space = HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier)
+
+    # Enable parallel processing (default is True)
+    opt = GeneticSearch(
+        estimator_class=DecisionTreeClassifier,
+        hyperparam_space=space,
+        use_parallel=True  # Default
+    )
+
+    # Disable parallel processing for sequential execution
+    opt = GeneticSearch(
+        estimator_class=DecisionTreeClassifier,
+        hyperparam_space=space,
+        use_parallel=False
+    )
+
+Performance Comparison Example
+------------------------------
+
+Here's an example comparing parallel vs. sequential execution:
+
+.. code-block:: python
+
     import time
+    from sklearn.datasets import load_iris
+    from sklearn.tree import DecisionTreeClassifier
+    from mloptimizer.interfaces import GeneticSearch, HyperparameterSpaceBuilder
 
-    # Load the dataset and get the features and target
     X, y = load_iris(return_X_y=True)
+    space = HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier)
 
-    # Define the hyperparameter space (a default space is provided for some algorithms)
-    hyperparameter_space = HyperparameterSpace.get_default_hyperparameter_space(DecisionTreeClassifier)
+    # With parallel processing
+    opt_parallel = GeneticSearch(
+        estimator_class=DecisionTreeClassifier,
+        hyperparam_space=space,
+        generations=5,
+        population_size=20,
+        use_parallel=True,
+        seed=42
+    )
 
-    # Set the seed to ensure the result using parallel processing is the same as the one without parallel processing
-    my_seed = 25
-    population = 50
-    generations = 4
+    start = time.time()
+    opt_parallel.fit(X, y)
+    time_parallel = time.time() - start
 
-    opt_with_parallel = Optimizer(estimator_class=DecisionTreeClassifier, features=X, labels=y,
-                                  hyperparam_space=hyperparameter_space, seed=my_seed, use_parallel=True)
+    # Without parallel processing
+    opt_sequential = GeneticSearch(
+        estimator_class=DecisionTreeClassifier,
+        hyperparam_space=space,
+        generations=5,
+        population_size=20,
+        use_parallel=False,
+        seed=42
+    )
 
-    start_time_parallel = time.time()
-    clf_with_parallel = opt_with_parallel.optimize_clf(population, generations)
-    end_time_parallel = time.time()
+    start = time.time()
+    opt_sequential.fit(X, y)
+    time_sequential = time.time() - start
 
-    opt = Optimizer(estimator_class=DecisionTreeClassifier, features=X, labels=y,
-                    hyperparam_space=hyperparameter_space, seed=my_seed, use_parallel=False)
-    start_time = time.time()
-    clf = opt.optimize_clf(population, generations)
-    end_time = time.time()
+    print(f"Parallel: {time_parallel:.2f}s")
+    print(f"Sequential: {time_sequential:.2f}s")
 
-    elapsed_time_parallel = end_time_parallel - start_time_parallel
-    elapsed_time = end_time - start_time
-    speedup = round(((elapsed_time_parallel / elapsed_time) - 1) * 100, 2)
+.. note::
 
-    print(f"Elapsed time with parallel: {elapsed_time_parallel}")
-    print(f"Elapsed time without parallel: {elapsed_time}")
-    print(f"Speedup: {speedup}%")
+    The speedup from parallel processing depends on:
 
+    - **Model training time**: Larger speedups for models that take longer to train
+    - **Number of CPU cores**: More cores = more potential parallelism
+    - **Population size**: Larger populations benefit more from parallelization
+    - **Overhead**: For very fast models (like DecisionTree on small data), the parallelization overhead may outweigh benefits
+
+MLflow Limitation
+-----------------
+
+When using MLflow tracking with ``use_mlflow=True``, there is a limitation:
+
+.. warning::
+
+    When ``use_parallel=True`` (default), child runs for individual evaluations are NOT created in MLflow.
+    This is because joblib workers don't share the MLflow context.
+
+    The parent run with generation-level metrics is always logged correctly.
+
+To enable full MLflow logging including child runs for each individual:
+
+.. code-block:: python
+
+    opt = GeneticSearch(
+        estimator_class=DecisionTreeClassifier,
+        hyperparam_space=space,
+        use_mlflow=True,
+        use_parallel=False  # Required for child run logging
+    )
+
+When to Disable Parallel Processing
+-----------------------------------
+
+Consider setting ``use_parallel=False`` when:
+
+- You need full MLflow child run logging
+- Debugging optimization issues (easier to trace sequential execution)
+- Running on systems with limited memory (parallel workers increase memory usage)
+- The model itself uses parallelization (e.g., ``n_jobs=-1`` in RandomForest)

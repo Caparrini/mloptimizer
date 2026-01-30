@@ -1,7 +1,11 @@
+import logging
+
 from mloptimizer.domain.model.alg_wrapper import generate_model
 from mloptimizer.domain.optimization import Optimizer
 from mloptimizer.domain.hyperspace import Hyperparam
 from mloptimizer.domain.population import IndividualUtils
+
+logger = logging.getLogger(__name__)
 
 
 class KerasClassifierOptimizer(Optimizer):
@@ -27,10 +31,10 @@ class KerasClassifierOptimizer(Optimizer):
         try:
             from keras.wrappers.scikit_learn import KerasClassifier
         except ImportError as e:
-            print(f"{e}: Keras is not installed. Please install it to use this function.")
+            logger.warning(f"{e}: Keras is not installed. Please install it to use this function.")
             return None
         individual_dict = IndividualUtils(hyperparam_space=self.hyperparam_space).individual2dict(individual)
-        print(individual_dict)
+        logger.debug(f"Individual dict: {individual_dict}")
         clf = KerasClassifier(build_fn=generate_model,
                               **individual_dict)
         return clf
