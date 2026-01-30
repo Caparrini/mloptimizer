@@ -102,3 +102,101 @@ def test_performance_attributes_consistency(iris_data):
     # Both attributes should be set
     assert opt.n_trials_ is not None
     assert opt.optimization_time_ is not None
+
+
+def test_best_score_attribute(iris_data):
+    """Test that best_score_ attribute is set correctly after fitting.
+
+    This tests sklearn GridSearchCV interface compatibility.
+    """
+    X, y = iris_data
+
+    hyperparam_space = HyperparameterSpaceBuilder.get_default_space(
+        estimator_class=DecisionTreeClassifier
+    )
+
+    opt = GeneticSearch(
+        estimator_class=DecisionTreeClassifier,
+        hyperparam_space=hyperparam_space,
+        generations=3,
+        population_size=5,
+        seed=42,
+        use_parallel=False
+    )
+
+    opt.fit(X, y)
+
+    # Check that best_score_ attribute exists and is a valid float
+    assert hasattr(opt, 'best_score_')
+    assert isinstance(opt.best_score_, float)
+
+    # For classification with accuracy, score should be between 0 and 1
+    assert 0.0 <= opt.best_score_ <= 1.0
+
+    # best_score_ should match the max fitness across all generations
+    # With elitism enabled (default), last generation's max equals global max
+    assert opt.best_score_ == opt.populations_['fitness'].max()
+
+
+def test_best_score_consistency_with_populations(iris_data):
+    """Test that best_score_ is consistent with populations DataFrame."""
+    X, y = iris_data
+
+    hyperparam_space = HyperparameterSpaceBuilder.get_default_space(
+        estimator_class=DecisionTreeClassifier
+    )
+
+    opt = GeneticSearch(
+        estimator_class=DecisionTreeClassifier,
+        hyperparam_space=hyperparam_space,
+        generations=4,
+        population_size=6,
+        seed=42,
+        use_parallel=False
+    )
+
+    opt.fit(X, y)
+
+    # best_score_ should be the maximum fitness across all individuals
+    max_fitness_in_populations = opt.populations_['fitness'].max()
+    assert opt.best_score_ == max_fitness_in_populations
+
+
+def test_sklearn_compatible_attributes_all_present(iris_data):
+    """Test that all sklearn-compatible attributes are present after fit."""
+    X, y = iris_data
+
+    hyperparam_space = HyperparameterSpaceBuilder.get_default_space(
+        estimator_class=DecisionTreeClassifier
+    )
+
+    opt = GeneticSearch(
+        estimator_class=DecisionTreeClassifier,
+        hyperparam_space=hyperparam_space,
+        generations=2,
+        population_size=4,
+        seed=42,
+        use_parallel=False
+    )
+
+    opt.fit(X, y)
+
+    # All sklearn GridSearchCV-compatible attributes should be present
+    assert hasattr(opt, 'best_estimator_')
+    assert hasattr(opt, 'best_params_')
+    assert hasattr(opt, 'best_score_')
+    assert hasattr(opt, 'cv_results_')
+
+    # mloptimizer additional attributes
+    assert hasattr(opt, 'n_trials_')
+    assert hasattr(opt, 'optimization_time_')
+    assert hasattr(opt, 'logbook_')
+    assert hasattr(opt, 'populations_')
+
+    # All should have valid values
+    assert opt.best_estimator_ is not None
+    assert opt.best_params_ is not None
+    assert opt.best_score_ is not None
+    assert opt.cv_results_ is not None
+    assert opt.n_trials_ > 0
+    assert opt.optimization_time_ > 0

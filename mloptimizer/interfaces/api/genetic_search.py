@@ -132,6 +132,11 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
     optimization_time_ : float
         Total time (in seconds) spent on the optimization process.
         This excludes the final refit on the full training set.
+
+    best_score_ : float
+        Best fitness score achieved during optimization. This is the fitness value
+        of the best individual found (from the Hall of Fame). Equivalent to
+        sklearn's GridSearchCV.best_score_ for interface compatibility.
     """
     _required_parameters = ["estimator_class"]
 
@@ -407,6 +412,11 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
         # The logbook tracks 'nevals' per generation, which is the count of individuals
         # that were actually evaluated (excluding those with cached fitness from elitism)
         self.n_trials_ = sum(record['nevals'] for record in self.logbook_)
+
+        # Best score (sklearn-compatible) - maximum fitness achieved
+        # This matches sklearn's GridSearchCV.best_score_ interface
+        # Use the max fitness from populations DataFrame (most reliable across all generations)
+        self.best_score_ = self.populations_['fitness'].max()
 
         # Build sklearn-compatible cv_results_ DataFrame
         tracker = self._optimizer_service.optimizer.tracker

@@ -28,13 +28,13 @@ The output will show the details of the best model, including its class and the 
 
 **Example: Accessing Best Hyperparameters and Fitness Score**
 
-The best hyperparameters and fitness score can be accessed directly through `best_params_` and `best_fitness_` attributes.
+The best hyperparameters and fitness score can be accessed directly through `best_params_` and `best_score_` attributes. This follows the sklearn `GridSearchCV` interface for compatibility.
 
 .. code-block:: python
 
     # Display the best hyperparameters and fitness score
     print("Best Hyperparameters:", opt.best_params_)
-    print("Best Fitness Score:", opt.best_fitness_)
+    print("Best Score:", opt.best_score_)
 
 These attributes provide a summary of the best configuration found and its performance score, allowing you to assess the quality of the optimized model.
 

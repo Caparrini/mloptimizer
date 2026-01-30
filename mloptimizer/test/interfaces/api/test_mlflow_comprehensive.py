@@ -297,9 +297,8 @@ class TestMLflowDataConsistency:
         )
         opt.fit(X, y)
 
-        # Get best fitness from GeneticSearch
-        # Note: best_score_ might not exist, use logbook instead
-        logbook_best = max(record['max'] for record in opt.logbook_)
+        # Get best fitness from GeneticSearch (now using best_score_ attribute)
+        best_score = opt.best_score_
 
         client = MlflowClient(tracking_uri=self.mlflow_uri)
         experiment = client.get_experiment_by_name("mloptimizer")
@@ -313,8 +312,8 @@ class TestMLflowDataConsistency:
         assert mlflow_final_fitness is not None, "final_best_fitness not logged"
 
         # Allow small floating point tolerance
-        assert abs(mlflow_final_fitness - logbook_best) < 1e-6, \
-            f"MLflow final_best_fitness ({mlflow_final_fitness}) != logbook max ({logbook_best})"
+        assert abs(mlflow_final_fitness - best_score) < 1e-6, \
+            f"MLflow final_best_fitness ({mlflow_final_fitness}) != best_score_ ({best_score})"
 
 
 class TestMLflowDataRecoverability:
