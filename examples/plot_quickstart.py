@@ -23,7 +23,6 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 # %%
 # Define the HyperparameterSpace, you can use the default hyperparameters for the machine learning model
 # that you want to optimize. In this case we use the default hyperparameters for a DecisionTreeClassifier.
-# Another dataset or a custom one can be used
 hyperparam_space = HyperparameterSpaceBuilder.get_default_space(estimator_class=DecisionTreeClassifier)
 
 # %%

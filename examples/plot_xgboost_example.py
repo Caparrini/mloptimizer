@@ -24,9 +24,9 @@ print("Loading Forest CoverType dataset...")
 data = fetch_covtype()
 X, y = data.data, data.target
 y = y - 1  # Adjust labels to start from 0
-# Use a subset for faster execution
+# Use a small subset for faster execution in documentation builds
 np.random.seed(42)
-sample_indices = np.random.choice(len(X), size=2000, replace=False)
+sample_indices = np.random.choice(len(X), size=1000, replace=False)
 X = X[sample_indices]
 y = y[sample_indices]
 
@@ -45,12 +45,21 @@ X_train, X_test, y_train, y_test = train_test_split(
 # We can build a custom hyperparameter space by adding individual parameters.
 # This gives fine-grained control over the search space for each hyperparameter.
 hyperparam_space = (HyperparameterSpaceBuilder()
-                    .add_int_param('max_depth', min_value=2, max_value=10)
+                    .add_int_param('max_depth', min_value=2, max_value=8)
                     .add_float_param('learning_rate', min_value=10, max_value=30, scale=100)
-                    .add_int_param('n_estimators', min_value=50, max_value=300)
+                    .add_int_param('n_estimators', min_value=20, max_value=100)
                     .add_float_param('subsample', min_value=60, max_value=100, scale=100)
                     .add_float_param('colsample_bytree', min_value=60, max_value=100, scale=100)
                     .build())
+
+# %%
+# Configure MLflow Backend (Recommended)
+# --------------------------------------
+# The file-based backend (./mlruns) was deprecated by MLflow in February 2026.
+# Configure a database backend before using MLflow.
+import mlflow
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
+print(f"MLflow tracking URI: {mlflow.get_tracking_uri()}")
 
 # %%
 # Configure and run the genetic optimization WITH MLFLOW
@@ -61,14 +70,15 @@ hyperparam_space = (HyperparameterSpaceBuilder()
 # - n_elites: Number of best individuals preserved each generation
 # - seed: Random seed for reproducibility
 # - use_mlflow: Enable MLflow experiment tracking
+# - use_parallel: Must be False for complete MLflow logging (child runs)
 # Note: Small values for documentation builds. For production, increase to 20+ generations.
 genetic_params = {
-    'generations': 5,
-    'population_size': 8,
+    'generations': 3,
+    'population_size': 6,
     'n_elites': 2,
     'seed': 42,
     'use_mlflow': True,
-    'use_parallel': False
+    'use_parallel': False  # Required for child run logging
 }
 
 opt = GeneticSearch(
@@ -115,13 +125,19 @@ g_search_space.update_layout(
     width=None,
     height=650
 )
-plotly.io.show(g_search_space, config={'responsive': True})
+# For sphinx-gallery, the figure is captured automatically
+# For direct execution, save to HTML file
+g_search_space.write_html("search_space.html")
+print("Search space plot saved to search_space.html")
 
 # %%
 # Simple logbook visualization
 g_logbook_s = plot_logbook(opt.logbook_)
-# Show plot
-plt.show()
+# For sphinx-gallery, the figure is captured automatically
+# For direct execution, save to file
+plt.savefig("logbook_simple.png", dpi=100, bbox_inches='tight')
+print("Simple logbook plot saved to logbook_simple.png")
+plt.close()
 
 # %%
 # Evolution logbook visualization
@@ -132,7 +148,10 @@ g_logbook.update_layout(
     width=None,
     height=500
 )
-plotly.io.show(g_logbook, config={'responsive': True})
+# For sphinx-gallery, the figure is captured automatically
+# For direct execution, save to HTML file
+g_logbook.write_html("logbook_evolution.html")
+print("Evolution logbook plot saved to logbook_evolution.html")
 
 # %%
 # Analyze optimization results
@@ -155,7 +174,7 @@ print(f"Initial average fitness: {initial_avg_fitness:.4f}")
 print(f"Final average fitness: {final_avg_fitness:.4f}")
 
 # %%
- # Access generated files
+# Access generated files
 print("\n=== Generated Files ===")
 graphics_path = opt._optimizer_service.optimizer.tracker.graphics_path
 results_path = opt._optimizer_service.optimizer.tracker.results_path
@@ -179,7 +198,7 @@ if os.path.exists(results_path):
 #
 # Open a console and run::
 #
-#   mlflow ui --port 5000
+#   mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5000
 #
 # Then open a web browser and go to:
 #
@@ -190,5 +209,4 @@ if os.path.exists(results_path):
 # - View all optimization runs in the experiment
 # - Compare hyperparameters and metrics across runs
 # - See the evolution of fitness scores across generations
-# - Inspect logs and stored artifacts (TODO)
 # - Track model performance and optimization progress

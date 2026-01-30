@@ -126,9 +126,36 @@ class Evaluator:
             )
 
     def evaluate_individual(self, individual):
+        from mloptimizer.domain.evaluation.eval_utils import EvaluationResult
+
         clf = self.individual_utils.get_clf(individual)
-        metrics = self.evaluate(clf=clf, features=self.features, labels=self.labels)
-        self.tracker.log_evaluation(clf, metrics,
-                                    fitness_score=metrics[self.fitness_score],
-                                    greater_is_better=is_classifier(clf))
-        return (metrics[self.fitness_score],)
+        eval_result = self.evaluate(clf=clf, features=self.features, labels=self.labels)
+
+        # Handle both EvaluationResult (extended) and dict (legacy) formats
+        if isinstance(eval_result, EvaluationResult):
+            metrics = eval_result.metrics
+            fitness = metrics[self.fitness_score]
+
+            # Use extended logging if tracker supports it
+            if hasattr(self.tracker, 'log_extended_evaluation'):
+                self.tracker.log_extended_evaluation(
+                    clf, eval_result, fitness,
+                    generation=self.tracker.gen,
+                    individual_index=self.tracker.individual_index + 1,
+                    greater_is_better=is_classifier(clf)
+                )
+                self.tracker.individual_index += 1
+            else:
+                # Fallback to legacy logging
+                self.tracker.log_evaluation(clf, metrics,
+                                            fitness_score=fitness,
+                                            greater_is_better=is_classifier(clf))
+        else:
+            # Legacy dict format
+            metrics = eval_result
+            fitness = metrics[self.fitness_score]
+            self.tracker.log_evaluation(clf, metrics,
+                                        fitness_score=fitness,
+                                        greater_is_better=is_classifier(clf))
+
+        return (fitness,)

@@ -101,6 +101,15 @@ def test_pickle_fitted_optimizer(fitted_genetic_optimizer_dt):
                 "Restored best_estimator_ is not the correct type"
             assert restored_value.get_params() == original_value.get_params(), \
                 "Restored best_estimator_ has different parameters"
+        elif attr_name == 'cv_results_' and isinstance(original_value, pd.DataFrame):
+            # DataFrame comparison for sklearn-compatible cv_results_
+            pd.testing.assert_frame_equal(
+                restored_value,
+                original_value,
+                check_dtype=False,
+                check_exact=False,
+                rtol=1e-3
+            )
         else:
             assert restored_value == original_value, \
                 f"Restored {attr_name} does not match original"

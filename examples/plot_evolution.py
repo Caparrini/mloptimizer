@@ -21,7 +21,6 @@ X, y = load_iris(return_X_y=True)
 # %%
 # Define the HyperparameterSpace, you can use the default hyperparameters for the machine learning model
 # that you want to optimize. In this case we use the default hyperparameters for a DecisionTreeClassifier.
-# Another dataset or a custom one can be used
 hyperparam_space = HyperparameterSpaceBuilder.get_default_space(estimator_class=DecisionTreeClassifier)
 
 # %%

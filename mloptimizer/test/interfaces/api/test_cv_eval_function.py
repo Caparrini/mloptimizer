@@ -43,7 +43,8 @@ def test_eval_function_vs_cv_equivalence(iris_data, hyperparam_space_rf):
         scoring='balanced_accuracy'
     )
     search_eval.fit(X, y)
-    result_eval_fn = search_eval.cv_results_
+    # Use logbook_ for generation-level comparison (DEAP format)
+    result_eval_fn = search_eval.logbook_
 
     # --- Second GeneticSearch using cv=StratifiedKFold ---
     from sklearn.model_selection import StratifiedKFold
@@ -71,7 +72,8 @@ def test_eval_function_vs_cv_equivalence(iris_data, hyperparam_space_rf):
         scoring='balanced_accuracy'
     )
     search_cv.fit(X, y)
-    result_cv_obj = search_cv.cv_results_
+    # Use logbook_ for generation-level comparison (DEAP format)
+    result_cv_obj = search_cv.logbook_
 
     # --- Comparison ---
     for ind_eval, ind_cv in zip(result_eval_fn, result_cv_obj):

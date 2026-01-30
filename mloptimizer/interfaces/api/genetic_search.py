@@ -397,10 +397,7 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
         # Extract best hyperparameters from the optimizer service
         self.best_params_ = self.best_estimator_.get_params()
 
-        # Store the detailed cross-validation or genetic algorithm results
-        self.cv_results_ = self._optimizer_service.optimizer.genetic_algorithm.logbook
-
-        # Store logbook
+        # Store logbook (DEAP format - for backwards compatibility)
         self.logbook_ = self._optimizer_service.optimizer.genetic_algorithm.logbook
 
         # Store population df
@@ -410,6 +407,14 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
         # The logbook tracks 'nevals' per generation, which is the count of individuals
         # that were actually evaluated (excluding those with cached fitness from elitism)
         self.n_trials_ = sum(record['nevals'] for record in self.logbook_)
+
+        # Build sklearn-compatible cv_results_ DataFrame
+        tracker = self._optimizer_service.optimizer.tracker
+        if hasattr(tracker, 'get_cv_results_dataframe') and tracker.trials_data:
+            self.cv_results_ = tracker.get_cv_results_dataframe()
+        else:
+            # Fallback to DEAP logbook for backwards compatibility
+            self.cv_results_ = self.logbook_
 
         return self
 

@@ -158,10 +158,7 @@ class Optimizer:
                                    individual_utils=self.individual_utils,
                                    seed=self.mlopt_seed)
 
-        # DeapOptimizer
-        # self.deap_optimizer = None
         self.genetic_algorithm = None
-        #self.runs = []
 
     def _validate_hyperparam_space(self):
         """
@@ -286,7 +283,16 @@ class Optimizer:
         # Log genetic parameters
         self.tracker.log_genetic_params(self.genetic_params)
 
-        # Log comprehensive optimization configuration (Phase 1 MLflow improvement)
+        # Log CV metadata if eval_function has it
+        eval_fn = self.evaluator.eval_function
+        if hasattr(eval_fn, 'cv_strategy') and hasattr(eval_fn, 'n_splits'):
+            self.tracker.log_cv_metadata(
+                cv_strategy=eval_fn.cv_strategy,
+                n_splits=eval_fn.n_splits,
+                scoring=self.evaluator.fitness_score
+            )
+
+        # Log optimization configuration to MLflow
         if self.tracker.use_mlflow:
             config = {
                 'estimator_class': self.estimator_class.__name__,
@@ -301,7 +307,6 @@ class Optimizer:
             }
             self.tracker.log_optimization_config(config)
 
-            # Set comprehensive tags (Phase 1 MLflow improvement)
             tags = {
                 'estimator_class': self.estimator_class.__name__,
                 'mloptimizer_version': get_version(),
@@ -309,15 +314,6 @@ class Optimizer:
             }
             self.tracker.set_optimization_tags(tags)
 
-        # Creation of deap optimizer
-        #self.deap_optimizer = DeapOptimizer(hyperparam_space=self.hyperparam_space, seed=self.mlopt_seed,
-        #                                    use_parallel=self.use_parallel,
-        #                                    maximize=is_classifier(self.estimator_class))
-        # Creation of genetic algorithm runner
-        #ga_runner = GeneticAlgorithmRunner(deap_optimizer=self.deap_optimizer,
-        #                                   tracker=self.tracker,
-        #                                   seed=self.mlopt_seed,
-        #                                   evaluator=self.evaluator)
         self.genetic_algorithm = GeneticAlgorithm(hyperparam_space=self.hyperparam_space,
                                                   tracker=self.tracker,
                                                   seed=self.mlopt_seed,
@@ -341,20 +337,14 @@ class Optimizer:
                                                                      initial_params=self.initial_params,
                                                                      include_default=self.include_default)
 
-        #self.runs.append(ga_runner)
-        #self.logbook = logbook
-
-        # self.populations = population
-        # self.populations.append([[ind, ind.fitness] for ind in population])
-
-        # Log and save results
-        # self._log_and_save_results(hof)
-
         # Calculate final statistics
         best_fitness = hof[0].fitness.values[0] if hof else None
         total_evaluations = sum(record['nevals'] for record in logbook) if logbook else None
 
-        # End optimization with comprehensive summary (Phase 1 MLflow improvement)
+        # Log trials table to MLflow
+        self.tracker.log_trials_table()
+
+        # End optimization
         self.tracker.end_optimization(
             best_fitness=best_fitness,
             total_evaluations=total_evaluations,

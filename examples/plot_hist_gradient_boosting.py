@@ -29,15 +29,24 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # %%
 # Define the hyperparameter space
-hyperparam_space = HyperparameterSpaceBuilder.get_default_space(
-    estimator_class=HistGradientBoostingClassifier
-)
+# Using custom space with reduced max_iter for faster documentation builds.
+# For production, use the default space or increase max_iter range.
+hyperparam_space = (HyperparameterSpaceBuilder()
+                    .add_float_param('learning_rate', min_value=1, max_value=100, scale=1000)
+                    .add_int_param('max_depth', min_value=2, max_value=10)
+                    .add_int_param('max_iter', min_value=20, max_value=80)
+                    .add_int_param('max_leaf_nodes', min_value=20, max_value=60)
+                    .add_int_param('min_samples_leaf', min_value=10, max_value=30)
+                    .build())
+
+# For production, use the default space instead:
+# hyperparam_space = HyperparameterSpaceBuilder.get_default_space(HistGradientBoostingClassifier)
 
 # %%
 # Configure and run the genetic optimization
 genetic_params = {
-    'generations': 5,
-    'population_size': 8,
+    'generations': 3,
+    'population_size': 6,
     'n_elites': 2,
     'seed': 42,
     'use_mlflow': False,
@@ -70,7 +79,7 @@ print(f"Test F1: {test_f1:.4f}")
 # %%
 # Visualize the search space
 population_df = opt.populations_
-top_params = ['learning_rate', 'max_depth', 'max_iter', 'max_leaf_nodes', 'fitness']
+top_params = ['learning_rate', 'max_depth', 'max_iter', 'min_samples_leaf', 'fitness']
 df_filtered = population_df[top_params]
 g_search_space = plotly_search_space(df_filtered, top_params)
 g_search_space.update_layout(
@@ -79,7 +88,8 @@ g_search_space.update_layout(
     width=None,
     height=650
 )
-plotly.io.show(g_search_space, config={'responsive': True})
+# sphinx-gallery captures the figure automatically
+g_search_space
 
 # %%
 # Visualize the optimization evolution
@@ -90,7 +100,8 @@ g_logbook.update_layout(
     width=None,
     height=500
 )
-plotly.io.show(g_logbook, config={'responsive': True})
+# sphinx-gallery captures the figure automatically
+g_logbook
 
 # %%
 # Analyze optimization performance

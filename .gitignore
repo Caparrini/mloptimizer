@@ -358,7 +358,9 @@ dmypy.json
 # MLflow tracking databases
 mlflow.db
 mlflow_test.db
+mlflow_verify.db
 mlruns/
+mlruns_verify/
 mloptimizer/test/mlruns/
 docs/mlruns/
 examples/mlruns/
@@ -400,8 +402,8 @@ mloptimizer/test/application/reporting/*.png
 mloptimizer/test/catboost_info/
 mloptimizer/test/test_genoptimizer/
 
-# Scripts and temporary files
-scripts/
+# Scripts and temporary files (keep verify_mlflow.py)
+!scripts/verify_mlflow.py
 notexamples/
 review.txt
 softwx-draft.tex

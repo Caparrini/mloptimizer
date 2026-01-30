@@ -36,21 +36,20 @@ X_train, X_test, y_train, y_test = train_test_split(
 # Define the CatBoost hyperparameter space
 # -----------------------------------------
 # CatBoost has specific hyperparameters that differ from other gradient boosting libraries.
-# We can use the default hyperparameter space or build a custom one.
-#
-# Option 1: Load default space (recommended for quick start)
-hyperparam_space = HyperparameterSpaceBuilder.get_default_space(
-    estimator_class=CatBoostClassifier
-)
+# We use a custom space with reduced iterations for faster documentation builds.
+# For production, use the default space or increase iterations range.
+hyperparam_space = (HyperparameterSpaceBuilder()
+                    .add_int_param('depth', min_value=4, max_value=8)
+                    .add_float_param('learning_rate', min_value=5, max_value=30, scale=100)
+                    .add_int_param('iterations', min_value=20, max_value=50)
+                    .add_float_param('subsample', min_value=700, max_value=1000, scale=1000)
+                    .set_fixed_param('verbose', False)
+                    .set_fixed_param('allow_writing_files', False)
+                    .set_fixed_param('bootstrap_type', 'Bernoulli')
+                    .build())
 
-# Option 2: Build custom space (uncomment to use)
-# hyperparam_space = (HyperparameterSpaceBuilder()
-#                     .add_int_param('depth', min_value=4, max_value=10)
-#                     .add_float_param('learning_rate', min_value=1, max_value=10, scale=100)
-#                     .add_int_param('iterations', min_value=50, max_value=200)
-#                     .add_float_param('subsample', min_value=700, max_value=1000, scale=1000)
-#                     .set_fixed_param('verbose', False)
-#                     .build())
+# For production, use the default space instead:
+# hyperparam_space = HyperparameterSpaceBuilder.get_default_space(CatBoostClassifier)
 
 print("\nHyperparameter space configuration:")
 print(f"Evolvable parameters: {list(hyperparam_space.evolvable_hyperparams.keys())}")
@@ -66,8 +65,8 @@ print(f"Fixed parameters: {list(hyperparam_space.fixed_hyperparams.keys())}")
 # - seed: Random seed for reproducibility
 # Note: Small values for faster documentation builds. For production, increase to 20+ generations.
 genetic_params = {
-    'generations': 5,
-    'population_size': 8,
+    'generations': 3,
+    'population_size': 6,
     'n_elites': 2,
     'seed': 42,
     'use_parallel': False
@@ -111,7 +110,7 @@ print(f"  F1 Score:  {f1:.4f}")
 population_df = opt.populations_
 
 # Search space visualization
-top_params = ['depth', 'learning_rate', 'n_estimators', 'l2_leaf_reg', 'fitness']
+top_params = ['depth', 'learning_rate', 'iterations', 'subsample', 'fitness']
 df_filtered = population_df[top_params]
 g_search_space = plotly_search_space(df_filtered, top_params)
 g_search_space.update_layout(
@@ -120,12 +119,19 @@ g_search_space.update_layout(
     width=None,
     height=650
 )
-plotly.io.show(g_search_space, config={'responsive': True})
+# For sphinx-gallery, the figure is captured automatically
+# For direct execution, save to HTML file
+g_search_space.write_html("catboost_search_space.html")
+print("Search space plot saved to catboost_search_space.html")
 
 # %%
 # Simple logbook visualization
 g_logbook_s = plot_logbook(opt.logbook_)
-# plt.show()  # Commented out for non-interactive environments
+# For sphinx-gallery, the figure is captured automatically
+# For direct execution, save to file
+plt.savefig("catboost_logbook_simple.png", dpi=100, bbox_inches='tight')
+print("Simple logbook plot saved to catboost_logbook_simple.png")
+plt.close()
 
 # %%
 # Evolution logbook visualization
@@ -136,7 +142,10 @@ g_logbook.update_layout(
     width=None,
     height=500
 )
-plotly.io.show(g_logbook, config={'responsive': True})
+# For sphinx-gallery, the figure is captured automatically
+# For direct execution, save to HTML file
+g_logbook.write_html("catboost_logbook_evolution.html")
+print("Evolution logbook plot saved to catboost_logbook_evolution.html")
 
 # %%
 # Analyze optimization results

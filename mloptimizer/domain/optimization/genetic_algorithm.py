@@ -351,7 +351,7 @@ class GeneticAlgorithm:
         record = stats.compile(population) if stats else {}
         logbook.record(gen=0, nevals=len(invalid_ind), **record)
 
-        # Log generation 0 metrics to MLflow (Phase 1 improvement)
+        # Log generation 0 metrics to MLflow
         if self.tracker:
             self.tracker.log_generation_metrics(0, record)
 
@@ -391,7 +391,7 @@ class GeneticAlgorithm:
             record = stats.compile(population) if stats else {}
             logbook.record(gen=gen, nevals=len(invalid_ind), **record)
 
-            # Log generation metrics to MLflow (Phase 1 improvement)
+            # Log generation metrics to MLflow
             if self.tracker:
                 self.tracker.log_generation_metrics(gen, record)
 

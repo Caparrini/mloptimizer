@@ -67,6 +67,10 @@ class Tracker:
         # Best fitness
         self.best_fitness = None
 
+        # Trials collection for sklearn-compatible cv_results_
+        self.trials_data = []
+        self.cv_metadata = {}
+
         if self.use_mlflow:
             try:
                 self.mlflow = importlib.import_module("mlflow")
@@ -359,14 +363,12 @@ class Tracker:
                 logger.warning(f"Failed to log dataset: {e}")
 
     def log_clfs(self, classifiers_list: list, generation: int, fitness_list: list[float]):
-        self.gen = generation
-        self.individual_index = 0
+        """Log top classifiers for a generation (legacy method, kept for compatibility)."""
         for i in range(len(classifiers_list)):
             logger.info(f"Generation {generation} - Classifier TOP {i}")
             logger.info(f"Classifier: {classifiers_list[i]}")
             logger.info(f"Fitness: {fitness_list[i]}")
             logger.info("Hyperparams: {}".format(str(classifiers_list[i].get_params())))
-        self.gen = generation + 1
 
     def log_evaluation(self, classifier, metrics, fitness_score, greater_is_better=True):
         # tqdm is not compatible with parallel execution
@@ -385,8 +387,6 @@ class Tracker:
             run_name = f"gen_{self.gen}_ind_{individual_index}_{classifier.__class__.__name__}"
             with self.mlflow.start_run(run_name=run_name, nested=True):
                 self.mlflow.log_params(classifier.get_params())
-                # We use the generation as the step
-                # self.mlflow.log_metric(key="fitness", value=metric, step=self.gen)
                 self.mlflow.log_metrics(metrics, step=self.gen)
                 self.mlflow.set_tag("generation", self.gen)
                 self.mlflow.set_tag("individual_index", individual_index)
@@ -441,6 +441,10 @@ class Tracker:
                                 ).to_csv(filename, index=False)
 
     def start_progress_file(self, gen: int):
+        # Update current generation for MLflow child run naming
+        self.gen = gen
+        self.individual_index = 0  # Reset individual counter for new generation
+
         # tqdm is not compatible with parallel execution
         if not self.use_parallel:
             self.gen_pbar.update()
@@ -455,8 +459,6 @@ class Tracker:
             progress_gen_file.close()
 
         logger.debug("Generation: {}".format(gen))
-
-        # self.pbar.refresh()
 
     def append_progress_file(self, gen: int, ngen: int, c: int, evaluations_pending: int, ind_formatted, fit):
         logger.debug(
@@ -482,7 +484,6 @@ class Tracker:
 
     def _init_progress_bar(self, n_generations, msg="Genetic execution"):
         self.gen_pbar = tqdm.tqdm(desc=msg, total=n_generations+1, postfix={"best fitness": "?"})
-        # self.pbar.refresh()
 
     def log_genetic_params(self, genetic_params):
         """Log genetic algorithm parameters to MLflow."""
@@ -494,9 +495,6 @@ class Tracker:
     def log_generation_metrics(self, generation, stats_record):
         """
         Log generation-level metrics to MLflow.
-
-        This implements Phase 1 of the MLflow improvement plan by logging
-        population statistics per generation.
 
         Parameters
         ----------
@@ -595,3 +593,265 @@ class Tracker:
             The message to log.
         """
         logger.info(msg)
+
+    def log_cv_metadata(self, cv_strategy=None, n_splits=None, scoring=None):
+        """
+        Log cross-validation metadata to MLflow.
+
+        Parameters
+        ----------
+        cv_strategy : str
+            Name of the CV strategy (e.g., 'StratifiedKFold', 'KFold')
+        n_splits : int
+            Number of CV splits/folds
+        scoring : str
+            Scoring metric used
+        """
+        self.cv_metadata = {
+            'cv_strategy': cv_strategy,
+            'n_splits': n_splits,
+            'scoring': scoring
+        }
+
+        if not self.use_mlflow:
+            return
+
+        try:
+            tags = {}
+            if cv_strategy:
+                tags['cv_strategy'] = str(cv_strategy)
+            if n_splits:
+                tags['cv_n_splits'] = str(n_splits)
+            if scoring:
+                tags['scoring'] = str(scoring)
+
+            if tags:
+                self.mlflow.set_tags(tags)
+                logger.debug(f"Logged CV metadata: {tags}")
+
+        except Exception as e:
+            logger.warning(f"Failed to log CV metadata: {e}")
+
+    def log_extended_evaluation(self, classifier, eval_result, fitness_score,
+                                 generation, individual_index, greater_is_better=True):
+        """
+        Log extended evaluation results including per-fold CV data.
+
+        This method handles EvaluationResult objects that contain:
+        - Per-fold metrics
+        - Mean/std metrics
+        - Fit time and score time
+
+        Parameters
+        ----------
+        classifier : estimator
+            The fitted classifier
+        eval_result : EvaluationResult or dict
+            Evaluation result (extended or legacy dict format)
+        fitness_score : float
+            The fitness score for this individual
+        generation : int
+            Current generation number
+        individual_index : int
+            Index of the individual in the population
+        greater_is_better : bool
+            Whether higher fitness is better
+        """
+        # Update best fitness
+        if not self.use_parallel:
+            need_update = self.best_fitness is None or (
+                (greater_is_better and self.best_fitness < fitness_score) or
+                (not greater_is_better and self.best_fitness > fitness_score)
+            )
+            if need_update:
+                self.best_fitness = fitness_score
+                if self.gen_pbar:
+                    self.gen_pbar.set_postfix({"best fitness": self.best_fitness})
+
+        # Extract metrics based on result type
+        from mloptimizer.domain.evaluation.eval_utils import EvaluationResult
+
+        if isinstance(eval_result, EvaluationResult):
+            metrics = eval_result.metrics
+            fold_metrics = eval_result.fold_metrics
+            fit_times = eval_result.fit_times
+            score_times = eval_result.score_times
+            n_splits = eval_result.n_splits
+        else:
+            # Legacy dict format
+            metrics = eval_result
+            fold_metrics = []
+            fit_times = []
+            score_times = []
+            n_splits = None
+
+        # Collect trial data for cv_results_
+        trial_record = {
+            'generation': generation,
+            'individual_index': individual_index,
+            'fitness': fitness_score,
+            **{f'param_{k}': v for k, v in classifier.get_params().items()},
+        }
+
+        # Add mean metrics
+        for metric_name, value in metrics.items():
+            trial_record[f'mean_test_{metric_name}'] = value
+
+        # Add std metrics (if we have fold data)
+        if fold_metrics:
+            import numpy as np
+            for metric_name in fold_metrics[0].keys():
+                values = [f[metric_name] for f in fold_metrics]
+                trial_record[f'std_test_{metric_name}'] = np.std(values)
+
+            # Add per-fold scores
+            for fold_idx, fold_metric in enumerate(fold_metrics):
+                for metric_name, value in fold_metric.items():
+                    trial_record[f'split{fold_idx}_test_{metric_name}'] = value
+
+        # Add timing
+        if fit_times:
+            import numpy as np
+            trial_record['mean_fit_time'] = np.mean(fit_times)
+            trial_record['std_fit_time'] = np.std(fit_times)
+        if score_times:
+            import numpy as np
+            trial_record['mean_score_time'] = np.mean(score_times)
+            trial_record['std_score_time'] = np.std(score_times)
+
+        self.trials_data.append(trial_record)
+
+        # Log to MLflow
+        if self.use_mlflow:
+            run_name = f"gen_{generation}_ind_{individual_index}_{classifier.__class__.__name__}"
+            try:
+                with self.mlflow.start_run(run_name=run_name, nested=True):
+                    # Log hyperparameters
+                    self.mlflow.log_params(classifier.get_params())
+
+                    # Log mean metrics
+                    self.mlflow.log_metrics(metrics, step=generation)
+
+                    # Log std metrics if available
+                    if fold_metrics:
+                        import numpy as np
+                        std_metrics = {
+                            f'std_test_{k}': np.std([f[k] for f in fold_metrics])
+                            for k in fold_metrics[0].keys()
+                        }
+                        self.mlflow.log_metrics(std_metrics, step=generation)
+
+                        # Log per-fold metrics
+                        for fold_idx, fold_metric in enumerate(fold_metrics):
+                            fold_logged = {f'fold_{fold_idx}_{k}': v for k, v in fold_metric.items()}
+                            self.mlflow.log_metrics(fold_logged, step=generation)
+
+                    # Log timing metrics
+                    if fit_times:
+                        import numpy as np
+                        self.mlflow.log_metric('mean_fit_time', np.mean(fit_times))
+                    if score_times:
+                        import numpy as np
+                        self.mlflow.log_metric('mean_score_time', np.mean(score_times))
+
+                    # Tags
+                    self.mlflow.set_tag("generation", generation)
+                    self.mlflow.set_tag("individual_index", individual_index)
+                    self.mlflow.set_tag("estimator", classifier.__class__.__name__)
+                    if n_splits:
+                        self.mlflow.set_tag("n_cv_splits", n_splits)
+
+            except Exception as e:
+                logger.warning(f"Failed to log extended evaluation to MLflow: {e}")
+
+    def log_trials_table(self):
+        """
+        Log the trials table to MLflow as an artifact.
+
+        This creates a flat, queryable table of all trials similar to
+        sklearn's GridSearchCV.cv_results_.
+        """
+        if not self.trials_data:
+            logger.debug("No trials data to log")
+            return
+
+        if not self.use_mlflow:
+            return
+
+        try:
+            import pandas as pd
+            import numpy as np
+            import tempfile
+            import os
+
+            # Create DataFrame
+            trials_df = pd.DataFrame(self.trials_data)
+
+            # Add rank column based on fitness
+            if 'fitness' in trials_df.columns:
+                trials_df['rank_test_score'] = trials_df['fitness'].rank(
+                    ascending=False, method='min'
+                ).astype(int)
+
+            # Sort by fitness descending
+            trials_df = trials_df.sort_values('fitness', ascending=False)
+
+            # Log as table (MLflow 2.0+)
+            try:
+                self.mlflow.log_table(trials_df, artifact_file="trials.json")
+                logger.debug(f"Logged trials table with {len(trials_df)} entries")
+            except AttributeError:
+                # Fallback for older MLflow versions
+                with tempfile.TemporaryDirectory() as tmp_dir:
+                    csv_path = os.path.join(tmp_dir, "trials.csv")
+                    trials_df.to_csv(csv_path, index=False)
+                    self.mlflow.log_artifact(csv_path)
+                    logger.debug(f"Logged trials CSV artifact with {len(trials_df)} entries")
+
+        except Exception as e:
+            logger.warning(f"Failed to log trials table: {e}")
+
+    def get_cv_results_dataframe(self):
+        """
+        Get trials data as a pandas DataFrame in sklearn cv_results_ format.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with columns like sklearn's GridSearchCV.cv_results_:
+            - param_* columns for each hyperparameter
+            - mean_test_* columns for mean metrics
+            - std_test_* columns for std of metrics
+            - split*_test_* columns for per-fold scores
+            - mean_fit_time, std_fit_time
+            - mean_score_time, std_score_time
+            - rank_test_score
+        """
+        if not self.trials_data:
+            return pd.DataFrame()
+
+        import numpy as np
+
+        trials_df = pd.DataFrame(self.trials_data)
+
+        # Add rank column based on fitness
+        if 'fitness' in trials_df.columns:
+            trials_df['rank_test_score'] = trials_df['fitness'].rank(
+                ascending=False, method='min'
+            ).astype(int)
+
+        # Reorder columns to match sklearn convention
+        # param_* first, then mean_test_*, std_test_*, split*_test_*, timing, rank
+        param_cols = [c for c in trials_df.columns if c.startswith('param_')]
+        mean_cols = [c for c in trials_df.columns if c.startswith('mean_test_')]
+        std_cols = [c for c in trials_df.columns if c.startswith('std_test_')]
+        split_cols = sorted([c for c in trials_df.columns if c.startswith('split')])
+        time_cols = [c for c in trials_df.columns if 'time' in c]
+        other_cols = ['generation', 'individual_index', 'fitness', 'rank_test_score']
+        other_cols = [c for c in other_cols if c in trials_df.columns]
+
+        ordered_cols = param_cols + mean_cols + std_cols + split_cols + time_cols + other_cols
+        remaining = [c for c in trials_df.columns if c not in ordered_cols]
+        final_order = ordered_cols + remaining
+
+        return trials_df[final_order]

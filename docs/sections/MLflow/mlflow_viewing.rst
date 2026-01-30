@@ -11,23 +11,27 @@ The MLflow UI provides an interactive web interface to explore your optimization
 Starting the UI
 ~~~~~~~~~~~~~~~
 
-From your project directory (where ``mlruns/`` exists):
+.. warning::
+   The file-based backend (``./mlruns``) was deprecated by MLflow in February 2026.
+   Use a database backend like SQLite.
+
+For SQLite backend (recommended):
 
 .. code-block:: bash
 
-   mlflow ui --port 5000
+   mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5000
 
 Then open your browser to http://localhost:5000
 
-If using a custom tracking location:
+For other backends:
 
 .. code-block:: bash
 
-   # For database backend
-   mlflow ui --backend-store-uri sqlite:///path/to/mlflow.db --port 5000
+   # PostgreSQL
+   mlflow ui --backend-store-uri postgresql://user:password@host:5432/mlflow --port 5000
 
-   # For file-based backend
-   mlflow ui --backend-store-uri file:///path/to/mlruns --port 5000
+   # MySQL
+   mlflow ui --backend-store-uri mysql://user:password@host:3306/mlflow --port 5000
 
 UI Features
 ~~~~~~~~~~~

@@ -64,7 +64,16 @@ MLflow uses this priority order:
 
 1. Explicit ``mlflow.set_tracking_uri()`` call (highest priority)
 2. ``MLFLOW_TRACKING_URI`` environment variable
-3. Default local file-based (``./mlruns/``)
+3. MLflow default (file-based ``./mlruns/``)
+
+.. warning::
+   The file-based backend (``./mlruns``) was deprecated by MLflow in February 2026.
+   Configure a database backend (SQLite, PostgreSQL, MySQL) before using MLflow:
+
+   .. code-block:: python
+
+      import mlflow
+      mlflow.set_tracking_uri("sqlite:///mlflow.db")  # Recommended
 
 Starting a Local MLflow Server
 -------------------------------
@@ -260,7 +269,7 @@ The existing MLflow test demonstrates remote server usage:
 
    # From mloptimizer/test/interfaces/api/test_genetic_search_mlflow_tracking.py
 
-   MLFLOW_PORT = 5001
+   MLFLOW_PORT = 5051  # Non-standard port to avoid conflicts
    MLFLOW_TRACKING_URI = f"http://127.0.0.1:{MLFLOW_PORT}"
 
    def test_genetic_search_creates_mlflow_runs(mlflow_server):
@@ -284,7 +293,14 @@ Run this test to verify remote MLflow works:
 
 .. code-block:: bash
 
+   # First, start an MLflow server on port 5051
+   mlflow server --port 5051
+
+   # Then run the test
    pytest mloptimizer/test/interfaces/api/test_genetic_search_mlflow_tracking.py -v
+
+.. note::
+   The test will be automatically skipped if no MLflow server is running on port 5051.
 
 Security Considerations
 -----------------------

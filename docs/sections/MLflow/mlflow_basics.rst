@@ -17,6 +17,30 @@ First, ensure MLflow is installed:
 
 If you attempt to use ``use_mlflow=True`` without MLflow installed, mloptimizer will display a clear error message with installation instructions.
 
+Storage Backend (Recommended Configuration)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. warning::
+   The file-based MLflow backend (``./mlruns``) was deprecated by MLflow in February 2026.
+   We recommend configuring a database backend before using MLflow.
+
+Configure MLflow tracking URI **before** creating your ``GeneticSearch`` instance:
+
+.. code-block:: python
+
+   import mlflow
+
+   # Recommended: Use SQLite database (no extra dependencies)
+   mlflow.set_tracking_uri("sqlite:///mlflow.db")
+
+   # Or use a remote server for team collaboration
+   mlflow.set_tracking_uri("postgresql://user:password@host:5432/mlflow")
+
+   # Then create GeneticSearch with MLflow enabled
+   opt = GeneticSearch(..., use_mlflow=True)
+
+mloptimizer respects your MLflow configuration and does not override it.
+
 Enabling MLflow Tracking
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -196,6 +220,42 @@ MLflow tracking is disabled by default. To explicitly disable it:
    )
 
 When disabled, no MLflow data is logged, and the library works without requiring MLflow to be installed.
+
+Important Considerations
+-------------------------
+
+Parallel Execution Limitation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When using ``use_parallel=True`` (the default), **individual evaluation child runs are not logged to MLflow**. This is because joblib worker processes do not share the MLflow context with the parent process.
+
+**Parent run data is always logged correctly** (generation metrics, configuration, tags, final results).
+
+To enable full MLflow logging including child runs for each individual evaluation:
+
+.. code-block:: python
+
+   opt = GeneticSearch(
+       estimator_class=YourEstimator,
+       hyperparam_space=space,
+       use_mlflow=True,
+       use_parallel=False  # Required for child run logging
+   )
+
+**When to use ``use_parallel=False``:**
+
+- When you need detailed per-individual hyperparameter logging
+- When debugging optimization behavior
+- When doing research analysis on individual configurations
+
+**When ``use_parallel=True`` is fine:**
+
+- When you only need generation-level metrics (best/avg/worst fitness per generation)
+- When optimization speed is more important than granular logging
+- For production runs where you want final results, not individual details
+
+.. warning::
+   When using ``use_mlflow=True`` with ``use_parallel=True`` (default), child runs for individual evaluations will NOT be created. Only the parent run with generation-level metrics will be logged.
 
 .. note::
    MLflow tracking adds minimal overhead to optimization time. The benefits of comprehensive experiment tracking typically outweigh the small performance cost.

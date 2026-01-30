@@ -117,8 +117,7 @@ class CustomXGBClassifier(BaseEstimator):
         self.scale_pos_weight = round(1/scale_pos_weight, 3)
         self.obj = obj
         self.feval = feval
-        #self.tree_method = "gpu_hist"
-        self.num_boost_round= num_boost_round
+        self.num_boost_round = num_boost_round
 
     def fit(self, x, y):
         """
