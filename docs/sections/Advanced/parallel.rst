@@ -85,35 +85,35 @@ Here's an example comparing parallel vs. sequential execution:
     - **Population size**: Larger populations benefit more from parallelization
     - **Overhead**: For very fast models (like DecisionTree on small data), the parallelization overhead may outweigh benefits
 
-MLflow Limitation
------------------
+MLflow Compatibility
+--------------------
 
-When using MLflow tracking with ``use_mlflow=True``, there is a limitation:
+MLflow tracking works seamlessly with parallel execution. When ``use_parallel=True``, mloptimizer:
 
-.. warning::
-
-    When ``use_parallel=True`` (default), child runs for individual evaluations are NOT created in MLflow.
-    This is because joblib workers don't share the MLflow context.
-
-    The parent run with generation-level metrics is always logged correctly.
-
-To enable full MLflow logging including child runs for each individual:
+1. Collects evaluation metadata from parallel workers
+2. Logs child runs in batches after each generation completes
+3. Creates the same comprehensive MLflow data as sequential mode
 
 .. code-block:: python
 
+    # Full MLflow logging works with parallel execution
     opt = GeneticSearch(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=space,
         use_mlflow=True,
-        use_parallel=False  # Required for child run logging
+        use_parallel=True  # Works with MLflow (default)
     )
+
+.. note::
+
+    Child runs are logged after each generation completes rather than in real-time.
+    This is transparent to the user - all data appears correctly in MLflow UI.
 
 When to Disable Parallel Processing
 -----------------------------------
 
 Consider setting ``use_parallel=False`` when:
 
-- You need full MLflow child run logging
 - Debugging optimization issues (easier to trace sequential execution)
 - Running on systems with limited memory (parallel workers increase memory usage)
 - The model itself uses parallelization (e.g., ``n_jobs=-1`` in RandomForest)

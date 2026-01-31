@@ -70,7 +70,7 @@ print(f"MLflow tracking URI: {mlflow.get_tracking_uri()}")
 # - n_elites: Number of best individuals preserved each generation
 # - seed: Random seed for reproducibility
 # - use_mlflow: Enable MLflow experiment tracking
-# - use_parallel: Must be False for complete MLflow logging (child runs)
+# - use_parallel: Parallel execution works with MLflow logging
 # Note: Small values for documentation builds. For production, increase to 20+ generations.
 genetic_params = {
     'generations': 3,
@@ -78,7 +78,7 @@ genetic_params = {
     'n_elites': 2,
     'seed': 42,
     'use_mlflow': True,
-    'use_parallel': False  # Required for child run logging
+    'use_parallel': True  # Works with MLflow logging
 }
 
 opt = GeneticSearch(

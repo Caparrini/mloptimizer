@@ -135,27 +135,51 @@ class Evaluator:
         if isinstance(eval_result, EvaluationResult):
             metrics = eval_result.metrics
             fitness = metrics[self.fitness_score]
-
-            # Use extended logging if tracker supports it
-            if hasattr(self.tracker, 'log_extended_evaluation'):
-                self.tracker.log_extended_evaluation(
-                    clf, eval_result, fitness,
-                    generation=self.tracker.gen,
-                    individual_index=self.tracker.individual_index + 1,
-                    greater_is_better=is_classifier(clf)
-                )
-                self.tracker.individual_index += 1
-            else:
-                # Fallback to legacy logging
-                self.tracker.log_evaluation(clf, metrics,
-                                            fitness_score=fitness,
-                                            greater_is_better=is_classifier(clf))
         else:
             # Legacy dict format
             metrics = eval_result
             fitness = metrics[self.fitness_score]
-            self.tracker.log_evaluation(clf, metrics,
-                                        fitness_score=fitness,
-                                        greater_is_better=is_classifier(clf))
 
-        return (fitness,)
+        # Check if we should defer logging for parallel MLflow
+        # When running in parallel with MLflow enabled, workers can't create nested runs
+        # So we return metadata for the main process to log after workers return
+        defer_mlflow_logging = (
+            self.tracker.use_parallel and
+            self.tracker.use_mlflow and
+            hasattr(self.tracker, 'log_batch_evaluations')
+        )
+
+        if defer_mlflow_logging:
+            # Return metadata for main process to log
+            eval_metadata = {
+                'classifier_params': clf.get_params(),
+                'classifier_name': clf.__class__.__name__,
+                'eval_result': eval_result,
+                'fitness_score': fitness,
+                'generation': self.tracker.gen,
+                'greater_is_better': is_classifier(clf)
+            }
+            return (fitness, eval_metadata)
+        else:
+            # Log immediately (sequential mode or no MLflow)
+            if isinstance(eval_result, EvaluationResult):
+                # Use extended logging if tracker supports it
+                if hasattr(self.tracker, 'log_extended_evaluation'):
+                    self.tracker.log_extended_evaluation(
+                        clf, eval_result, fitness,
+                        generation=self.tracker.gen,
+                        individual_index=self.tracker.individual_index + 1,
+                        greater_is_better=is_classifier(clf)
+                    )
+                    self.tracker.individual_index += 1
+                else:
+                    # Fallback to legacy logging
+                    self.tracker.log_evaluation(clf, metrics,
+                                                fitness_score=fitness,
+                                                greater_is_better=is_classifier(clf))
+            else:
+                self.tracker.log_evaluation(clf, metrics,
+                                            fitness_score=fitness,
+                                            greater_is_better=is_classifier(clf))
+
+            return (fitness,)

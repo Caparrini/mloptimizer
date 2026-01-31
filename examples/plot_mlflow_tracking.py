@@ -72,9 +72,9 @@ print(f"Hyperparameter space: {space.evolvable_hyperparams.keys()}")
 #   - Fitness score
 #   - Generation and individual index
 #
-# .. warning::
-#    Set ``use_parallel=False`` for complete MLflow logging.
-#    Parallel execution doesn't log child runs due to joblib limitations.
+# MLflow logging works seamlessly with both parallel and sequential execution.
+# When using parallel mode, child runs are logged in batches after each
+# generation completes.
 
 opt = GeneticSearch(
     estimator_class=RandomForestClassifier,
@@ -86,7 +86,7 @@ opt = GeneticSearch(
     n_elites=2,
     seed=42,
     use_mlflow=True,       # Enable MLflow tracking
-    use_parallel=False,    # Required for child run logging
+    use_parallel=True,     # Works with parallel execution
 )
 
 print("\nStarting optimization with MLflow tracking...")

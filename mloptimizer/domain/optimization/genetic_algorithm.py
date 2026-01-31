@@ -337,15 +337,29 @@ class GeneticAlgorithm:
 
         # Evaluate the initial population first (generation 0)
         invalid_ind = [ind for ind in population if not ind.fitness.valid]
-        fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+        results = toolbox.map(toolbox.evaluate, invalid_ind)
         c = 1
         self.tracker.start_progress_file(0)
-        for ind, fit in zip(invalid_ind, fitnesses):
-            ind.fitness.values = fit
+        eval_metadata_list = []
+        for ind, result in zip(invalid_ind, results):
+            # Handle both (fitness,) and (fitness, metadata) return formats
+            if isinstance(result, tuple) and len(result) > 1:
+                fitness = result[0]
+                metadata = result[1]
+                # Add individual index for logging (1-based)
+                metadata['individual_index'] = c
+                eval_metadata_list.append(metadata)
+            else:
+                fitness = result[0] if isinstance(result, tuple) else result
+            ind.fitness.values = (fitness,)
             ind_formatted = IndividualUtils(hyperparam_space=self.hyperparam_space,
                                             mlopt_seed=self.seed).individual2dict(ind)
-            self.tracker.append_progress_file(0, ngen, c, len(invalid_ind), ind_formatted, fit)
+            self.tracker.append_progress_file(0, ngen, c, len(invalid_ind), ind_formatted, (fitness,))
             c += 1
+
+        # Batch log evaluations to MLflow (for parallel mode)
+        if eval_metadata_list and hasattr(self.tracker, 'log_batch_evaluations'):
+            self.tracker.log_batch_evaluations(eval_metadata_list)
 
         halloffame.update(population)
         record = stats.compile(population) if stats else {}
@@ -378,14 +392,28 @@ class GeneticAlgorithm:
 
             # Evaluate individuals with invalid fitness
             invalid_ind = [ind for ind in population if not ind.fitness.valid]
-            fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+            results = toolbox.map(toolbox.evaluate, invalid_ind)
             c = 1
-            for ind, fit in zip(invalid_ind, fitnesses):
-                ind.fitness.values = fit
+            eval_metadata_list = []
+            for ind, result in zip(invalid_ind, results):
+                # Handle both (fitness,) and (fitness, metadata) return formats
+                if isinstance(result, tuple) and len(result) > 1:
+                    fitness = result[0]
+                    metadata = result[1]
+                    # Add individual index for logging (1-based)
+                    metadata['individual_index'] = c
+                    eval_metadata_list.append(metadata)
+                else:
+                    fitness = result[0] if isinstance(result, tuple) else result
+                ind.fitness.values = (fitness,)
                 ind_formatted = IndividualUtils(hyperparam_space=self.hyperparam_space,
                                                 mlopt_seed=self.seed).individual2dict(ind)
-                self.tracker.append_progress_file(gen, ngen, c, len(invalid_ind), ind_formatted, fit)
+                self.tracker.append_progress_file(gen, ngen, c, len(invalid_ind), ind_formatted, (fitness,))
                 c += 1
+
+            # Batch log evaluations to MLflow (for parallel mode)
+            if eval_metadata_list and hasattr(self.tracker, 'log_batch_evaluations'):
+                self.tracker.log_batch_evaluations(eval_metadata_list)
 
             halloffame.update(population)
             record = stats.compile(population) if stats else {}

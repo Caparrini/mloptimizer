@@ -11,10 +11,7 @@ Test Categories:
 3. Data recoverability (can read back what was written)
 4. Error handling (traceable errors when things fail)
 5. Disabled MLflow behavior (no data created when disabled)
-
-IMPORTANT NOTE: These tests use use_parallel=False because MLflow nested run logging
-does not work correctly with parallel execution (joblib workers don't share MLflow context).
-This is a known limitation documented in the MLflow integration.
+6. Parallel MLflow child run logging (batch logging after workers return)
 """
 
 import os
@@ -741,3 +738,233 @@ class TestMLflowDataIntegrity:
         # Allow some tolerance for elitism
         assert len(child_runs) == opt.n_trials_, \
             f"MLflow child runs ({len(child_runs)}) should match n_trials_ ({opt.n_trials_})"
+
+
+class TestMLflowParallelChildRuns:
+    """Test MLflow child run logging in parallel mode.
+
+    These tests verify that child runs are created even with parallel execution
+    by using batch logging after workers return.
+    """
+
+    @pytest.fixture(autouse=True)
+    def setup_mlflow_dir(self, tmp_path):
+        """Create isolated MLflow SQLite database for each test."""
+        self.mlflow_db = tmp_path / "mlflow.db"
+        self.mlflow_uri = f"sqlite:///{self.mlflow_db}"
+        mlflow.set_tracking_uri(self.mlflow_uri)
+        yield
+        mlflow.end_run()
+
+    def test_parallel_creates_child_runs(self):
+        """Verify MLflow child runs are created with parallel execution."""
+        X, y = load_iris(return_X_y=True)
+        space = HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier)
+
+        opt = GeneticSearch(
+            estimator_class=DecisionTreeClassifier,
+            hyperparam_space=space,
+            generations=2,
+            population_size=4,
+            n_elites=1,
+            use_mlflow=True,
+            use_parallel=True,  # Key: parallel mode
+            seed=42
+        )
+        opt.fit(X, y)
+
+        client = MlflowClient(tracking_uri=self.mlflow_uri)
+        experiment = client.get_experiment_by_name("mloptimizer")
+        runs = client.search_runs([experiment.experiment_id])
+
+        import re
+        # Find child runs (format: gen_N_ind_M_EstimatorName)
+        child_runs = [r for r in runs if re.match(r'^gen_\d+_ind_\d+_', r.info.run_name)]
+
+        # Should have child runs now (previously would be 0 with parallel mode)
+        assert len(child_runs) > 0, "Child runs should be created with parallel execution"
+
+        # Child runs should match n_trials_
+        assert len(child_runs) == opt.n_trials_, \
+            f"MLflow child runs ({len(child_runs)}) should match n_trials_ ({opt.n_trials_})"
+
+    def test_parallel_child_runs_have_hyperparams(self):
+        """Verify parallel child runs have recoverable hyperparameters."""
+        X, y = load_iris(return_X_y=True)
+        space = HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier)
+
+        opt = GeneticSearch(
+            estimator_class=DecisionTreeClassifier,
+            hyperparam_space=space,
+            generations=2,
+            population_size=4,
+            n_elites=1,
+            use_mlflow=True,
+            use_parallel=True,  # Parallel mode
+            seed=42
+        )
+        opt.fit(X, y)
+
+        client = MlflowClient(tracking_uri=self.mlflow_uri)
+        experiment = client.get_experiment_by_name("mloptimizer")
+        runs = client.search_runs([experiment.experiment_id])
+
+        import re
+        child_runs = [r for r in runs if re.match(r'^gen_\d+_ind_\d+_', r.info.run_name)]
+
+        assert len(child_runs) > 0, "No child runs found"
+
+        # Each child run should have hyperparameters
+        for child in child_runs:
+            params = child.data.params
+            assert len(params) > 0, f"Child run {child.info.run_name} has no parameters"
+
+            # Should have DecisionTree-relevant params
+            possible_params = ['max_depth', 'min_samples_split', 'min_samples_leaf', 'criterion']
+            has_relevant_param = any(p in params for p in possible_params)
+            assert has_relevant_param, \
+                f"Child run params don't include expected DecisionTree params: {list(params.keys())}"
+
+    def test_parallel_child_runs_have_metrics(self):
+        """Verify parallel child runs have metrics logged."""
+        X, y = load_iris(return_X_y=True)
+        space = HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier)
+
+        opt = GeneticSearch(
+            estimator_class=DecisionTreeClassifier,
+            hyperparam_space=space,
+            generations=2,
+            population_size=4,
+            n_elites=1,
+            use_mlflow=True,
+            use_parallel=True,  # Parallel mode
+            seed=42
+        )
+        opt.fit(X, y)
+
+        client = MlflowClient(tracking_uri=self.mlflow_uri)
+        experiment = client.get_experiment_by_name("mloptimizer")
+        runs = client.search_runs([experiment.experiment_id])
+
+        import re
+        child_runs = [r for r in runs if re.match(r'^gen_\d+_ind_\d+_', r.info.run_name)]
+
+        assert len(child_runs) > 0, "No child runs found"
+
+        # Each child run should have metrics
+        for child in child_runs:
+            metrics = child.data.metrics
+            assert len(metrics) > 0, f"Child run {child.info.run_name} has no metrics"
+
+            # Should have accuracy metric (classification)
+            assert 'accuracy' in metrics, \
+                f"Child run should have 'accuracy' metric, found: {list(metrics.keys())}"
+
+    def test_parallel_child_runs_have_tags(self):
+        """Verify parallel child runs have appropriate tags."""
+        X, y = load_iris(return_X_y=True)
+        space = HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier)
+
+        opt = GeneticSearch(
+            estimator_class=DecisionTreeClassifier,
+            hyperparam_space=space,
+            generations=2,
+            population_size=4,
+            n_elites=1,
+            use_mlflow=True,
+            use_parallel=True,  # Parallel mode
+            seed=42
+        )
+        opt.fit(X, y)
+
+        client = MlflowClient(tracking_uri=self.mlflow_uri)
+        experiment = client.get_experiment_by_name("mloptimizer")
+        runs = client.search_runs([experiment.experiment_id])
+
+        import re
+        child_runs = [r for r in runs if re.match(r'^gen_\d+_ind_\d+_', r.info.run_name)]
+
+        assert len(child_runs) > 0, "No child runs found"
+
+        # Each child run should have generation and individual_index tags
+        for child in child_runs:
+            tags = child.data.tags
+            assert 'generation' in tags, f"Child run missing 'generation' tag"
+            assert 'individual_index' in tags, f"Child run missing 'individual_index' tag"
+            assert 'estimator' in tags, f"Child run missing 'estimator' tag"
+            assert tags['estimator'] == 'DecisionTreeClassifier', \
+                f"Expected estimator='DecisionTreeClassifier', got {tags['estimator']}"
+
+    def test_parallel_regressor_child_runs(self):
+        """Verify MLflow child runs work for regressors in parallel mode."""
+        X, y = load_diabetes(return_X_y=True)
+        space = HyperparameterSpaceBuilder.get_default_space(DecisionTreeRegressor)
+
+        opt = GeneticSearch(
+            estimator_class=DecisionTreeRegressor,
+            hyperparam_space=space,
+            generations=2,
+            population_size=4,
+            n_elites=1,
+            use_mlflow=True,
+            use_parallel=True,  # Parallel mode
+            seed=42
+        )
+        opt.fit(X, y)
+
+        client = MlflowClient(tracking_uri=self.mlflow_uri)
+        experiment = client.get_experiment_by_name("mloptimizer")
+        runs = client.search_runs([experiment.experiment_id])
+
+        import re
+        child_runs = [r for r in runs if re.match(r'^gen_\d+_ind_\d+_', r.info.run_name)]
+
+        # Should have child runs for regressor
+        assert len(child_runs) == opt.n_trials_, \
+            f"Regressor parallel child runs ({len(child_runs)}) should match n_trials_ ({opt.n_trials_})"
+
+        # Check one has DecisionTreeRegressor in name
+        regressor_runs = [r for r in child_runs if 'DecisionTreeRegressor' in r.info.run_name]
+        assert len(regressor_runs) > 0, "Expected child runs with DecisionTreeRegressor in name"
+
+    def test_parallel_matches_sequential_results(self):
+        """Verify parallel mode produces same optimization quality as sequential."""
+        X, y = load_iris(return_X_y=True)
+        space = HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier)
+
+        # Run with parallel=True
+        opt_parallel = GeneticSearch(
+            estimator_class=DecisionTreeClassifier,
+            hyperparam_space=space,
+            generations=2,
+            population_size=4,
+            n_elites=1,
+            use_mlflow=True,
+            use_parallel=True,
+            seed=42
+        )
+        opt_parallel.fit(X, y)
+
+        # Reset MLflow for second run
+        mlflow.end_run()
+
+        # Run with parallel=False (same seed)
+        opt_sequential = GeneticSearch(
+            estimator_class=DecisionTreeClassifier,
+            hyperparam_space=space,
+            generations=2,
+            population_size=4,
+            n_elites=1,
+            use_mlflow=True,
+            use_parallel=False,
+            seed=42
+        )
+        opt_sequential.fit(X, y)
+
+        # Both should complete successfully and produce results
+        assert opt_parallel.best_estimator_ is not None
+        assert opt_sequential.best_estimator_ is not None
+
+        # n_trials should match between parallel and sequential
+        assert opt_parallel.n_trials_ == opt_sequential.n_trials_, \
+            f"Parallel n_trials ({opt_parallel.n_trials_}) != Sequential n_trials ({opt_sequential.n_trials_})"

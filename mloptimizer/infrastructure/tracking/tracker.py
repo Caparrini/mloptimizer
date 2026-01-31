@@ -764,6 +764,144 @@ class Tracker:
             except Exception as e:
                 logger.warning(f"Failed to log extended evaluation to MLflow: {e}")
 
+    def log_batch_evaluations(self, eval_metadata_list):
+        """
+        Log a batch of evaluations to MLflow from the main process.
+
+        This method is called after parallel workers return with evaluation metadata.
+        It enables MLflow child run logging in parallel mode by logging all evaluations
+        from the main process where the MLflow context is available.
+
+        Parameters
+        ----------
+        eval_metadata_list : list of dict
+            List of evaluation metadata dictionaries, each containing:
+            - classifier_params: dict of hyperparameters
+            - classifier_name: str name of the classifier class
+            - eval_result: EvaluationResult or dict with metrics
+            - fitness_score: float fitness value
+            - generation: int generation number
+            - individual_index: int individual index (1-based)
+            - greater_is_better: bool whether higher fitness is better
+        """
+        if not self.use_mlflow:
+            return
+
+        from mloptimizer.domain.evaluation.eval_utils import EvaluationResult
+
+        for metadata in eval_metadata_list:
+            generation = metadata['generation']
+            individual_index = metadata['individual_index']
+            classifier_name = metadata['classifier_name']
+            classifier_params = metadata['classifier_params']
+            eval_result = metadata['eval_result']
+            fitness_score = metadata['fitness_score']
+            greater_is_better = metadata['greater_is_better']
+
+            # Update best fitness tracking
+            if not self.use_parallel:
+                need_update = self.best_fitness is None or (
+                    (greater_is_better and self.best_fitness < fitness_score) or
+                    (not greater_is_better and self.best_fitness > fitness_score)
+                )
+                if need_update:
+                    self.best_fitness = fitness_score
+                    if self.gen_pbar:
+                        self.gen_pbar.set_postfix({"best fitness": self.best_fitness})
+
+            # Extract metrics based on result type
+            if isinstance(eval_result, EvaluationResult):
+                metrics = eval_result.metrics
+                fold_metrics = eval_result.fold_metrics
+                fit_times = eval_result.fit_times
+                score_times = eval_result.score_times
+                n_splits = eval_result.n_splits
+            else:
+                # Legacy dict format
+                metrics = eval_result
+                fold_metrics = []
+                fit_times = []
+                score_times = []
+                n_splits = None
+
+            # Collect trial data for cv_results_
+            trial_record = {
+                'generation': generation,
+                'individual_index': individual_index,
+                'fitness': fitness_score,
+                **{f'param_{k}': v for k, v in classifier_params.items()},
+            }
+
+            # Add mean metrics
+            for metric_name, value in metrics.items():
+                trial_record[f'mean_test_{metric_name}'] = value
+
+            # Add std metrics (if we have fold data)
+            if fold_metrics:
+                import numpy as np
+                for metric_name in fold_metrics[0].keys():
+                    values = [f[metric_name] for f in fold_metrics]
+                    trial_record[f'std_test_{metric_name}'] = np.std(values)
+
+                # Add per-fold scores
+                for fold_idx, fold_metric in enumerate(fold_metrics):
+                    for metric_name, value in fold_metric.items():
+                        trial_record[f'split{fold_idx}_test_{metric_name}'] = value
+
+            # Add timing
+            if fit_times:
+                import numpy as np
+                trial_record['mean_fit_time'] = np.mean(fit_times)
+                trial_record['std_fit_time'] = np.std(fit_times)
+            if score_times:
+                import numpy as np
+                trial_record['mean_score_time'] = np.mean(score_times)
+                trial_record['std_score_time'] = np.std(score_times)
+
+            self.trials_data.append(trial_record)
+
+            # Log to MLflow as nested child run
+            run_name = f"gen_{generation}_ind_{individual_index}_{classifier_name}"
+            try:
+                with self.mlflow.start_run(run_name=run_name, nested=True):
+                    # Log hyperparameters
+                    self.mlflow.log_params(classifier_params)
+
+                    # Log mean metrics
+                    self.mlflow.log_metrics(metrics, step=generation)
+
+                    # Log std metrics if available
+                    if fold_metrics:
+                        import numpy as np
+                        std_metrics = {
+                            f'std_test_{k}': np.std([f[k] for f in fold_metrics])
+                            for k in fold_metrics[0].keys()
+                        }
+                        self.mlflow.log_metrics(std_metrics, step=generation)
+
+                        # Log per-fold metrics
+                        for fold_idx, fold_metric in enumerate(fold_metrics):
+                            fold_logged = {f'fold_{fold_idx}_{k}': v for k, v in fold_metric.items()}
+                            self.mlflow.log_metrics(fold_logged, step=generation)
+
+                    # Log timing metrics
+                    if fit_times:
+                        import numpy as np
+                        self.mlflow.log_metric('mean_fit_time', np.mean(fit_times))
+                    if score_times:
+                        import numpy as np
+                        self.mlflow.log_metric('mean_score_time', np.mean(score_times))
+
+                    # Tags
+                    self.mlflow.set_tag("generation", generation)
+                    self.mlflow.set_tag("individual_index", individual_index)
+                    self.mlflow.set_tag("estimator", classifier_name)
+                    if n_splits:
+                        self.mlflow.set_tag("n_cv_splits", n_splits)
+
+            except Exception as e:
+                logger.warning(f"Failed to log batch evaluation to MLflow: {e}")
+
     def log_trials_table(self):
         """
         Log the trials table to MLflow as an artifact.
