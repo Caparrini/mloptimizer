@@ -5,18 +5,18 @@ from mloptimizer.domain.optimization import Optimizer
 from mloptimizer.domain.hyperspace import HyperparameterSpace
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.datasets import load_iris
-import matplotlib.pyplot as plt
 
 
 @pytest.fixture
 def default_tree_optimizer():
+    """Fixture with minimal optimization for fast plot testing."""
     x, y = load_iris(return_X_y=True)
     default_hyperparameter_space = HyperparameterSpace.get_default_hyperparameter_space(DecisionTreeClassifier)
     genetic_params = {
-        "generations": 10,
-        "population_size": 100,
+        "generations": 2,
+        "population_size": 10,
         'cxpb': 0.5, 'mutpb': 0.5,
-        'n_elites': 2, 'tournsize': 3, 'indpb': 0.5
+        'n_elites': 1, 'tournsize': 3, 'indpb': 0.5
     }
     opt = Optimizer(features=x, labels=y, estimator_class=DecisionTreeClassifier,
                     genetic_params=genetic_params,
@@ -32,16 +32,20 @@ def test_logbook_to_pandas(default_tree_optimizer):
 
 
 def test_plot_logbook(default_tree_optimizer):
+    import matplotlib.pyplot as plt
+
     logbook = default_tree_optimizer.genetic_algorithm.logbook
     fig = plot_logbook(logbook)
-    plt.show()
+    plt.close('all')  # Clean up to avoid display issues in CI
     assert fig is not None
 
 
 def test_plot_search_space(default_tree_optimizer):
+    import matplotlib.pyplot as plt
+
     populations_df = default_tree_optimizer.genetic_algorithm.population_2_df()
     fig = plot_search_space(populations_df)
-    plt.show()
+    plt.close('all')  # Clean up to avoid display issues in CI
     assert fig is not None
 
 def test_plotly_logbook(default_tree_optimizer):

@@ -1,10 +1,11 @@
-import seaborn as sns
+"""
+Plotting utilities for mloptimizer.
+
+This module uses lazy imports to avoid loading heavy plotting libraries
+(matplotlib, plotly, seaborn) until they are actually needed.
+"""
 import pandas as pd
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import numpy as np
-from scipy import stats
-import matplotlib.ticker as ticker
 
 
 def logbook_to_pandas(logbook):
@@ -44,6 +45,8 @@ def plotly_logbook(logbook, population):
     fig : plotly.graph_objects.Figure
         The figure
     """
+    import plotly.graph_objects as go
+
     # --- Prep ---------------------------------------------------------------
     #df = pd.DataFrame(logbook).rename(columns=str.lower).sort_values("gen")
     df = pd.DataFrame(logbook)
@@ -161,9 +164,12 @@ def plot_logbook(logbook, font_size=12):
         The font size of the labels, legends and ticks (-2). Default is 12.
     Returns
     -------
-    fig : plotly.graph_objects.Figure
+    fig : matplotlib.figure.Figure
         The figure
     """
+    import seaborn as sns
+    import matplotlib.ticker as ticker
+
     df = pd.DataFrame(logbook)
     g = sns.lineplot(data=df.drop(columns=['gen', 'nevals']), palette="colorblind")
     # Labels
@@ -224,6 +230,10 @@ def plotly_search_space(populations_df: pd.DataFrame, features: list = None, s=2
     fig : plotly.graph_objects.Figure
         The figure
     """
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+    from scipy import stats
+
     # Use specified features or default to all numeric columns
     if features is None:
         features = populations_df.select_dtypes(include="number").columns.tolist()
@@ -530,9 +540,11 @@ def plot_search_space(populations_df: pd.DataFrame, height=2, s=25):
 
     Returns
     -------
-    fig : plotly.graph_objects.Figure
+    fig : seaborn.PairGrid
         The figure
     """
+    import seaborn as sns
+
     sns.set_style("white")
     g = sns.PairGrid(populations_df, diag_sharey=False, height=height)
     g = g.map_upper(sns.scatterplot, s=s, color="r", alpha=0.2)

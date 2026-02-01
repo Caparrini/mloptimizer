@@ -58,25 +58,29 @@ def hyperparam_space_dt():
 
 @pytest.fixture
 def genetic_optimizer_rf(hyperparam_space_rf, iris_data):
-    """Fixture to create a GeneticOptimizerAPI instance for RandomForestClassifier."""
+    """Fixture to create a fitted GeneticSearch instance for RandomForestClassifier."""
     X, y = iris_data
-    return GeneticSearch(
+    opt = GeneticSearch(
         estimator_class=RandomForestClassifier,
         hyperparam_space=hyperparam_space_rf,
-        **{"generations": 5, "population_size": 5},
+        generations=2,
+        population_size=4,
         eval_function=None,
         seed=42,
         use_parallel=False
-    ).fit(X, y)
+    )
+    opt.fit(X, y)
+    return opt
 
 
 @pytest.fixture
 def genetic_optimizer_svc(hyperparam_space_svc):
-    """Fixture to create a GeneticOptimizerAPI instance for SVC."""
+    """Fixture to create a GeneticSearch instance for SVC (unfitted)."""
     return GeneticSearch(
         estimator_class=SVC,
         hyperparam_space=hyperparam_space_svc,
-        **{"generations": 5, "population_size": 5},
+        generations=2,
+        population_size=4,
         eval_function=None,
         seed=42,
         use_parallel=False
@@ -85,11 +89,12 @@ def genetic_optimizer_svc(hyperparam_space_svc):
 
 @pytest.fixture
 def genetic_optimizer_dt(hyperparam_space_dt):
-    """Fixture to create a GeneticOptimizerAPI instance for DecisionTreeClassifier."""
+    """Fixture to create a GeneticSearch instance for DecisionTreeClassifier (unfitted)."""
     return GeneticSearch(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=hyperparam_space_dt,
-        **{"generations": 5, "population_size": 5},
+        generations=2,
+        population_size=4,
         eval_function=None,
         seed=42,
         use_parallel=False
@@ -97,11 +102,8 @@ def genetic_optimizer_dt(hyperparam_space_dt):
 
 
 def test_fit_random_forest(genetic_optimizer_rf, iris_data):
-    """Test fitting the GeneticOptimizerAPI with RandomForestClassifier using the Iris dataset."""
-    X, y = iris_data
-    genetic_optimizer_rf.fit(X, y)
-
-    # Validate that the best estimator and best parameters are set
+    """Test fitting the GeneticSearch with RandomForestClassifier using the Iris dataset."""
+    # Fixture already fitted, just validate
     assert genetic_optimizer_rf.best_estimator_ is not None
     assert genetic_optimizer_rf.best_params_ is not None
     assert genetic_optimizer_rf.cv_results_ is not None
@@ -208,8 +210,8 @@ def test_get_genetic_params(genetic_optimizer_rf):
     # Validate that the genetic parameters are retrieved correctly
     assert genetic_params is not None
     assert isinstance(genetic_params, dict)
-    assert genetic_params["generations"] == 5
-    assert genetic_params["population_size"] == 5
+    assert genetic_params["generations"] == 2
+    assert genetic_params["population_size"] == 4
 
 
 def test_set_genetic_params(genetic_optimizer_rf):

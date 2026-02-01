@@ -34,7 +34,7 @@ class TestInitialParams:
             estimator_class=DecisionTreeClassifier,
             hyperparam_space=tree_space,
             initial_params=[{'max_depth': 5, 'min_samples_split': 10}],
-            population_size=10,
+            population_size=6,
             generations=3,
             disable_file_output=True,
             seed=42
@@ -53,7 +53,7 @@ class TestInitialParams:
             estimator_class=DecisionTreeClassifier,
             hyperparam_space=tree_space,
             initial_params=None,
-            population_size=10,
+            population_size=6,
             generations=3,
             disable_file_output=True,
             seed=42
@@ -70,7 +70,7 @@ class TestInitialParams:
             estimator_class=DecisionTreeClassifier,
             hyperparam_space=tree_space,
             initial_params=[],
-            population_size=10,
+            population_size=6,
             generations=3,
             disable_file_output=True,
             seed=42
@@ -93,7 +93,7 @@ class TestInitialParams:
             estimator_class=DecisionTreeClassifier,
             hyperparam_space=tree_space,
             initial_params=initial_configs,
-            population_size=10,
+            population_size=6,
             generations=3,
             disable_file_output=True,
             seed=42
@@ -112,7 +112,7 @@ class TestInitialParams:
             hyperparam_space=tree_space,
             initial_params=[{'max_depth': 5, 'min_samples_split': 10}],
             include_default=True,
-            population_size=10,
+            population_size=6,
             generations=3,
             disable_file_output=True,
             seed=42
@@ -130,7 +130,7 @@ class TestInitialParams:
             hyperparam_space=tree_space,
             initial_params=[{'max_depth': 5, 'min_samples_split': 10}],
             include_default=False,
-            population_size=10,
+            population_size=6,
             generations=3,
             disable_file_output=True,
             seed=42
@@ -147,8 +147,8 @@ class TestInitialParams:
             estimator_class=DecisionTreeClassifier,
             hyperparam_space=tree_space,
             initial_params=[{'max_depth': 5, 'min_samples_split': 10}],
-            population_size=10,
-            generations=20,
+            population_size=6,
+            generations=10,
             early_stopping=True,
             patience=3,
             min_delta=0.01,
@@ -158,7 +158,7 @@ class TestInitialParams:
         opt.fit(X, y)
 
         assert opt.best_estimator_ is not None
-        # May stop early, so generations could be less than 20
+        # May stop early, so generations could be less than 10
         assert opt.n_trials_ > 0
 
     def test_initial_params_random_forest(self, iris_data):
@@ -174,7 +174,7 @@ class TestInitialParams:
                 'max_depth': 5,
                 'min_samples_split': 10
             }],
-            population_size=10,
+            population_size=6,
             generations=3,
             disable_file_output=True,
             seed=42
@@ -192,7 +192,7 @@ class TestInitialParams:
             estimator_class=DecisionTreeClassifier,
             hyperparam_space=tree_space,
             initial_params=[{'max_depth': 5}],  # Only max_depth specified
-            population_size=10,
+            population_size=6,
             generations=3,
             disable_file_output=True,
             seed=42
@@ -214,7 +214,7 @@ class TestInitialParams:
             estimator_class=DecisionTreeClassifier,
             hyperparam_space=tree_space,
             initial_params=initial_configs,
-            population_size=10,
+            population_size=6,
             generations=3,
             disable_file_output=True,
             seed=42
@@ -225,7 +225,7 @@ class TestInitialParams:
             estimator_class=DecisionTreeClassifier,
             hyperparam_space=tree_space,
             initial_params=initial_configs,
-            population_size=10,
+            population_size=6,
             generations=3,
             disable_file_output=True,
             seed=42
@@ -243,7 +243,7 @@ class TestInitialParams:
             estimator_class=DecisionTreeClassifier,
             hyperparam_space=tree_space,
             initial_params=[{'max_depth': 5, 'min_samples_split': 10}],
-            population_size=10,
+            population_size=6,
             generations=3,
             cv=3,
             disable_file_output=True,
@@ -265,7 +265,7 @@ class TestInitialParams:
             estimator_class=DecisionTreeClassifier,
             hyperparam_space=tree_space,
             initial_params=[known_good],
-            population_size=10,
+            population_size=6,
             generations=3,
             disable_file_output=True,
             seed=42
@@ -277,7 +277,7 @@ class TestInitialParams:
             estimator_class=DecisionTreeClassifier,
             hyperparam_space=tree_space,
             initial_params=None,
-            population_size=10,
+            population_size=6,
             generations=3,
             disable_file_output=True,
             seed=43  # Different seed to ensure different random init

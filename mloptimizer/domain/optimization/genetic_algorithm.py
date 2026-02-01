@@ -9,11 +9,9 @@ from deap import creator, base, tools, algorithms
 from deap.algorithms import eaSimple, varAnd
 
 from mloptimizer.domain.hyperspace import HyperparameterSpace
+from mloptimizer.infrastructure.tracking import Tracker
 
 logger = logging.getLogger(__name__)
-from matplotlib import pyplot as plt
-from mloptimizer.application.reporting.plots import plotly_search_space, plotly_logbook, plot_logbook
-from mloptimizer.infrastructure.tracking import Tracker
 from mloptimizer.domain.evaluation import Evaluator
 from mloptimizer.domain.population import IndividualUtils
 
@@ -129,12 +127,14 @@ class GeneticAlgorithm:
 
         if self.use_parallel:
             try:
-                from joblib import Parallel, delayed
+                from joblib import Parallel, delayed, parallel_config
 
                 def joblib_map(func, iterable):
                     """
                     Wrapper to make joblib.Parallel compatible with DEAP's toolbox.map.
-                    Uses loky backend which can handle closures and complex objects.
+                    Uses loky backend with inner_max_num_threads=1 to prevent thread
+                    oversubscription when parallelizing estimators that use internal
+                    threading (XGBoost, LightGBM, CatBoost, sklearn with OpenMP).
 
                     Parameters
                     ----------
@@ -148,16 +148,13 @@ class GeneticAlgorithm:
                     list
                         Results from applying func to each item
                     """
-                    # Use loky backend for better pickling support (can handle closures)
-                    # n_jobs=-1 uses all available CPU cores
-                    # verbose=0 suppresses joblib progress messages
-                    return Parallel(n_jobs=-1, backend='loky', verbose=0)(
-                        delayed(func)(item) for item in iterable
-                    )
+                    with parallel_config(backend='loky', inner_max_num_threads=1):
+                        return Parallel(n_jobs=-1, verbose=0)(
+                            delayed(func)(item) for item in iterable
+                        )
 
                 self.toolbox.register("map", joblib_map)
-                if self.tracker:
-                    logger.debug("Parallelization enabled using joblib with loky backend")
+                logger.info("Parallelization enabled using joblib with loky backend")
             except ImportError:
                 logger.warning("joblib not available, falling back to sequential execution")
                 self.use_parallel = False
@@ -245,6 +242,12 @@ class GeneticAlgorithm:
         # Skip visualization if file output is disabled
         if self.tracker.disable_file_output:
             return
+
+        # Lazy import of heavy visualization dependencies
+        from matplotlib import pyplot as plt
+        from mloptimizer.application.reporting.plots import (
+            plotly_search_space, plotly_logbook, plot_logbook
+        )
 
         hyperparam_names = list(self.hyperparam_space.evolvable_hyperparams.keys())
         hyperparam_names.append("fitness")

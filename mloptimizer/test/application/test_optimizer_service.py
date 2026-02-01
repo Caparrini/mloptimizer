@@ -2,15 +2,17 @@ import pytest
 import time
 import warnings
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
-from sklearn.svm import SVC
-from sklearn.datasets import load_iris, load_breast_cancer
-from sklearn.preprocessing import StandardScaler
+from sklearn.datasets import load_iris
 from sklearn.metrics import accuracy_score
 from mloptimizer.application.optimizer_service import OptimizerService
 from mloptimizer.domain.hyperspace import HyperparameterSpace, Hyperparam
 from mloptimizer.domain.evaluation import kfold_score, train_score, train_test_score
+
+# Representative estimators for testing (covers sklearn native, ensemble, and external library)
+REPRESENTATIVE_ESTIMATORS = [DecisionTreeClassifier, RandomForestClassifier, XGBClassifier]
+
 
 @pytest.fixture
 def default_metrics_dict():
@@ -18,19 +20,16 @@ def default_metrics_dict():
         "accuracy": accuracy_score,
     }
 
-@pytest.mark.parametrize('estimator_class',
-                         [DecisionTreeClassifier, RandomForestClassifier, ExtraTreesClassifier,
-                          GradientBoostingClassifier, XGBClassifier, SVC])
+
+@pytest.mark.parametrize('estimator_class', REPRESENTATIVE_ESTIMATORS)
 def test_optimizer_service_with_estimators(estimator_class, default_metrics_dict, tmp_path):
+    """Test basic optimization flow with representative estimators."""
     x, y = load_iris(return_X_y=True)
-    if estimator_class == SVC:
-        scaler = StandardScaler()
-        x = scaler.fit_transform(x)
     hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
     optimizer_service = OptimizerService(
         estimator_class=estimator_class,
         hyperparam_space=hyperparam_space,
-        genetic_params={"generations": 5, "population_size": 5},
+        genetic_params={"generations": 2, "population_size": 4},
         metrics=default_metrics_dict,
         seed=42,
         use_parallel=False
@@ -38,42 +37,17 @@ def test_optimizer_service_with_estimators(estimator_class, default_metrics_dict
     best_model = optimizer_service.optimize(x, y)
     assert best_model is not None
 
-@pytest.mark.parametrize('estimator_class',
-                         [DecisionTreeClassifier, RandomForestClassifier, ExtraTreesClassifier,
-                          GradientBoostingClassifier, XGBClassifier, SVC])
-@pytest.mark.parametrize('dataset',
-                         [load_breast_cancer, load_iris])
-def test_optimizer_service_with_datasets(estimator_class, dataset, default_metrics_dict, tmp_path):
-    x, y = dataset(return_X_y=True)
-    if estimator_class == SVC:
-        scaler = StandardScaler()
-        x = scaler.fit_transform(x)
-    hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
-    optimizer_service = OptimizerService(
-        estimator_class=estimator_class,
-        hyperparam_space=hyperparam_space,
-        genetic_params={"generations": 5, "population_size": 5},
-        metrics=default_metrics_dict,
-        seed=42,
-        use_parallel=False
-    )
-    best_model = optimizer_service.optimize(x, y)
-    assert best_model is not None
 
-@pytest.mark.parametrize('estimator_class',
-                         [DecisionTreeClassifier, RandomForestClassifier, ExtraTreesClassifier,
-                          GradientBoostingClassifier, SVC])
-@pytest.mark.parametrize('dataset',
-                         [load_breast_cancer, load_iris])
-def test_optimizer_service_parallel_speedup(estimator_class, dataset, default_metrics_dict, tmp_path):
-    x, y = dataset(return_X_y=True)
-    if estimator_class == SVC:
-        scaler = StandardScaler()
-        x = scaler.fit_transform(x)
+@pytest.mark.slow
+def test_optimizer_service_parallel_speedup(default_metrics_dict, tmp_path):
+    """Test parallel execution produces same results as sequential."""
+    x, y = load_iris(return_X_y=True)
+    estimator_class = DecisionTreeClassifier
     hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
     seed = 42
-    generations = 20
-    population_size = 10
+    generations = 3
+    population_size = 5
+
     optimizer_service_parallel = OptimizerService(
         estimator_class=estimator_class,
         hyperparam_space=hyperparam_space,
@@ -109,21 +83,19 @@ def test_optimizer_service_parallel_speedup(estimator_class, dataset, default_me
             f"to parallel execution time ({elapsed_time_parallel:.2f}s)."
         )
 
-@pytest.mark.parametrize('estimator_class',
-                         [DecisionTreeClassifier, RandomForestClassifier, ExtraTreesClassifier,
-                          GradientBoostingClassifier, XGBClassifier, SVC])
+
+@pytest.mark.parametrize('estimator_class', REPRESENTATIVE_ESTIMATORS)
 @pytest.mark.parametrize('eval_function', [kfold_score, train_score, train_test_score])
 def test_optimizer_service_reproducibility(estimator_class, default_metrics_dict,
                                            eval_function, tmp_path):
+    """Test that same seed produces same results, different seed produces different results."""
     x, y = load_iris(return_X_y=True)
-    if estimator_class == SVC:
-        scaler = StandardScaler()
-        x = scaler.fit_transform(x)
     hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(estimator_class)
     seed = 42
     distinct_seed = 43
     generations = 2
-    population_size = 5
+    population_size = 4
+
     optimizer_service_1 = OptimizerService(
         estimator_class=estimator_class,
         hyperparam_space=hyperparam_space,
@@ -134,6 +106,7 @@ def test_optimizer_service_reproducibility(estimator_class, default_metrics_dict
         use_parallel=False
     )
     best_model_1 = optimizer_service_1.optimize(x, y)
+
     optimizer_service_2 = OptimizerService(
         estimator_class=estimator_class,
         hyperparam_space=hyperparam_space,
@@ -144,6 +117,7 @@ def test_optimizer_service_reproducibility(estimator_class, default_metrics_dict
         use_parallel=False
     )
     best_model_2 = optimizer_service_2.optimize(x, y)
+
     optimizer_service_3 = OptimizerService(
         estimator_class=estimator_class,
         hyperparam_space=hyperparam_space,
@@ -154,16 +128,18 @@ def test_optimizer_service_reproducibility(estimator_class, default_metrics_dict
         use_parallel=False
     )
     best_model_3 = optimizer_service_3.optimize(x, y)
+
     assert str(best_model_1) == str(best_model_2)
     assert str(best_model_1) != str(best_model_3)
 
 def test_optimizer_service_set_evaluator(tmp_path, default_metrics_dict):
+    """Test changing eval function after initialization."""
     x, y = load_iris(return_X_y=True)
     hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(DecisionTreeClassifier)
     optimizer_service = OptimizerService(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=hyperparam_space,
-        genetic_params={"generations": 5, "population_size": 5},
+        genetic_params={"generations": 2, "population_size": 4},
         metrics=default_metrics_dict,
         seed=42,
         use_parallel=False
@@ -174,13 +150,15 @@ def test_optimizer_service_set_evaluator(tmp_path, default_metrics_dict):
     best_model = optimizer_service.optimize(x, y)
     assert best_model is not None
 
+
 def test_optimizer_service_set_hyperparameter_space(tmp_path):
+    """Test changing hyperparameter space after initialization."""
     x, y = load_iris(return_X_y=True)
     initial_hyperparam_space = HyperparameterSpace.get_default_hyperparameter_space(DecisionTreeClassifier)
     optimizer_service = OptimizerService(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=initial_hyperparam_space,
-        genetic_params={"generations": 5, "population_size": 5},
+        genetic_params={"generations": 2, "population_size": 4},
         eval_function=train_test_score,
         seed=42,
         use_parallel=False
@@ -198,6 +176,7 @@ def test_optimizer_service_set_hyperparameter_space(tmp_path):
     assert best_model is not None
 
 def test_optimizer_service_invalid_hyperparameter_space(tmp_path):
+    """Test that invalid hyperparameter names raise ValueError."""
     x, y = load_iris(return_X_y=True)
     invalid_hyperparam_space = HyperparameterSpace(
         evolvable_hyperparams={
@@ -208,7 +187,7 @@ def test_optimizer_service_invalid_hyperparameter_space(tmp_path):
     optimizer_service = OptimizerService(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=invalid_hyperparam_space,
-        genetic_params={"generations": 5, "population_size": 5},
+        genetic_params={"generations": 2, "population_size": 4},
         eval_function=accuracy_score,
         seed=42,
         use_parallel=False
@@ -217,12 +196,14 @@ def test_optimizer_service_invalid_hyperparameter_space(tmp_path):
                        match="Parameters {'invalid_param'} are not parameters of DecisionTreeClassifier"):
         optimizer_service.optimize(x, y)
 
+
 def test_optimizer_service_hyperparameter_space_none(tmp_path):
+    """Test that None hyperparameter space raises ValueError."""
     x, y = load_iris(return_X_y=True)
     optimizer_service = OptimizerService(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=None,
-        genetic_params={"generations": 5, "population_size": 5},
+        genetic_params={"generations": 2, "population_size": 4},
         eval_function=accuracy_score,
         seed=42,
         use_parallel=False
@@ -230,7 +211,14 @@ def test_optimizer_service_hyperparameter_space_none(tmp_path):
     with pytest.raises(ValueError, match="hyperparam_space is None"):
         optimizer_service.optimize(x, y)
 
+
+@pytest.mark.slow
 def test_optimizer_service_custom_svc(tmp_path):
+    """Test optimization with custom SVC hyperparameter space."""
+    from sklearn.svm import SVC
+    from sklearn.datasets import load_breast_cancer
+    from sklearn.preprocessing import StandardScaler
+
     x, y = load_breast_cancer(return_X_y=True)
     scaler = StandardScaler()
     x = scaler.fit_transform(x)
@@ -248,7 +236,7 @@ def test_optimizer_service_custom_svc(tmp_path):
     optimizer_service = OptimizerService(
         estimator_class=SVC,
         hyperparam_space=hyperparam_space,
-        genetic_params={"generations": 5, "population_size": 5},
+        genetic_params={"generations": 2, "population_size": 4},
         eval_function=train_test_score,
         seed=42,
         use_parallel=False

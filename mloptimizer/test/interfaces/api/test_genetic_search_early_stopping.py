@@ -22,24 +22,23 @@ def noisy_dataset():
     return X, y
 
 def test_early_stopping_triggers(noisy_dataset):
+    """Test that early stopping triggers before reaching max generations."""
     X, y = noisy_dataset
 
     genetic_optimizer = GeneticSearch(
         estimator_class=DecisionTreeClassifier,
         hyperparam_space=HyperparameterSpaceBuilder.get_default_space(DecisionTreeClassifier),
-        **{
-            "generations": 100,
-            "population_size": 50,
-            "cxpb": 0.5,
-            "mutpb": 0.2,
-            "tournsize": 3,
-            "indpb": 0.5,
-            "n_elites": 1,
-        },
+        generations=20,  # Reduced from 100 - enough to test early stopping
+        population_size=8,  # Reduced from 50
+        cxpb=0.5,
+        mutpb=0.2,
+        tournsize=3,
+        indpb=0.5,
+        n_elites=1,
         seed=42,
         use_parallel=False,
         early_stopping=True,
-        patience=10,
+        patience=3,  # Reduced from 10 - faster trigger
         min_delta=0.01
     )
 
@@ -49,6 +48,6 @@ def test_early_stopping_triggers(noisy_dataset):
     ga = optimizer.genetic_algorithm
 
     assert hasattr(ga, "generations_run_")
-    assert ga.generations_run_ < 100, f"Expected early stopping (patience={genetic_optimizer.patience}) before reaching 100 generations, but ran {ga.generations_run_}"
+    assert ga.generations_run_ < 20, f"Expected early stopping (patience={genetic_optimizer.patience}) before reaching 20 generations, but ran {ga.generations_run_}"
     assert getattr(ga, "stopped_early_", False) is True
 

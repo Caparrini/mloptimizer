@@ -1,5 +1,6 @@
 {
     "fixed_hyperparams": {
+        "n_jobs": 1
     },
     "evolvable_hyperparams": {
         "learning_rate": {

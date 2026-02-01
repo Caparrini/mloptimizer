@@ -42,7 +42,7 @@ class TestDisableFileOutput:
                     hyperparam_space=tree_space,
                     disable_file_output=True,  # Explicit default
                     generations=3,
-                    population_size=10,
+                    population_size=6,
                     seed=42
                 )
                 opt.fit(X, y)
@@ -72,7 +72,7 @@ class TestDisableFileOutput:
                     estimator_class=DecisionTreeClassifier,
                     hyperparam_space=tree_space,
                     generations=3,
-                    population_size=10,
+                    population_size=6,
                     seed=42
                 )
                 opt.fit(X, y)
@@ -98,7 +98,7 @@ class TestDisableFileOutput:
                     hyperparam_space=tree_space,
                     disable_file_output=False,  # Enable file output
                     generations=3,
-                    population_size=10,
+                    population_size=6,
                     seed=42
                 )
                 opt.fit(X, y)
@@ -131,7 +131,7 @@ class TestDisableFileOutput:
                     patience=3,
                     min_delta=0.01,
                     generations=20,
-                    population_size=10,
+                    population_size=6,
                     seed=42
                 )
                 opt.fit(X, y)
@@ -158,7 +158,7 @@ class TestDisableFileOutput:
                     disable_file_output=True,
                     initial_params=[{'max_depth': 5, 'min_samples_split': 10}],
                     generations=3,
-                    population_size=10,
+                    population_size=6,
                     seed=42
                 )
                 opt.fit(X, y)
@@ -180,7 +180,7 @@ class TestDisableFileOutput:
             hyperparam_space=tree_space,
             disable_file_output=True,
             generations=3,
-            population_size=10,
+            population_size=6,
             seed=42
         )
         opt_no_files.fit(X, y)
@@ -196,7 +196,7 @@ class TestDisableFileOutput:
                     hyperparam_space=tree_space,
                     disable_file_output=False,
                     generations=3,
-                    population_size=10,
+                    population_size=6,
                     seed=42
                 )
                 opt_with_files.fit(X, y)
@@ -220,7 +220,7 @@ class TestDisableFileOutput:
             hyperparam_space=tree_space,
             disable_file_output=True,
             generations=3,
-            population_size=10,
+            population_size=6,
             seed=42
         )
         opt.fit(X, y)
@@ -253,7 +253,7 @@ class TestDisableFileOutput:
                     disable_file_output=True,
                     cv=3,
                     generations=3,
-                    population_size=10,
+                    population_size=6,
                     seed=42
                 )
                 opt.fit(X, y)
@@ -280,7 +280,7 @@ class TestDisableFileOutput:
                     disable_file_output=True,
                     use_parallel=True,
                     generations=3,
-                    population_size=10,
+                    population_size=6,
                     seed=42
                 )
                 opt.fit(X, y)
@@ -301,7 +301,7 @@ class TestDisableFileOutput:
             hyperparam_space=tree_space,
             disable_file_output=True,
             generations=5,
-            population_size=10,
+            population_size=6,
             seed=42
         )
         opt.fit(X, y)
@@ -325,7 +325,7 @@ class TestDisableFileOutput:
             hyperparam_space=tree_space,
             disable_file_output=True,
             generations=3,
-            population_size=10,
+            population_size=6,
             seed=42
         )
         opt.fit(X, y)

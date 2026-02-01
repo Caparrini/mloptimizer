@@ -1,5 +1,8 @@
 {
     "fixed_hyperparams": {
+        "verbose": false,
+        "thread_count": 1,
+        "allow_writing_files": false
     },
     "evolvable_hyperparams": {
         "learning_rate": {
