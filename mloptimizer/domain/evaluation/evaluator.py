@@ -62,6 +62,9 @@ class Evaluator:
         self.individual_utils = individual_utils
         self.seed = seed
 
+        # Cache eval function signature to avoid repeated inspection
+        self._eval_signature = self._determine_eval_signature(eval_function)
+
         if metrics is None:
             if is_classifier(self.estimator_class):
                 self.metrics = _default_classification_metrics()
@@ -77,6 +80,35 @@ class Evaluator:
                     self.fitness_score = fitness_score
         else:
             self.metrics = metrics
+
+    def _determine_eval_signature(self, eval_function):
+        """
+        Determine the signature type of the eval function once at init time.
+
+        Returns
+        -------
+        tuple : (style, has_random_state)
+            style: 'old' for (features, labels, clf, metrics) or 'new' for (estimator, X, y, metrics)
+            has_random_state: bool indicating if random_state parameter exists
+        """
+        import inspect
+        sig = inspect.signature(eval_function)
+        param_names = list(sig.parameters)
+
+        has_random_state = "random_state" in param_names
+
+        if param_names[:4] == ["features", "labels", "clf", "metrics"]:
+            return ('old', has_random_state)
+        elif param_names[:4] == ["estimator", "X", "y", "metrics"]:
+            return ('new', has_random_state)
+        else:
+            raise TypeError(
+                f"The evaluation function `{eval_function.__name__}` does not match expected signatures.\n"
+                "It should be either:\n"
+                "  (features, labels, clf, metrics[, random_state]) [OLD STYLE], or\n"
+                "  (clf, X, y, metrics[, random_state]) [NEW STYLE].\n"
+                f"Found parameters: {param_names}"
+            )
 
     def evaluate(self, clf, features, labels):
         """
@@ -96,34 +128,18 @@ class Evaluator:
         metrics : dict
             Dictionary of the form {"metric_name": metric_value}
         """
-        import inspect
-        sig = inspect.signature(self.eval_function)
-        param_names = list(sig.parameters)
+        style, has_random_state = self._eval_signature
 
-        # Match old-style: features, labels, clf, metrics
-        if param_names[:4] == ["features", "labels", "clf", "metrics"]:
-            if "random_state" in param_names:
+        if style == 'old':
+            if has_random_state:
                 return self.eval_function(features, labels, clf, self.metrics, random_state=self.seed)
             else:
                 return self.eval_function(features, labels, clf, self.metrics)
-
-        # Match new-style: clf, X, y, metrics
-        elif param_names[:4] == ["estimator", "X", "y", "metrics"]:
-            if "random_state" in param_names:
+        else:  # style == 'new'
+            if has_random_state:
                 return self.eval_function(clf, features, labels, self.metrics, random_state=self.seed)
             else:
                 return self.eval_function(clf, features, labels, self.metrics)
-
-
-        # Fallback for partial matches
-        else:
-            raise TypeError(
-                f"The evaluation function `{self.eval_function.__name__}` does not match expected signatures.\n"
-                "It should be either:\n"
-                "  (features, labels, clf, metrics[, random_state]) [OLD STYLE], or\n"
-                "  (clf, X, y, metrics[, random_state]) [NEW STYLE].\n"
-                f"Found parameters: {param_names}"
-            )
 
     def evaluate_individual(self, individual):
         from mloptimizer.domain.evaluation.eval_utils import EvaluationResult

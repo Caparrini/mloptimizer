@@ -91,6 +91,12 @@ class GeneticAlgorithm:
         np.random.seed(seed)
         self.populations = []
 
+        # Create IndividualUtils once and reuse (avoid repeated instantiation)
+        self.individual_utils = IndividualUtils(
+            hyperparam_space=self.hyperparam_space,
+            mlopt_seed=self.seed
+        )
+
         # Toolbox setup (from DeapOptimizer)
         self.toolbox = base.Toolbox()
         self.eval_dict = {}
@@ -160,8 +166,7 @@ class GeneticAlgorithm:
                 self.use_parallel = False
 
         self.toolbox.register("individual",
-                              IndividualUtils(hyperparam_space=self.hyperparam_space,
-                                              mlopt_seed=self.seed).init_individual,creator.Individual)
+                              self.individual_utils.init_individual, creator.Individual)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.individual)
         self.toolbox.register("evaluate", self.evaluator.evaluate_individual)
         self.toolbox.register("clone", copy.deepcopy)
@@ -198,11 +203,10 @@ class GeneticAlgorithm:
         """
         # Create initial individuals from user-provided params and/or defaults
         seed_individuals = []
-        individual_utils = IndividualUtils(hyperparam_space=self.hyperparam_space, mlopt_seed=self.seed)
 
         # Add default individual if requested
         if include_default and self.estimator_class is not None:
-            default_ind = individual_utils.get_default_individual(
+            default_ind = self.individual_utils.get_default_individual(
                 self.estimator_class, pcls=creator.Individual
             )
             seed_individuals.append(default_ind)
@@ -210,7 +214,7 @@ class GeneticAlgorithm:
         # Add user-provided initial params
         if initial_params:
             for params in initial_params:
-                ind = individual_utils.params_to_individual(params, pcls=creator.Individual)
+                ind = self.individual_utils.params_to_individual(params, pcls=creator.Individual)
                 seed_individuals.append(ind)
 
         # Create remaining random individuals
@@ -355,8 +359,7 @@ class GeneticAlgorithm:
             else:
                 fitness = result[0] if isinstance(result, tuple) else result
             ind.fitness.values = (fitness,)
-            ind_formatted = IndividualUtils(hyperparam_space=self.hyperparam_space,
-                                            mlopt_seed=self.seed).individual2dict(ind)
+            ind_formatted = self.individual_utils.individual2dict(ind)
             self.tracker.append_progress_file(0, ngen, c, len(invalid_ind), ind_formatted, (fitness,))
             c += 1
 
@@ -409,8 +412,7 @@ class GeneticAlgorithm:
                 else:
                     fitness = result[0] if isinstance(result, tuple) else result
                 ind.fitness.values = (fitness,)
-                ind_formatted = IndividualUtils(hyperparam_space=self.hyperparam_space,
-                                                mlopt_seed=self.seed).individual2dict(ind)
+                ind_formatted = self.individual_utils.individual2dict(ind)
                 self.tracker.append_progress_file(gen, ngen, c, len(invalid_ind), ind_formatted, (fitness,))
                 c += 1
 
@@ -471,8 +473,7 @@ class GeneticAlgorithm:
         n = 0
         for p in self.populations:
             for i in p:
-                i_hyperparams = IndividualUtils(hyperparam_space=self.hyperparam_space,
-                                                mlopt_seed=self.seed).individual2dict(i[0])
+                i_hyperparams = self.individual_utils.individual2dict(i[0])
                 i_hyperparams['fitness'] = i[1].values[0]
                 i_hyperparams['population'] = n
                 data.append(i_hyperparams)
