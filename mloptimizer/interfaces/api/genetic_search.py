@@ -192,10 +192,12 @@ class GeneticSearch(MetaEstimatorMixin, BaseEstimator):
         self.seed = seed
 
         # cv - Cross-validation handling
+        # Cache classifier check to avoid repeated instantiation
+        self._is_classifier = is_classifier(estimator_class)
         if isinstance(cv, int):
             if cv < 2:
                 raise ValueError("cv must be >= 2 when given as an integer.")
-            if is_classifier(estimator_class()):
+            if self._is_classifier:
                 self.cv = StratifiedKFold(n_splits=cv, shuffle=True, random_state=self.seed)
             else:
                 self.cv = KFold(n_splits=cv, shuffle=True, random_state=self.seed)

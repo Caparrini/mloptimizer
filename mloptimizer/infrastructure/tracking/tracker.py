@@ -4,6 +4,7 @@ import shutil
 from datetime import datetime
 import importlib
 import joblib
+import numpy as np
 import pandas as pd
 import tqdm
 
@@ -49,7 +50,6 @@ class Tracker:
         # Paths
         self.opt_run_folder = None
         self.opt_run_checkpoint_path = None
-        self.progress_path = None
         self.progress_path = None
         self.results_path = None
         self.graphics_path = None
@@ -343,7 +343,6 @@ class Tracker:
                 self.mlflow.log_input(dataset, context="training")
 
                 # Log dataset metadata as tags
-                import numpy as np
                 n_samples, n_features = X.shape
                 n_classes = len(np.unique(y)) if y is not None else 0
 
@@ -699,7 +698,6 @@ class Tracker:
 
         # Add std metrics (if we have fold data)
         if fold_metrics:
-            import numpy as np
             for metric_name in fold_metrics[0].keys():
                 values = [f[metric_name] for f in fold_metrics]
                 trial_record[f'std_test_{metric_name}'] = np.std(values)
@@ -711,11 +709,9 @@ class Tracker:
 
         # Add timing
         if fit_times:
-            import numpy as np
             trial_record['mean_fit_time'] = np.mean(fit_times)
             trial_record['std_fit_time'] = np.std(fit_times)
         if score_times:
-            import numpy as np
             trial_record['mean_score_time'] = np.mean(score_times)
             trial_record['std_score_time'] = np.std(score_times)
 
@@ -734,7 +730,6 @@ class Tracker:
 
                     # Log std metrics if available
                     if fold_metrics:
-                        import numpy as np
                         std_metrics = {
                             f'std_test_{k}': np.std([f[k] for f in fold_metrics])
                             for k in fold_metrics[0].keys()
@@ -748,10 +743,8 @@ class Tracker:
 
                     # Log timing metrics
                     if fit_times:
-                        import numpy as np
                         self.mlflow.log_metric('mean_fit_time', np.mean(fit_times))
                     if score_times:
-                        import numpy as np
                         self.mlflow.log_metric('mean_score_time', np.mean(score_times))
 
                     # Tags
@@ -838,7 +831,6 @@ class Tracker:
 
             # Add std metrics (if we have fold data)
             if fold_metrics:
-                import numpy as np
                 for metric_name in fold_metrics[0].keys():
                     values = [f[metric_name] for f in fold_metrics]
                     trial_record[f'std_test_{metric_name}'] = np.std(values)
@@ -850,11 +842,9 @@ class Tracker:
 
             # Add timing
             if fit_times:
-                import numpy as np
                 trial_record['mean_fit_time'] = np.mean(fit_times)
                 trial_record['std_fit_time'] = np.std(fit_times)
             if score_times:
-                import numpy as np
                 trial_record['mean_score_time'] = np.mean(score_times)
                 trial_record['std_score_time'] = np.std(score_times)
 
@@ -872,7 +862,6 @@ class Tracker:
 
                     # Log std metrics if available
                     if fold_metrics:
-                        import numpy as np
                         std_metrics = {
                             f'std_test_{k}': np.std([f[k] for f in fold_metrics])
                             for k in fold_metrics[0].keys()
@@ -886,10 +875,8 @@ class Tracker:
 
                     # Log timing metrics
                     if fit_times:
-                        import numpy as np
                         self.mlflow.log_metric('mean_fit_time', np.mean(fit_times))
                     if score_times:
-                        import numpy as np
                         self.mlflow.log_metric('mean_score_time', np.mean(score_times))
 
                     # Tags
@@ -918,7 +905,6 @@ class Tracker:
 
         try:
             import pandas as pd
-            import numpy as np
             import tempfile
             import os
 
@@ -968,7 +954,6 @@ class Tracker:
         if not self.trials_data:
             return pd.DataFrame()
 
-        import numpy as np
 
         trials_df = pd.DataFrame(self.trials_data)
 

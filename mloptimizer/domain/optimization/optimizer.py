@@ -167,11 +167,26 @@ class Optimizer:
         if self.hyperparam_space is None:
             raise ValueError("hyperparam_space is None")
 
-        # Get default params of the estimator_class
-        default_estimator_params = set(self.estimator_class().get_params().keys())
+        # Try to get valid parameters using inspect first (faster for most estimators)
+        # Fall back to instantiation for estimators using **kwargs (XGBoost, LightGBM)
+        sig = inspect.signature(self.estimator_class.__init__)
+        has_var_keyword = any(
+            p.kind == inspect.Parameter.VAR_KEYWORD
+            for p in sig.parameters.values()
+        )
+
+        if has_var_keyword:
+            # Estimator uses **kwargs, must instantiate to get valid params
+            default_estimator_params = set(self.estimator_class().get_params().keys())
+        else:
+            # Use inspect for faster validation
+            default_estimator_params = set(
+                param_name for param_name in sig.parameters.keys()
+                if param_name != 'self'
+            )
 
         # For estimators like CatBoost that don't properly implement get_params(),
-        # use inspect to get constructor parameters
+        # use inspect to get constructor parameters as fallback
         is_catboost = 'catboost' in self.estimator_class.__module__.lower()
         if not default_estimator_params or is_catboost:
             sig = inspect.signature(self.estimator_class.__init__)

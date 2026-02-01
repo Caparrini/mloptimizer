@@ -1,6 +1,8 @@
+import math
+import random
+
 from mloptimizer.domain.hyperspace import HyperparameterSpace
 from sklearn.svm import SVR
-import random
 
 
 class IndividualUtils:
@@ -82,7 +84,6 @@ class IndividualUtils:
                     int_val = int(val * hp.scale)
                 elif hp.hyperparam_type == 'nexp':
                     # val = 10^(-int_val), so int_val = -log10(val)
-                    import math
                     int_val = int(-math.log10(val)) if val > 0 else hp.max_value
                 elif hp.hyperparam_type == 'x10':
                     int_val = int(val / 10)
