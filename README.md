@@ -6,6 +6,7 @@
 [![Tests](https://github.com/Caparrini/mloptimizer/actions/workflows/CI.yml/badge.svg)](https://github.com/Caparrini/mloptimizer/actions/workflows/CI.yml)
 [![Coverage Status](http://codecov.io/github/Caparrini/mloptimizer/coverage.svg?branch=master)](https://app.codecov.io/gh/Caparrini/mloptimizer)
 [![Shield: Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-Support-yellow?logo=buymeacoffee)](https://www.buymeacoffee.com/caparrini)
+[![DOI](https://img.shields.io/badge/DOI-10.1016/j.softx.2026.102567-blue)](https://doi.org/10.1016/j.softx.2026.102567)
 
 
 
@@ -133,6 +134,29 @@ with examples, classes and methods reference.
 
 * **Antonio Caparrini** - *Author* - [caparrini](https://github.com/caparrini)
 * **Javier Arroyo Gallardo** - *Author* - [javiag](https://github.com/javiag)
+
+## Citing
+
+If you use `mloptimizer` in a scientific publication, please cite:
+
+> Caparrini, A., & Arroyo, J. (2026). mloptimizer: Genetic algorithm-based hyperparameter optimization for machine learning models in Python. *SoftwareX*, 34, 102567. [doi:10.1016/j.softx.2026.102567](https://doi.org/10.1016/j.softx.2026.102567)
+
+<details>
+<summary>BibTeX</summary>
+
+```bibtex
+@article{caparrini2026mloptimizer,
+  title = {mloptimizer: Genetic algorithm-based hyperparameter optimization for machine learning models in Python},
+  author = {Caparrini, Antonio and Arroyo, Javier},
+  journal = {SoftwareX},
+  volume = {34},
+  pages = {102567},
+  year = {2026},
+  doi = {10.1016/j.softx.2026.102567}
+}
+```
+
+</details>
 
 ## Analytics
 

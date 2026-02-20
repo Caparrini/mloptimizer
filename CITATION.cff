@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: mloptimizer
+type: software
+authors:
+  - family-names: Caparrini
+    given-names: Antonio
+  - family-names: Arroyo
+    given-names: Javier
+message: "If you use mloptimizer in a scientific publication, please cite the following paper:"
+preferred-citation:
+  type: article
+  title: "mloptimizer: Genetic algorithm-based hyperparameter optimization for machine learning models in Python"
+  authors:
+    - family-names: Caparrini
+      given-names: Antonio
+    - family-names: Arroyo
+      given-names: Javier
+  journal: "SoftwareX"
+  volume: 34
+  start: 102567
+  year: 2026
+  month: 6
+  doi: "10.1016/j.softx.2026.102567"
+  issn: "2352-7110"
+  url: "https://www.sciencedirect.com/science/article/pii/S2352711026000610"

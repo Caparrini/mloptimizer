@@ -20,6 +20,7 @@ project = 'mloptimizer'
 copyright = '2024, Antonio Caparrini, Javier Arroyo'
 author = 'Antonio Caparrini, Javier Arroyo'
 release = version
+root_doc = 'readme_link'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -119,6 +120,8 @@ sphinx_gallery_conf = {
 }
 
 html_theme_options = {
+    "announcement": "mloptimizer has been published in SoftwareX! "
+                    "<a href='https://doi.org/10.1016/j.softx.2026.102567'>Read the paper</a>",
     "show_nav_level": 2,  # Control the navigation levels displayed
     "show_prev_next": False,  # Hide previous/next links
     "navigation_depth": 3,  # Set navigation depth to control sidebar depth
