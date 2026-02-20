@@ -165,5 +165,6 @@ setup(
         #    "Funding": "https://donate.pypi.org",
         #    "Say Thanks!": "http://saythanks.io/to/example",
         "Source": "https://github.com/Caparrini/mloptimizer",
+        "Paper": "https://doi.org/10.1016/j.softx.2026.102567",
     },
 )

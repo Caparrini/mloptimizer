@@ -11,6 +11,7 @@ Welcome to mloptimizer's documentation!
    :maxdepth: 4
 
    readme_link
+   sections/citing
    sections/install
    sections/user_guide
    api/api_reference
